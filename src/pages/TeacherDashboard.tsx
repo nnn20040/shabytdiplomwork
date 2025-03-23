@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
@@ -18,7 +17,8 @@ import {
   Brain,
   Pencil,
   Trash2,
-  Search
+  Search,
+  Calendar as CalendarIcon
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -307,7 +307,7 @@ const TeacherDashboard = () => {
                         <span>{course.duration}</span>
                       </div>
                       <div className="flex items-center">
-                        <Calendar className="h-4 w-4 mr-1" />
+                        <CalendarIcon className="h-4 w-4 mr-1" />
                         <span>{course.creation_date}</span>
                       </div>
                     </div>
