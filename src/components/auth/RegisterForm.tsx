@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { EyeIcon, EyeOffIcon } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
+import { authApi } from '@/api';
 
 const RegisterForm = () => {
   const [firstName, setFirstName] = useState('');
@@ -17,76 +18,42 @@ const RegisterForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const { toast } = useToast();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!firstName || !lastName || !email || !password || !confirmPassword) {
-      toast({
-        title: "Ошибка",
-        description: "Пожалуйста, заполните все поля",
-        variant: "destructive",
-      });
+      toast.error("Пожалуйста, заполните все поля");
       return;
     }
     
     if (password !== confirmPassword) {
-      toast({
-        title: "Ошибка",
-        description: "Пароли не совпадают",
-        variant: "destructive",
-      });
+      toast.error("Пароли не совпадают");
       return;
     }
     
     setIsLoading(true);
     
     try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: `${firstName} ${lastName}`,
-          email,
-          password,
-          role
-        }),
+      const response = await authApi.register({
+        name: `${firstName} ${lastName}`,
+        email,
+        password,
+        role
       });
       
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Ошибка при регистрации');
-      }
-      
-      const data = await response.json();
-      
-      // Save token and user info to localStorage
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      
-      toast({
-        title: "Регистрация успешна",
-        description: "Добро пожаловать в StudyHub!",
-      });
+      toast.success("Регистрация успешна! Добро пожаловать в StudyHub!");
       
       // Redirect based on user role
-      if (data.user.role === 'teacher') {
+      if (role === 'teacher') {
         navigate('/teacher-dashboard');
       } else {
         navigate('/student-dashboard');
       }
     } catch (error) {
       console.error('Registration error:', error);
-      
-      toast({
-        title: "Ошибка",
-        description: error instanceof Error ? error.message : "Проблема с подключением к серверу",
-        variant: "destructive",
-      });
+      toast.error(error instanceof Error ? error.message : "Проблема с подключением к серверу");
     } finally {
       setIsLoading(false);
     }

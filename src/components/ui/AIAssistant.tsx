@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -6,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { Bot, X, Send, Loader2, MinusCircle, RefreshCw } from 'lucide-react';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { aiApi } from '@/api';
 
 interface Message {
   id: string;
@@ -52,23 +52,10 @@ const AIAssistant = () => {
     queryKey: ['aiHistory'],
     queryFn: async () => {
       if (!isAuthenticated) return null;
-      
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/ai/history', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch history');
-      }
-      
-      return response.json();
+      return aiApi.getHistory();
     },
     enabled: isAuthenticated && isOpen,
     retry: false,
-    // Updated: Use meta for handling error instead of onError
     meta: {
       onError: () => {
         // Silently fail on error - we'll use the default welcome message
@@ -109,21 +96,7 @@ const AIAssistant = () => {
   // Ask AI question mutation
   const askMutation = useMutation({
     mutationFn: async (question: string) => {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/ai/ask', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ question })
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to get AI response');
-      }
-      
-      return response.json();
+      return aiApi.askQuestion(question);
     },
     onError: () => {
       toast.error('Не удалось получить ответ. Пожалуйста, попробуйте позже.');
@@ -154,49 +127,21 @@ const AIAssistant = () => {
 
     const userQuestion = input.trim();
 
-    if (isAuthenticated) {
-      try {
-        const result = await askMutation.mutateAsync(userQuestion);
-        
-        if (result.success) {
-          const aiMessage: Message = {
-            id: Date.now().toString() + '-ai',
-            role: 'assistant',
-            content: result.data.response,
-            timestamp: new Date(),
-          };
-          
-          setMessages((prev) => [...prev, aiMessage]);
-        }
-      } catch (error) {
-        // Error handled in mutation onError
-      }
-    } else {
-      // Fallback for unauthenticated users - simulate response
-      setTimeout(() => {
-        let response = 'Для получения точных ответов, пожалуйста, войдите в систему.';
-        
-        // Basic math parser for demo purposes
-        if (/^[\d\s+\-*/().]+$/.test(userQuestion)) {
-          try {
-            // Simple and unsafe evaluation for demo
-            // eslint-disable-next-line no-eval
-            const result = eval(userQuestion);
-            response = `${result}`;
-          } catch {
-            response = 'Не удалось вычислить выражение. Пожалуйста, проверьте синтаксис.';
-          }
-        }
-        
+    try {
+      const result = await askMutation.mutateAsync(userQuestion);
+      
+      if (result.success) {
         const aiMessage: Message = {
           id: Date.now().toString() + '-ai',
           role: 'assistant',
-          content: response,
+          content: result.data.response,
           timestamp: new Date(),
         };
         
         setMessages((prev) => [...prev, aiMessage]);
-      }, 1000);
+      }
+    } catch (error) {
+      // Error handled in mutation onError
     }
   };
 
