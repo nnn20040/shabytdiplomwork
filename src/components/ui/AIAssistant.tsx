@@ -68,8 +68,11 @@ const AIAssistant = () => {
     },
     enabled: isAuthenticated && isOpen,
     retry: false,
-    onError: () => {
-      // Silently fail on error - we'll use the default welcome message
+    // Updated: Use meta for handling error instead of onError
+    meta: {
+      onError: () => {
+        // Silently fail on error - we'll use the default welcome message
+      }
     }
   });
 
