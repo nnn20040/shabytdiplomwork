@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -58,35 +57,34 @@ const RegisterForm = () => {
         }),
       });
       
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || 'Ошибка при регистрации');
+      }
+      
       const data = await response.json();
       
-      if (response.ok) {
-        // Save token and user info to localStorage
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        
-        toast({
-          title: "Регистрация успешна",
-          description: "Добро пожаловать в StudyHub!",
-        });
-        
-        // Redirect based on user role
-        if (data.user.role === 'teacher') {
-          navigate('/teacher-dashboard');
-        } else {
-          navigate('/student-dashboard');
-        }
+      // Save token and user info to localStorage
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      
+      toast({
+        title: "Регистрация успешна",
+        description: "Добро пожаловать в StudyHub!",
+      });
+      
+      // Redirect based on user role
+      if (data.user.role === 'teacher') {
+        navigate('/teacher-dashboard');
       } else {
-        toast({
-          title: "Ошибка",
-          description: data.message || "Ошибка при регистрации",
-          variant: "destructive",
-        });
+        navigate('/student-dashboard');
       }
     } catch (error) {
+      console.error('Registration error:', error);
+      
       toast({
         title: "Ошибка",
-        description: "Проблема с подключением к серверу",
+        description: error instanceof Error ? error.message : "Проблема с подключением к серверу",
         variant: "destructive",
       });
     } finally {
