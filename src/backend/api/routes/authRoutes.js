@@ -23,4 +23,10 @@ router.put('/profile', protect, authController.updateProfile);
 // Change password
 router.put('/change-password', protect, authController.changePassword);
 
+// Forgot password - request reset
+router.post('/forgot-password', authController.forgotPassword);
+
+// Reset password with token
+router.post('/reset-password', authController.resetPassword);
+
 module.exports = router;

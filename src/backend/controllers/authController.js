@@ -1,10 +1,11 @@
-
 /**
  * Authentication controller
  */
 
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 
 // JWT Secret Key (should be in environment variables)
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
@@ -186,10 +187,116 @@ const changePassword = async (req, res) => {
   }
 };
 
+// Forgot password - generate token and send email
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: 'Please provide an email' });
+    }
+
+    // Find user by email
+    const user = await User.findByEmail(email);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(4).toString('hex');
+    const resetTokenExpiry = Date.now() + 15 * 60 * 1000; // 15 minutes
+
+    // Save token to database
+    await User.saveResetToken(user.id, resetToken, resetTokenExpiry);
+
+    // Configure nodemailer
+    const transporter = nodemailer.createTransport({
+      host: process.env.EMAIL_HOST || 'smtp.example.com',
+      port: process.env.EMAIL_PORT || 587,
+      secure: false,
+      auth: {
+        user: process.env.EMAIL_USER || 'user@example.com',
+        pass: process.env.EMAIL_PASS || 'password',
+      },
+    });
+
+    // Send email
+    await transporter.sendMail({
+      from: process.env.EMAIL_FROM || 'noreply@studyhub.kz',
+      to: email,
+      subject: 'StudyHub - Сброс пароля',
+      text: `Ваш код для сброса пароля: ${resetToken}. Код действителен в течение 15 минут.`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h2 style="color: #4f46e5;">StudyHub - Сброс пароля</h2>
+          <p>Вы запросили сброс пароля. Используйте следующий код для восстановления доступа:</p>
+          <div style="background-color: #f3f4f6; padding: 15px; border-radius: 5px; text-align: center; font-size: 24px; letter-spacing: 5px; font-weight: bold;">
+            ${resetToken}
+          </div>
+          <p>Код действителен в течение 15 минут.</p>
+          <p>Если вы не запрашивали сброс пароля, проигнорируйте это сообщение.</p>
+        </div>
+      `,
+    });
+
+    res.json({
+      success: true,
+      message: 'Password reset code sent to your email',
+    });
+  } catch (error) {
+    console.error('Forgot password error:', error.message);
+    res.status(500).json({ message: 'Server error during password reset request' });
+  }
+};
+
+// Reset password with token
+const resetPassword = async (req, res) => {
+  try {
+    const { email, token, newPassword } = req.body;
+
+    if (!email || !token || !newPassword) {
+      return res.status(400).json({ 
+        message: 'Please provide email, reset token, and new password' 
+      });
+    }
+
+    // Find user by email
+    const user = await User.findByEmail(email);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Verify token
+    const isValid = await User.verifyResetToken(user.id, token);
+
+    if (!isValid) {
+      return res.status(400).json({ message: 'Invalid or expired reset token' });
+    }
+
+    // Update password
+    await User.updatePassword(user.id, newPassword);
+    
+    // Clear reset token
+    await User.clearResetToken(user.id);
+
+    res.json({
+      success: true,
+      message: 'Password has been reset successfully'
+    });
+  } catch (error) {
+    console.error('Reset password error:', error.message);
+    res.status(500).json({ message: 'Server error during password reset' });
+  }
+};
+
 module.exports = {
   register,
   login,
   getCurrentUser,
   updateProfile,
-  changePassword
+  changePassword,
+  forgotPassword,
+  resetPassword
 };

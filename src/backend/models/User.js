@@ -1,4 +1,3 @@
-
 /**
  * User model
  */
@@ -146,6 +145,75 @@ class User {
    */
   static async comparePassword(providedPassword, storedPassword) {
     return await bcrypt.compare(providedPassword, storedPassword);
+  }
+
+  /**
+   * Save password reset token
+   * @param {string} id
+   * @param {string} resetToken
+   * @param {number} resetTokenExpiry
+   * @returns {Promise<boolean>} Success status
+   */
+  static async saveResetToken(id, resetToken, resetTokenExpiry) {
+    try {
+      await db.query(
+        'UPDATE users SET reset_token = $1, reset_token_expiry = $2 WHERE id = $3',
+        [resetToken, resetTokenExpiry, id]
+      );
+      return true;
+    } catch (error) {
+      console.error('Error saving reset token:', error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Verify password reset token
+   * @param {string} id
+   * @param {string} token
+   * @returns {Promise<boolean>} True if token is valid
+   */
+  static async verifyResetToken(id, token) {
+    try {
+      const result = await db.query(
+        'SELECT reset_token, reset_token_expiry FROM users WHERE id = $1',
+        [id]
+      );
+
+      if (result.rows.length === 0) {
+        return false;
+      }
+
+      const user = result.rows[0];
+
+      // Check if token matches and has not expired
+      if (user.reset_token === token && user.reset_token_expiry > Date.now()) {
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error('Error verifying reset token:', error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Clear password reset token
+   * @param {string} id
+   * @returns {Promise<boolean>} Success status
+   */
+  static async clearResetToken(id) {
+    try {
+      await db.query(
+        'UPDATE users SET reset_token = NULL, reset_token_expiry = NULL WHERE id = $1',
+        [id]
+      );
+      return true;
+    } catch (error) {
+      console.error('Error clearing reset token:', error.message);
+      throw error;
+    }
   }
 }
 

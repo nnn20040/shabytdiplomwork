@@ -3,37 +3,42 @@
  * AI Assistant controller
  */
 
-const AIService = require('../services/aiService');
 const db = require('../config/db');
+const { generateAIResponse } = require('../services/aiService');
 
-// Ask a question to the AI assistant
+// Ask a question to AI assistant
 const askQuestion = async (req, res) => {
   try {
-    const { question, context } = req.body;
+    const { question } = req.body;
     const userId = req.user.id;
 
-    // Validate input
     if (!question) {
       return res.status(400).json({ message: 'Question is required' });
     }
 
-    // Get response from AI service
-    const response = await AIService.getResponse(userId, question, context);
+    // Generate AI response
+    const response = await generateAIResponse(question, req.user.role);
 
-    // Save the interaction to database
-    await AIService.saveInteraction(db, userId, question, response);
+    // Save the interaction in the database
+    const result = await db.query(
+      'INSERT INTO ai_assistant (user_id, question, response, created_at) VALUES ($1, $2, $3, NOW()) RETURNING *',
+      [userId, question, response]
+    );
+
+    const aiInteraction = result.rows[0];
 
     res.json({
       success: true,
       data: {
-        question,
-        response,
-        timestamp: new Date()
+        id: aiInteraction.id,
+        question: aiInteraction.question,
+        response: aiInteraction.response,
+        created_at: aiInteraction.created_at
       }
     });
   } catch (error) {
-    console.error('AI Assistant error:', error.message);
-    res.status(500).json({ message: 'Error processing your question' });
+    console.error('Ask AI question error:', error.message);
+    res.status(500).json({ message: 'Server error while processing AI request' });
   }
 };
 
@@ -41,18 +46,20 @@ const askQuestion = async (req, res) => {
 const getHistory = async (req, res) => {
   try {
     const userId = req.user.id;
-    const limit = parseInt(req.query.limit) || 10;
-
-    const interactions = await AIService.getUserInteractions(db, userId, limit);
+    
+    // Get user's AI interaction history
+    const result = await db.query(
+      'SELECT id, question, response, created_at FROM ai_assistant WHERE user_id = $1 ORDER BY created_at DESC',
+      [userId]
+    );
 
     res.json({
       success: true,
-      count: interactions.length,
-      data: interactions
+      data: result.rows
     });
   } catch (error) {
     console.error('Get AI history error:', error.message);
-    res.status(500).json({ message: 'Error retrieving AI interaction history' });
+    res.status(500).json({ message: 'Server error while retrieving AI history' });
   }
 };
 
