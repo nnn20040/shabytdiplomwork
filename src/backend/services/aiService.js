@@ -26,18 +26,21 @@ const isMathExpression = (text) => {
 // Simulate a more comprehensive AI response using predefined knowledge
 const getAIResponse = async (question) => {
   try {
-    // Simplified version of using an AI API
-    // In a real app, this would call an external API like OpenAI
+    // Using the Google Gemini Free API
+    const apiKey = process.env.GEMINI_API_KEY || 'AIzaSyDJC5a7eWgwlPqRPjoQeR0rrxnDPVDXZY0'; // Demo key for testing
+
     const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        // This is a demo API key that would need to be replaced with a real one
-        'x-goog-api-key': 'YOUR_GEMINI_API_KEY',
+        'x-goog-api-key': apiKey,
       },
       body: JSON.stringify({
         contents: [{ 
-          parts: [{ text: question }]
+          parts: [{ 
+            text: `Ты - образовательный ассистент для подготовки к ЕНТ (Единому Национальному Тестированию) в Казахстане.
+                  Ответь на следующий вопрос ясно и информативно: ${question}`
+          }]
         }],
         generationConfig: {
           temperature: 0.7,
@@ -46,8 +49,8 @@ const getAIResponse = async (question) => {
       })
     });
     
-    // Fallback to predefined answers if API call fails
     if (!response.ok) {
+      console.log('API response error:', await response.text());
       return getFallbackResponse(question);
     }
     
@@ -81,6 +84,12 @@ const getFallbackResponse = (question) => {
     return 'У меня всё хорошо, спасибо! Я готов помочь вам с вопросами по подготовке к ЕНТ. Какой предмет вас интересует?';
   } else if (lowercaseQuestion.includes('помощь') || lowercaseQuestion.includes('помоги')) {
     return 'Я могу помочь вам с подготовкой к ЕНТ по разным предметам, объяснить сложные концепции и предложить стратегии обучения. Просто задайте мне конкретный вопрос.';
+  } else if (lowercaseQuestion.includes('химия') || lowercaseQuestion.includes('химич')) {
+    return 'Химия на ЕНТ охватывает основные разделы общей, неорганической и органической химии. Важно знать периодическую таблицу, химические реакции, уметь решать задачи на расчет массы, объема и концентрации веществ. Рекомендую составить краткий справочник с формулами и систематически решать задачи.';
+  } else if (lowercaseQuestion.includes('биолог')) {
+    return 'Биология на ЕНТ включает цитологию, ботанику, зоологию, анатомию, генетику и экологию. Особое внимание уделяется терминологии, классификации организмов и пониманию биологических процессов. Используйте мнемонические приемы для запоминания сложных терминов и систематики.';
+  } else if (lowercaseQuestion.includes('история') || lowercaseQuestion.includes('истори')) {
+    return 'История Казахстана на ЕНТ охватывает периоды от древности до современности. Ключевые темы: древние государства на территории Казахстана, средневековые ханства, присоединение к Российской империи, советский период и независимый Казахстан. Важно знать даты, исторические личности и события.';
   } else {
     return 'Спасибо за ваш вопрос. Я могу помочь с подготовкой к ЕНТ по различным предметам: математика, физика, химия, биология, история, языки и другие. Пожалуйста, уточните ваш вопрос, чтобы я мог дать более конкретный ответ.';
   }
