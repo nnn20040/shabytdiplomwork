@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
@@ -9,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { Trash2, Plus, MoveUp, MoveDown, AlignLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { Question } from '@/models/Course';
@@ -20,7 +20,6 @@ const CreateTest = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Form state
   const [testData, setTestData] = useState({
     title: '',
     description: '',
@@ -29,7 +28,6 @@ const CreateTest = () => {
     lesson_id: 0
   });
 
-  // Questions state
   const [questions, setQuestions] = useState<Question[]>([
     {
       id: Date.now(),
@@ -40,16 +38,10 @@ const CreateTest = () => {
     }
   ]);
 
-  // Fetch lessons for this course
   useEffect(() => {
     const fetchLessons = async () => {
       setIsLoading(true);
       try {
-        // This would be a real API call in production
-        // const response = await fetch(`/api/courses/${courseId}/lessons`);
-        // const data = await response.json();
-        
-        // Mock data for now
         const mockLessons = [
           { id: 1, title: 'Введение в алгебру' },
           { id: 2, title: 'Линейные уравнения' },
@@ -147,7 +139,6 @@ const CreateTest = () => {
       const newQuestions = [...prev];
       const targetIndex = direction === 'up' ? index - 1 : index + 1;
       
-      // Swap the questions
       [newQuestions[index], newQuestions[targetIndex]] = 
       [newQuestions[targetIndex], newQuestions[index]];
       
@@ -156,7 +147,6 @@ const CreateTest = () => {
   };
 
   const saveTest = async () => {
-    // Validate the form
     if (!testData.title.trim()) {
       toast.error('Введите название теста');
       return;
@@ -167,7 +157,6 @@ const CreateTest = () => {
       return;
     }
 
-    // Validate questions
     for (let i = 0; i < questions.length; i++) {
       const q = questions[i];
       if (!q.question.trim()) {
@@ -175,14 +164,12 @@ const CreateTest = () => {
         return;
       }
 
-      // Check if at least two options are filled
       const filledOptions = q.options.filter(opt => opt.trim() !== '');
       if (filledOptions.length < 2) {
         toast.error(`Вопрос ${i + 1}: введите как минимум два варианта ответа`);
         return;
       }
 
-      // Make sure the correct answer is valid
       if (q.options[q.correct_answer].trim() === '') {
         toast.error(`Вопрос ${i + 1}: правильный ответ не может быть пустым`);
         return;
@@ -191,24 +178,6 @@ const CreateTest = () => {
 
     setSaving(true);
     try {
-      // This would be a real API call in production
-      // const response = await fetch(`/api/courses/${courseId}/tests`, {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify({
-      //     ...testData,
-      //     course_id: parseInt(courseId || '0'),
-      //     questions
-      //   }),
-      // });
-
-      // if (!response.ok) {
-      //   throw new Error('Failed to create test');
-      // }
-
-      // Mock successful creation
       toast.success('Тест успешно создан!');
       setTimeout(() => {
         navigate(`/course/${courseId}/manage`);
@@ -306,7 +275,6 @@ const CreateTest = () => {
             </CardContent>
           </Card>
           
-          {/* Questions */}
           <h2 className="text-2xl font-semibold mb-4">Вопросы</h2>
           
           {questions.map((question, qIndex) => (
@@ -364,7 +332,7 @@ const CreateTest = () => {
                       </div>
                       <div className="w-20">
                         {oIndex === question.correct_answer && (
-                          <Badge className="bg-green-500">Верный</Badge>
+                          <Badge variant="default" className="bg-green-500">Верный</Badge>
                         )}
                       </div>
                     </div>
