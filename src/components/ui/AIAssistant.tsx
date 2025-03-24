@@ -4,9 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader2, X, MessageSquare, SendHorizontal, Calculator, BookOpen } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Loader2, X, MessageSquare, SendHorizontal, Calculator, BookOpen, Brain, Sparkles, Link, ChevronRight } from 'lucide-react';
 import { aiApi } from '@/api';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 interface Message {
   id: string;
@@ -20,8 +22,10 @@ const AIAssistant = () => {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('chat');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Scroll to bottom when messages change
@@ -59,12 +63,61 @@ const AIAssistant = () => {
     setIsLoading(true);
     
     try {
-      const response = await aiApi.askQuestion(input);
+      // Check if it's a math expression
+      if (isMathExpression(input)) {
+        try {
+          // Simple eval for math expressions - only for demo purposes
+          // In production, this should be done securely on the server
+          // eslint-disable-next-line no-eval
+          const result = eval(input);
+          
+          const calculationResponse: Message = {
+            id: `assistant-${Date.now()}`,
+            role: 'assistant',
+            content: `Результат вычисления: ${result}`,
+            timestamp: new Date(),
+          };
+          
+          setMessages(prev => [...prev, calculationResponse]);
+          setIsLoading(false);
+          return;
+        } catch (error) {
+          console.error('Error evaluating expression:', error);
+          // Continue to API call if evaluation fails
+        }
+      }
+      
+      // This would be an API call to a real AI model in production
+      // For now using mock responses based on keywords
+      let response = '';
+      
+      const getQueryResponse = async (query: string) => {
+        if (query.toLowerCase().includes('казахстан')) {
+          return 'Казахстан — государство в Центральной Азии, бывшая советская республика. Столица — Нур-Султан (бывшая Астана). Население составляет более 19 миллионов человек. Государственным языком является казахский, а русский имеет статус языка межнационального общения.';
+        } else if (query.toLowerCase().includes('ент')) {
+          return 'ЕНТ (Единое национальное тестирование) — система оценки знаний выпускников школ Казахстана для поступления в высшие учебные заведения страны. Тестирование включает обязательные предметы (математическая грамотность, грамотность чтения, история Казахстана) и профильные предметы в зависимости от выбранной специальности.';
+        } else if (query.toLowerCase().includes('математик') || query.toLowerCase().includes('алгебр') || query.toLowerCase().includes('геометри')) {
+          return 'В рамках школьной программы по математике изучаются алгебра, геометрия и начала математического анализа. Ключевые темы включают уравнения, функции, производные, интегралы, планиметрию и стереометрию. На ЕНТ часто встречаются задачи на решение уравнений, неравенств, задачи на оптимизацию и геометрические задачи.';
+        } else if (query.toLowerCase().includes('физик')) {
+          return 'Школьный курс физики охватывает механику, термодинамику, электричество и магнетизм, оптику и элементы квантовой физики. На ЕНТ по физике проверяется умение применять формулы, законы и принципы для решения практических задач, понимание физических явлений и процессов.';
+        } else if (query.toLowerCase().includes('привет') || query.toLowerCase().includes('здравствуй')) {
+          return 'Привет! Я Shabyt ЕНТ-ассистент. Я могу помочь вам с подготовкой к экзамену, ответить на вопросы по школьной программе или объяснить сложные темы. Что вас интересует?';
+        } else {
+          return 'Я могу помочь вам с информацией по предметам ЕНТ, стратегиям подготовки и различным темам школьной программы. Вы можете задать конкретный вопрос по интересующей вас теме, например, о математике, физике, истории Казахстана и т.д.';
+        }
+      };
+      
+      // Simulating API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      response = await getQueryResponse(input);
+      
+      // In a real implementation, this would be:
+      // const response = await aiApi.askQuestion(input);
       
       const assistantMessage: Message = {
         id: `assistant-${Date.now()}`,
         role: 'assistant',
-        content: response.data.response,
+        content: response,
         timestamp: new Date(),
       };
       
@@ -90,6 +143,11 @@ const AIAssistant = () => {
     setIsOpen(!isOpen);
   };
 
+  const handleFullChat = () => {
+    setIsOpen(false);
+    navigate('/ai-assistant');
+  };
+
   return (
     <>
       {/* Floating button */}
@@ -105,73 +163,223 @@ const AIAssistant = () => {
       {/* Assistant panel */}
       {isOpen && (
         <Card className="fixed bottom-24 right-6 w-80 md:w-96 shadow-lg border-primary/10 max-h-[70vh] flex flex-col">
-          <CardHeader className="px-4 py-2 border-b">
+          <CardHeader className="px-4 py-3 border-b flex flex-row justify-between items-center">
             <CardTitle className="text-lg flex items-center">
-              <BookOpen className="h-5 w-5 mr-2" />
-              <span>ЕНТ Ассистент</span>
+              <Brain className="h-5 w-5 mr-2" />
+              <span>Shabyt ЕНТ Ассистент</span>
             </CardTitle>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-8 w-8" 
+              onClick={handleFullChat}
+              title="Открыть полный чат"
+            >
+              <Sparkles className="h-4 w-4" />
+            </Button>
           </CardHeader>
           
-          <ScrollArea className="flex-1 p-4 max-h-[50vh]">
-            {messages.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <BookOpen className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">Привет! Я ваш ЕНТ-ассистент.</p>
-                <p className="text-sm mt-1">Задайте мне вопрос по любому предмету или напишите математическое выражение для вычисления.</p>
-                <div className="mt-4 flex flex-col gap-2 text-xs">
-                  <div className="bg-muted p-2 rounded-md flex items-center">
-                    <Calculator className="h-4 w-4 mr-2 text-primary" />
-                    <span className="font-mono">2 + 2 * 5</span>
-                  </div>
-                  <div className="bg-muted p-2 rounded-md flex items-center">
-                    <BookOpen className="h-4 w-4 mr-2 text-primary" />
-                    <span>Расскажи о теореме Пифагора</span>
-                  </div>
+          <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+            <TabsList className="mx-4 mt-2 mb-2 grid grid-cols-2">
+              <TabsTrigger value="chat">
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Чат
+              </TabsTrigger>
+              <TabsTrigger value="examples">
+                <Sparkles className="h-4 w-4 mr-2" />
+                Примеры
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="chat" className="flex-1 flex flex-col p-0 m-0">
+              <ScrollArea className="flex-1 px-4">
+                <div className="space-y-4 py-2">
+                  {messages.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Brain className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">Привет! Я Shabyt ЕНТ-ассистент.</p>
+                      <p className="text-sm mt-1">Задайте мне вопрос по любому предмету ЕНТ или напишите математическое выражение для вычисления.</p>
+                    </div>
+                  ) : (
+                    messages.map((message) => (
+                      <div
+                        key={message.id}
+                        className={`flex ${
+                          message.role === 'user' ? 'justify-end' : 'justify-start'
+                        }`}
+                      >
+                        <div
+                          className={`max-w-[85%] px-3 py-2 rounded-lg ${
+                            message.role === 'user'
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-muted text-foreground'
+                          }`}
+                        >
+                          <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                          <p className="text-xs opacity-70 mt-1">
+                            {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                  
+                  {isLoading && (
+                    <div className="flex justify-start">
+                      <div
+                        className="max-w-[85%] px-3 py-2 rounded-lg bg-muted text-foreground"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span className="text-sm">Печатает...</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div ref={messagesEndRef} />
                 </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`flex ${
-                      message.role === 'user' ? 'justify-end' : 'justify-start'
-                    }`}
-                  >
-                    <div
-                      className={`max-w-[85%] px-3 py-2 rounded-lg ${
-                        message.role === 'user'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted text-foreground'
-                      }`}
-                    >
-                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                      <p className="text-xs opacity-70 mt-1">
-                        {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </p>
+              </ScrollArea>
+              
+              <CardFooter className="border-t p-2">
+                <form onSubmit={handleSubmit} className="flex gap-2 w-full">
+                  <Input
+                    ref={inputRef}
+                    placeholder="Задайте вопрос..."
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    disabled={isLoading}
+                    className={isMathExpression(input) ? "font-mono" : ""}
+                  />
+                  <Button type="submit" size="icon" disabled={isLoading || !input.trim()}>
+                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <SendHorizontal className="h-4 w-4" />}
+                  </Button>
+                </form>
+              </CardFooter>
+            </TabsContent>
+            
+            <TabsContent value="examples" className="p-0 m-0">
+              <ScrollArea className="h-[300px] p-4">
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-medium mb-2">Примеры запросов</h3>
+                    
+                    <div className="space-y-2">
+                      <Button 
+                        variant="outline" 
+                        className="w-full justify-start text-left h-auto py-2 px-3"
+                        onClick={() => {
+                          setInput('Объясни теорему Пифагора простыми словами');
+                          setActiveTab('chat');
+                          if (inputRef.current) inputRef.current.focus();
+                        }}
+                      >
+                        <div className="flex items-start">
+                          <BookOpen className="h-4 w-4 mr-2 mt-0.5 text-primary" />
+                          <div>
+                            <p className="font-medium">Объясни теорему Пифагора простыми словами</p>
+                          </div>
+                        </div>
+                      </Button>
+                      
+                      <Button 
+                        variant="outline" 
+                        className="w-full justify-start text-left h-auto py-2 px-3"
+                        onClick={() => {
+                          setInput('Какие формулы нужно знать для решения тригонометрических уравнений?');
+                          setActiveTab('chat');
+                          if (inputRef.current) inputRef.current.focus();
+                        }}
+                      >
+                        <div className="flex items-start">
+                          <BookOpen className="h-4 w-4 mr-2 mt-0.5 text-primary" />
+                          <div>
+                            <p className="font-medium">Какие формулы нужно знать для решения тригонометрических уравнений?</p>
+                          </div>
+                        </div>
+                      </Button>
+                      
+                      <Button 
+                        variant="outline" 
+                        className="w-full justify-start text-left h-auto py-2 px-3"
+                        onClick={() => {
+                          setInput('25 * 18 / 2 + 37');
+                          setActiveTab('chat');
+                          if (inputRef.current) inputRef.current.focus();
+                        }}
+                      >
+                        <div className="flex items-start">
+                          <Calculator className="h-4 w-4 mr-2 mt-0.5 text-primary" />
+                          <div>
+                            <p className="font-medium font-mono">25 * 18 / 2 + 37</p>
+                          </div>
+                        </div>
+                      </Button>
+                      
+                      <Button 
+                        variant="outline" 
+                        className="w-full justify-start text-left h-auto py-2 px-3"
+                        onClick={() => {
+                          setInput('Расскажи о важных событиях в истории Казахстана');
+                          setActiveTab('chat');
+                          if (inputRef.current) inputRef.current.focus();
+                        }}
+                      >
+                        <div className="flex items-start">
+                          <BookOpen className="h-4 w-4 mr-2 mt-0.5 text-primary" />
+                          <div>
+                            <p className="font-medium">Расскажи о важных событиях в истории Казахстана</p>
+                          </div>
+                        </div>
+                      </Button>
                     </div>
                   </div>
-                ))}
-                <div ref={messagesEndRef} />
-              </div>
-            )}
-          </ScrollArea>
-          
-          <CardFooter className="border-t p-2">
-            <form onSubmit={handleSubmit} className="flex gap-2 w-full">
-              <Input
-                ref={inputRef}
-                placeholder="Задайте вопрос..."
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                disabled={isLoading}
-                className={isMathExpression(input) ? "font-mono" : ""}
-              />
-              <Button type="submit" size="icon" disabled={isLoading || !input.trim()}>
-                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <SendHorizontal className="h-4 w-4" />}
-              </Button>
-            </form>
-          </CardFooter>
+                  
+                  <div>
+                    <h3 className="font-medium mb-2">Возможности</h3>
+                    
+                    <div className="space-y-3">
+                      <div className="bg-muted rounded-lg p-3">
+                        <div className="flex items-start">
+                          <BookOpen className="h-5 w-5 mr-2 text-primary flex-shrink-0" />
+                          <div>
+                            <p className="font-medium">Объяснение тем</p>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              Получите простые и понятные объяснения любой темы школьной программы
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-muted rounded-lg p-3">
+                        <div className="flex items-start">
+                          <Calculator className="h-5 w-5 mr-2 text-primary flex-shrink-0" />
+                          <div>
+                            <p className="font-medium">Вычисления</p>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              Мгновенное вычисление математических выражений
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="pt-2">
+                    <Button 
+                      variant="outline" 
+                      className="w-full" 
+                      onClick={handleFullChat}
+                    >
+                      <Link className="h-4 w-4 mr-2" />
+                      Открыть полный чат
+                      <ChevronRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  </div>
+                </div>
+              </ScrollArea>
+            </TabsContent>
+          </Tabs>
         </Card>
       )}
     </>
