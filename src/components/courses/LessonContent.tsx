@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -62,7 +61,7 @@ const LessonContent: React.FC<LessonContentProps> = ({
         </div>
         <div className="flex items-center gap-2">
           {lessonCompleted ? (
-            <Badge variant="success" className="bg-green-100 text-green-800 hover:bg-green-200">
+            <Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-200">
               <CheckCircle className="h-3 w-3 mr-1" />
               Завершен
             </Badge>

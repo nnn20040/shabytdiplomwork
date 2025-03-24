@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -11,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { UserIcon, Settings, LogOut, Graduation, Bell } from 'lucide-react';
+import { UserIcon, Settings, LogOut, GraduationCap, Bell } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface StudentProfileProps {
@@ -23,7 +22,6 @@ const StudentProfile = ({ onLogout }: StudentProfileProps) => {
   const [user, setUser] = useState<{ name: string; email: string; role: string } | null>(null);
   
   useEffect(() => {
-    // Check if user exists in localStorage
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       setUser(JSON.parse(storedUser));
@@ -31,17 +29,13 @@ const StudentProfile = ({ onLogout }: StudentProfileProps) => {
   }, []);
 
   const handleLogout = () => {
-    // Clear user from localStorage
     localStorage.removeItem('user');
     sessionStorage.removeItem('isLoggedIn');
     
-    // Call onLogout prop
     onLogout();
     
-    // Notify user
     toast.success('Вы успешно вышли из системы');
     
-    // Navigate to home
     navigate('/');
   };
 
@@ -92,7 +86,7 @@ const StudentProfile = ({ onLogout }: StudentProfileProps) => {
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link to={getDashboardLink()} className="cursor-pointer">
-            <Graduation className="mr-2 h-4 w-4" />
+            <GraduationCap className="mr-2 h-4 w-4" />
             <span>Моя учебная панель</span>
           </Link>
         </DropdownMenuItem>
