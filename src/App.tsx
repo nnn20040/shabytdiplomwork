@@ -20,6 +20,14 @@ import AIAssistant from "./components/ui/AIAssistant";
 import CreateTest from "./pages/CreateTest";
 import TakeTest from "./pages/TakeTest";
 import TeacherCourseManage from "./pages/TeacherCourseManage";
+import CreateLesson from "./pages/CreateLesson";
+import EditLesson from "./pages/EditLesson";
+import EditTest from "./pages/EditTest";
+import TestResults from "./pages/TestResults";
+import CourseDiscussions from "./pages/CourseDiscussions";
+import DiscussionDetails from "./pages/DiscussionDetails";
+import CreateDiscussion from "./pages/CreateDiscussion";
+import CourseAnalytics from "./pages/CourseAnalytics";
 
 const queryClient = new QueryClient();
 
@@ -40,7 +48,15 @@ const App = () => (
           <Route path="/course/:id" element={<CourseDetails />} />
           <Route path="/course/:courseId/test/create" element={<CreateTest />} />
           <Route path="/course/:courseId/test/:testId" element={<TakeTest />} />
+          <Route path="/course/:courseId/test/:testId/edit" element={<EditTest />} />
+          <Route path="/course/:courseId/test/:testId/results" element={<TestResults />} />
+          <Route path="/course/:courseId/lesson/create" element={<CreateLesson />} />
+          <Route path="/course/:courseId/lesson/:lessonId/edit" element={<EditLesson />} />
           <Route path="/course/:courseId/manage" element={<TeacherCourseManage />} />
+          <Route path="/course/:courseId/analytics" element={<CourseAnalytics />} />
+          <Route path="/course/:courseId/discussions" element={<CourseDiscussions />} />
+          <Route path="/course/:courseId/discussions/:discussionId" element={<DiscussionDetails />} />
+          <Route path="/course/:courseId/discussions/create" element={<CreateDiscussion />} />
           <Route path="/courses" element={<Courses />} />
           <Route path="/how-it-works" element={<HowItWorks />} />
           <Route path="/about" element={<About />} />

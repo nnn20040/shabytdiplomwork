@@ -1,131 +1,326 @@
 
 import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Menu, X, Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+} from '@/components/ui/navigation-menu';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
+import { Separator } from '@/components/ui/separator';
+import { Menu, Search, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import StudentProfile from './StudentProfile';
 
 const Navbar = () => {
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const location = useLocation();
+  const navigate = useNavigate();
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    // Check if user is logged in using localStorage
+    const user = localStorage.getItem('user');
+    const sessionLogin = sessionStorage.getItem('isLoggedIn');
+    setIsLoggedIn(!!user || !!sessionLogin);
   }, []);
 
-  useEffect(() => {
-    setMobileMenuOpen(false);
-  }, [location.pathname]);
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Navigate to search results page
+    if (searchQuery.trim()) {
+      navigate(`/courses?search=${encodeURIComponent(searchQuery.trim())}`);
+      setIsSearchOpen(false);
+      setSearchQuery('');
+    }
+  };
 
-  const navigation = [
-    { name: 'Главная', href: '/' },
-    { name: 'Курсы', href: '/courses' },
-    { name: 'Как это работает', href: '/how-it-works' },
-    { name: 'О нас', href: '/about' },
-  ];
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+  };
 
   return (
-    <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out ${
-        isScrolled
-          ? 'bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg shadow-sm'
-          : 'bg-transparent'
-      }`}
-    >
-      <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8" aria-label="Top">
-        <div className="flex items-center justify-between h-16 md:h-20">
-          <div className="flex items-center">
-            <Link to="/" className="flex items-center">
-              <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-500">
-                StudyHub
-              </span>
-            </Link>
-          </div>
-
-          {/* Desktop menu */}
-          <div className="hidden md:flex items-center space-x-8">
-            <div className="flex space-x-6">
-              {navigation.map((item) => (
+    <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <nav className="container flex h-16 items-center justify-between">
+        <div className="flex items-center">
+          <Sheet>
+            <SheetTrigger asChild className="mr-2 block sm:hidden">
+              <Button variant="ghost" size="icon">
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Toggle Menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left">
+              <SheetHeader className="mb-4">
+                <SheetTitle>Меню</SheetTitle>
+                <SheetDescription>
+                  Навигация по платформе обучения
+                </SheetDescription>
+              </SheetHeader>
+              <div className="grid gap-2 py-6">
                 <Link
-                  key={item.name}
-                  to={item.href}
-                  className={`text-sm font-medium transition-colors duration-200 ${
-                    location.pathname === item.href
-                      ? 'text-primary font-semibold'
-                      : 'text-foreground/80 hover:text-primary'
-                  }`}
+                  to="/"
+                  className="flex items-center py-2 text-lg font-semibold"
                 >
-                  {item.name}
+                  Главная
                 </Link>
-              ))}
-            </div>
-            <div className="flex items-center space-x-3">
-              <Link to="/login">
-                <Button variant="ghost" size="sm" className="animate-hover">
-                  Войти
-                </Button>
-              </Link>
-              <Link to="/register">
-                <Button variant="default" size="sm" className="animate-hover">
-                  Регистрация
-                </Button>
-              </Link>
-            </div>
-          </div>
+                <Separator />
+                <Link
+                  to="/courses"
+                  className="flex items-center py-2 text-lg font-semibold"
+                >
+                  Все курсы
+                </Link>
+                <Link
+                  to="/how-it-works"
+                  className="flex items-center py-2 text-lg font-semibold"
+                >
+                  Как это работает
+                </Link>
+                <Link
+                  to="/about"
+                  className="flex items-center py-2 text-lg font-semibold"
+                >
+                  О нас
+                </Link>
+                <Separator />
+                {isLoggedIn ? (
+                  <>
+                    <Link
+                      to="/student-dashboard"
+                      className="flex items-center py-2 text-lg font-semibold"
+                    >
+                      Личный кабинет
+                    </Link>
+                    <Link
+                      to="/profile"
+                      className="flex items-center py-2 text-lg font-semibold"
+                    >
+                      Мой профиль
+                    </Link>
+                    <button
+                      onClick={() => {
+                        localStorage.removeItem('user');
+                        sessionStorage.removeItem('isLoggedIn');
+                        navigate('/');
+                      }}
+                      className="flex items-center py-2 text-lg font-semibold"
+                    >
+                      Выйти
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      to="/login"
+                      className="flex items-center py-2 text-lg font-semibold"
+                    >
+                      Вход
+                    </Link>
+                    <Link
+                      to="/register"
+                      className="flex items-center py-2 text-lg font-semibold"
+                    >
+                      Регистрация
+                    </Link>
+                  </>
+                )}
+              </div>
+            </SheetContent>
+          </Sheet>
 
-          {/* Mobile menu button */}
-          <div className="flex md:hidden">
-            <button
-              type="button"
-              className="text-foreground p-2 rounded-md"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            >
-              <span className="sr-only">Открыть меню</span>
-              {mobileMenuOpen ? (
-                <X className="h-6 w-6" aria-hidden="true" />
-              ) : (
-                <Menu className="h-6 w-6" aria-hidden="true" />
-              )}
-            </button>
+          <Link to="/" className="hidden sm:flex items-center gap-2">
+            <span className="font-bold text-xl">EduKZ</span>
+          </Link>
+
+          <div className="hidden md:flex ml-6">
+            <NavigationMenu>
+              <NavigationMenuList>
+                <NavigationMenuItem>
+                  <Link to="/courses">
+                    <NavigationMenuLink
+                      className={cn(
+                        'group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50'
+                      )}
+                    >
+                      Все курсы
+                    </NavigationMenuLink>
+                  </Link>
+                </NavigationMenuItem>
+                <NavigationMenuItem>
+                  <NavigationMenuTrigger>Предметы</NavigationMenuTrigger>
+                  <NavigationMenuContent>
+                    <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
+                      {[
+                        {
+                          title: 'Математика',
+                          href: '/courses?category=math',
+                          description:
+                            'Алгебра, геометрия, математический анализ и другие направления',
+                        },
+                        {
+                          title: 'Физика',
+                          href: '/courses?category=physics',
+                          description:
+                            'Механика, электричество, оптика, квантовая физика',
+                        },
+                        {
+                          title: 'Химия',
+                          href: '/courses?category=chemistry',
+                          description:
+                            'Неорганическая и органическая химия, химические элементы',
+                        },
+                        {
+                          title: 'Биология',
+                          href: '/courses?category=biology',
+                          description:
+                            'Ботаника, зоология, анатомия, генетика и экология',
+                        },
+                        {
+                          title: 'История',
+                          href: '/courses?category=history',
+                          description:
+                            'История Казахстана, всемирная история и культурология',
+                        },
+                        {
+                          title: 'Языки',
+                          href: '/courses?category=languages',
+                          description:
+                            'Казахский, русский, английский и другие языки',
+                        },
+                      ].map((subject) => (
+                        <li key={subject.title}>
+                          <Link
+                            to={subject.href}
+                            className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                          >
+                            <div className="text-sm font-medium leading-none">
+                              {subject.title}
+                            </div>
+                            <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                              {subject.description}
+                            </p>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </NavigationMenuContent>
+                </NavigationMenuItem>
+                <NavigationMenuItem>
+                  <Link to="/how-it-works">
+                    <NavigationMenuLink
+                      className={cn(
+                        'group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50'
+                      )}
+                    >
+                      Как это работает
+                    </NavigationMenuLink>
+                  </Link>
+                </NavigationMenuItem>
+                <NavigationMenuItem>
+                  <Link to="/about">
+                    <NavigationMenuLink
+                      className={cn(
+                        'group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50'
+                      )}
+                    >
+                      О нас
+                    </NavigationMenuLink>
+                  </Link>
+                </NavigationMenuItem>
+              </NavigationMenuList>
+            </NavigationMenu>
           </div>
         </div>
 
-        {/* Mobile menu */}
-        {mobileMenuOpen && (
-          <div className="md:hidden animate-fade-in">
-            <div className="space-y-1 px-2 pb-3 pt-2">
-              {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className={`block px-3 py-2 rounded-md text-base font-medium ${
-                    location.pathname === item.href
-                      ? 'text-primary bg-accent'
-                      : 'text-foreground hover:bg-secondary hover:text-primary'
-                  }`}
-                >
-                  {item.name}
-                </Link>
-              ))}
-              <div className="flex flex-col space-y-2 mt-4 px-3">
-                <Link to="/login">
-                  <Button variant="outline" className="w-full justify-center">
-                    Войти
+        <Link to="/" className="flex sm:hidden items-center gap-2">
+          <span className="font-bold text-xl">EduKZ</span>
+        </Link>
+
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsSearchOpen(!isSearchOpen)}
+          >
+            <Search className="h-5 w-5" />
+            <span className="sr-only">Search</span>
+          </Button>
+
+          {isLoggedIn ? (
+            <StudentProfile onLogout={handleLogout} />
+          ) : (
+            <div className="hidden sm:flex items-center gap-2">
+              <Link to="/login">
+                <Button variant="ghost">Вход</Button>
+              </Link>
+              <Link to="/register">
+                <Button>Регистрация</Button>
+              </Link>
+            </div>
+          )}
+        </div>
+      </nav>
+
+      {/* Search overlay */}
+      <div
+        className={`fixed inset-0 z-50 flex items-start justify-center bg-background/80 backdrop-blur-sm transition-opacity ${
+          isSearchOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+      >
+        <div className="container mt-20 mx-auto p-4 max-w-2xl">
+          <div className="relative">
+            <form onSubmit={handleSearch}>
+              <Input
+                placeholder="Найти курсы, уроки, тесты..."
+                className="pr-10"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                autoFocus
+              />
+            </form>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-0 top-0"
+              onClick={() => setIsSearchOpen(false)}
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+          <div className="mt-4">
+            <h3 className="font-medium text-sm">Популярные поисковые запросы:</h3>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {['математика', 'физика', 'ЕНТ', 'тригонометрия', 'химия'].map(
+                (term) => (
+                  <Button
+                    key={term}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSearchQuery(term);
+                    }}
+                  >
+                    {term}
                   </Button>
-                </Link>
-                <Link to="/register">
-                  <Button className="w-full justify-center">Регистрация</Button>
-                </Link>
-              </div>
+                )
+              )}
             </div>
           </div>
-        )}
-      </nav>
+        </div>
+      </div>
     </header>
   );
 };
