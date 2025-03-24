@@ -17,6 +17,8 @@ import HowItWorks from "./pages/HowItWorks";
 import About from "./pages/About";
 import NotFound from "./pages/NotFound";
 import AIAssistant from "./components/ui/AIAssistant";
+import CreateTest from "./pages/CreateTest";
+import TakeTest from "./pages/TakeTest";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +37,8 @@ const App = () => (
           <Route path="/student-dashboard" element={<StudentDashboard />} />
           <Route path="/teacher-dashboard" element={<TeacherDashboard />} />
           <Route path="/course/:id" element={<CourseDetails />} />
+          <Route path="/course/:courseId/test/create" element={<CreateTest />} />
+          <Route path="/course/:courseId/test/:testId" element={<TakeTest />} />
           <Route path="/courses" element={<Courses />} />
           <Route path="/how-it-works" element={<HowItWorks />} />
           <Route path="/about" element={<About />} />

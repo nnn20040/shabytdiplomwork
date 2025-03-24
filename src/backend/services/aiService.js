@@ -23,6 +23,69 @@ const isMathExpression = (text) => {
   return /^[\d\s+\-*/().]+$/.test(text.trim());
 };
 
+// Simulate a more comprehensive AI response using predefined knowledge
+const getAIResponse = async (question) => {
+  try {
+    // Simplified version of using an AI API
+    // In a real app, this would call an external API like OpenAI
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        // This is a demo API key that would need to be replaced with a real one
+        'x-goog-api-key': 'YOUR_GEMINI_API_KEY',
+      },
+      body: JSON.stringify({
+        contents: [{ 
+          parts: [{ text: question }]
+        }],
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 1024,
+        }
+      })
+    });
+    
+    // Fallback to predefined answers if API call fails
+    if (!response.ok) {
+      return getFallbackResponse(question);
+    }
+    
+    const data = await response.json();
+    const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    
+    if (!textResponse) {
+      return getFallbackResponse(question);
+    }
+    
+    return textResponse;
+  } catch (error) {
+    console.error('AI API error:', error);
+    return getFallbackResponse(question);
+  }
+};
+
+// Fallback function with predefined responses for common questions
+const getFallbackResponse = (question) => {
+  const lowercaseQuestion = question.toLowerCase();
+  
+  if (lowercaseQuestion.includes('ент')) {
+    return 'ЕНТ (Единое Национальное Тестирование) - это стандартизированный экзамен для выпускников школ в Казахстане. Он используется для поступления в высшие учебные заведения. Основные предметы включают математику, историю Казахстана, грамматику казахского/русского языка и предметы по выбору в зависимости от выбранной специальности.';
+  } else if (lowercaseQuestion.includes('математик')) {
+    return 'В математической части ЕНТ тестируются знания по алгебре, геометрии и математическому анализу. Ключевые темы включают функции, уравнения, неравенства, векторы, производные и интегралы. Рекомендую начать с базовых концепций и постепенно переходить к более сложным задачам.';
+  } else if (lowercaseQuestion.includes('физик')) {
+    return 'Физика на ЕНТ охватывает механику, термодинамику, электричество и магнетизм, оптику и элементы квантовой физики. Особое внимание уделяется умению решать задачи и применять физические законы. Регулярная практика решения задач - ключ к успеху в этом разделе.';
+  } else if (lowercaseQuestion.includes('привет') || lowercaseQuestion.includes('здравствуй')) {
+    return 'Здравствуйте! Я ИИ-ассистент для подготовки к ЕНТ. Чем я могу помочь вам сегодня?';
+  } else if (lowercaseQuestion.includes('как дела') || lowercaseQuestion.includes('как у тебя дела')) {
+    return 'У меня всё хорошо, спасибо! Я готов помочь вам с вопросами по подготовке к ЕНТ. Какой предмет вас интересует?';
+  } else if (lowercaseQuestion.includes('помощь') || lowercaseQuestion.includes('помоги')) {
+    return 'Я могу помочь вам с подготовкой к ЕНТ по разным предметам, объяснить сложные концепции и предложить стратегии обучения. Просто задайте мне конкретный вопрос.';
+  } else {
+    return 'Спасибо за ваш вопрос. Я могу помочь с подготовкой к ЕНТ по различным предметам: математика, физика, химия, биология, история, языки и другие. Пожалуйста, уточните ваш вопрос, чтобы я мог дать более конкретный ответ.';
+  }
+};
+
 /**
  * Generate AI response based on input
  * @param {string} question - The user's question
@@ -41,39 +104,8 @@ const generateAIResponse = async (question, userRole) => {
       return `${result}`;
     }
 
-    // Generate response based on keywords and content
-    let response = '';
-    const lowercaseQuestion = question.toLowerCase();
-
-    if (lowercaseQuestion.includes('ент')) {
-      response = 'ЕНТ (Единое Национальное Тестирование) - это стандартизированный экзамен для выпускников школ в Казахстане. Он используется для поступления в высшие учебные заведения. Основные предметы включают математику, историю Казахстана, грамматику казахского/русского языка и предметы по выбору в зависимости от выбранной специальности.';
-    } else if (lowercaseQuestion.includes('математик')) {
-      response = 'В математической части ЕНТ тестируются знания по алгебре, геометрии и математическому анализу. Ключевые темы включают функции, уравнения, неравенства, векторы, производные и интегралы. Рекомендую начать с базовых концепций и постепенно переходить к более сложным задачам.';
-    } else if (lowercaseQuestion.includes('физик')) {
-      response = 'Физика на ЕНТ охватывает механику, термодинамику, электричество и магнетизм, оптику и элементы квантовой физики. Особое внимание уделяется умению решать задачи и применять физические законы. Регулярная практика решения задач - ключ к успеху в этом разделе.';
-    } else if (lowercaseQuestion.includes('истори')) {
-      response = 'История Казахстана на ЕНТ включает периоды от древности до современности. Важно знать ключевые даты, исторические личности и события. Рекомендую использовать хронологические таблицы и карты для лучшего запоминания материала.';
-    } else if (lowercaseQuestion.includes('подготов')) {
-      response = 'Для эффективной подготовки к ЕНТ рекомендую: 1) Составить план подготовки по каждому предмету, 2) Регулярно решать тесты в формате ЕНТ, 3) Анализировать свои ошибки, 4) Использовать разнообразные учебные материалы, 5) Поддерживать режим дня и следить за здоровьем. Наша платформа предоставляет все необходимые ресурсы для успешной подготовки.';
-    } else if (lowercaseQuestion.includes('литератур')) {
-      response = 'Литература на ЕНТ проверяет знание ключевых произведений, их авторов, персонажей и основных тем. Важно читать произведения полностью, а не только краткие содержания. Обратите внимание на литературные течения, средства выразительности и анализ произведений.';
-    } else if (lowercaseQuestion.includes('казахск')) {
-      response = 'Казахский язык и литература на ЕНТ включают проверку грамматики, правописания, лексики, а также знание ключевых произведений казахской литературы. Регулярное чтение и письмо на казахском языке поможет улучшить ваши навыки.';
-    } else if (lowercaseQuestion.includes('русск')) {
-      response = 'Русский язык на ЕНТ проверяет знание грамматики, пунктуации, орфографии и лексики. Важно уделить внимание правилам построения предложений, использованию знаков препинания и правописанию сложных случаев.';
-    } else if (lowercaseQuestion.includes('химия') || lowercaseQuestion.includes('химии')) {
-      response = 'Химия на ЕНТ включает периодическую систему, химические элементы и соединения, типы реакций, основы органической и неорганической химии. Важно знать формулы, уметь составлять уравнения реакций и решать задачи на вычисления.';
-    } else if (lowercaseQuestion.includes('биологи')) {
-      response = 'Биология на ЕНТ охватывает клеточную биологию, генетику, эволюцию, анатомию и физиологию человека, экологию. Особое внимание уделяется пониманию биологических процессов и механизмов, а также умению анализировать биологические данные.';
-    } else if (lowercaseQuestion.includes('географи')) {
-      response = 'География на ЕНТ проверяет знание физической и экономической географии, карт, природных зон, стран и регионов. Важно знать географические объекты Казахстана и мира, климатические зоны и экономические особенности регионов.';
-    } else if (lowercaseQuestion.includes('англ')) {
-      response = 'Английский язык на ЕНТ проверяет знание грамматики, лексики, чтения и понимания текстов. Регулярная практика чтения, письма и выполнения грамматических упражнений поможет успешно сдать этот предмет.';
-    } else {
-      response = 'Я могу помочь с подготовкой к ЕНТ по различным предметам, объяснить сложные концепции и предложить стратегии обучения. Могу ответить на вопросы по математике, физике, истории, биологии, химии, языкам и другим предметам. Пожалуйста, уточните ваш вопрос для получения более конкретной информации.';
-    }
-
-    return response;
+    // For text questions, use the AI response function
+    return await getAIResponse(question);
   } catch (error) {
     console.error('AI Service error:', error.message);
     throw new Error('Failed to generate AI response');

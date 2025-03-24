@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Lesson } from '@/models/Course';
 import { FileText, Video } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 
 interface LessonContentProps {
   lesson: Lesson;
@@ -12,6 +13,22 @@ interface LessonContentProps {
 
 const LessonContent = ({ lesson }: LessonContentProps) => {
   const [activeTab, setActiveTab] = useState('video');
+  const [videoError, setVideoError] = useState(false);
+
+  // Function to get a valid video URL or use a fallback
+  const getVideoUrl = () => {
+    if (!lesson.video_url || lesson.video_url.trim() === '') {
+      return 'https://www.youtube.com/embed/jS4aFq5-91M'; // Math video fallback
+    }
+    
+    // If URL is from YouTube but not in embed format
+    if (lesson.video_url.includes('youtube.com/watch?v=')) {
+      const videoId = lesson.video_url.split('v=')[1].split('&')[0];
+      return `https://www.youtube.com/embed/${videoId}`;
+    }
+    
+    return lesson.video_url;
+  };
 
   return (
     <Card className="p-4">
@@ -34,13 +51,21 @@ const LessonContent = ({ lesson }: LessonContentProps) => {
           </div>
           
           <AspectRatio ratio={16 / 9} className="bg-muted rounded-md overflow-hidden">
-            <iframe
-              src={lesson.video_url}
-              title={lesson.title}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              className="w-full h-full"
-            />
+            {videoError ? (
+              <div className="flex items-center justify-center h-full flex-col p-4 text-center">
+                <AlertTriangle className="h-10 w-10 text-amber-500 mb-2" />
+                <p className="text-muted-foreground">Не удалось загрузить видео. Пожалуйста, проверьте ссылку или попробуйте позже.</p>
+              </div>
+            ) : (
+              <iframe
+                src={getVideoUrl()}
+                title={lesson.title}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="w-full h-full"
+                onError={() => setVideoError(true)}
+              />
+            )}
           </AspectRatio>
         </TabsContent>
         
