@@ -1,4 +1,3 @@
-
 /**
  * API client for handling requests to backend
  */
@@ -120,105 +119,40 @@ export const authApi = {
  * AI Assistant API calls
  */
 export const aiApi = {
-  // Ask a question to AI assistant
-  askQuestion: async (question: string) => {
-    // Try to use Gemini API if possible
+  askQuestion: async (question) => {
     try {
-      const apiKey = 'AIzaSyDJC5a7eWgwlPqRPjoQeR0rrxnDPVDXZY0'; // Demo key for testing
-      
-      // Check if it's a math expression
-      if (/^[\d\s+\-*/().]+$/.test(question.trim())) {
-        try {
-          // Basic sanitization
-          const sanitized = question.replace(/[^0-9+\-*/(). ]/g, '');
-          // Use Function constructor to evaluate the expression safely
-          const result = new Function(`return ${sanitized}`)();
-          return {
-            success: true,
-            data: {
-              id: `ai_${Date.now()}`,
-              question,
-              response: `${result}`,
-              created_at: new Date().toISOString()
-            }
-          };
-        } catch (error) {
-          return {
-            success: true,
-            data: {
-              id: `ai_${Date.now()}`,
-              question,
-              response: 'Не удалось вычислить выражение. Пожалуйста, проверьте синтаксис.',
-              created_at: new Date().toISOString()
-            }
-          };
-        }
-      }
-      
-      // For non-math questions, try to use the API
-      const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent', {
+      const response = await fetch('/api/ai-assistant/ask', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-goog-api-key': apiKey,
         },
-        body: JSON.stringify({
-          contents: [{ 
-            parts: [{ 
-              text: `Ты - образовательный ассистент для подготовки к ЕНТ (Единому Национальному Тестированию) в Казахстане.
-                    Ответь на следующий вопрос ясно и информативно: ${question}`
-            }]
-          }],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 1024,
-          }
-        })
+        body: JSON.stringify({ question }),
       });
       
       if (!response.ok) {
-        return getFallbackResponse(question);
+        throw new Error('Failed to get AI response');
       }
       
-      const data = await response.json();
-      const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      
-      return {
-        success: true,
-        data: {
-          id: `ai_${Date.now()}`,
-          question,
-          response: textResponse || getFallbackResponse(question).data.response,
-          created_at: new Date().toISOString()
-        }
-      };
+      return await response.json();
     } catch (error) {
       console.error('AI API error:', error);
-      return getFallbackResponse(question);
+      throw error;
     }
   },
   
-  // Get AI assistant history
   getHistory: async () => {
-    // For demonstration, we'll return an empty array or mock data
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-      return { success: true, data: [] };
+    try {
+      const response = await fetch('/api/ai-assistant/history');
+      
+      if (!response.ok) {
+        throw new Error('Failed to get AI history');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('AI history API error:', error);
+      throw error;
     }
-    
-    // Mock history data
-    return {
-      success: true,
-      data: [
-        {
-          id: 'hist1',
-          question: 'Что такое ЕНТ?',
-          response: 'ЕНТ (Единое Национальное Тестирование) - это стандартизированный экзамен для выпускников школ в Казахстане. Он используется для поступления в высшие учебные заведения.',
-          created_at: new Date(Date.now() - 86400000).toISOString() // yesterday
-        }
-      ]
-    };
   }
 };
 

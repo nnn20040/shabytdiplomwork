@@ -7,8 +7,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Brain, Send, ChevronRight, ArrowUp, Loader2, MessageSquare, X as CloseIcon } from 'lucide-react';
+import { Brain, Send, ChevronRight, ArrowUp, Loader2, MessageSquare, X as CloseIcon, Sparkles, Book, Calculator, Image, Crown, Search } from 'lucide-react';
 import { toast } from 'sonner';
+import axios from 'axios';
+import { Textarea } from '@/components/ui/textarea';
 
 interface Message {
   id: string;
@@ -71,6 +73,10 @@ const AIChatPage = () => {
     return conversation ? conversation.messages : [];
   };
   
+  const isMathExpression = (text: string) => {
+    return /^[\d\s+\-*/().]+$/.test(text.trim());
+  };
+  
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -102,60 +108,77 @@ const AIChatPage = () => {
     setIsLoading(true);
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const isMathExpression = /^[\d\s+\-*/().]+$/.test(input.trim());
-      
-      let response = '';
-      
-      if (isMathExpression) {
+      if (isMathExpression(input)) {
         try {
+          // eslint-disable-next-line no-eval
           const result = eval(input);
-          response = `Результат вычисления: ${result}`;
+          const response = `Результат вычисления: ${result}`;
+          
+          addAssistantResponse(response);
+          return;
         } catch (error) {
-          response = 'Извините, не удалось выполнить вычисление. Проверьте корректность выражения.';
-        }
-      } else {
-        if (input.toLowerCase().includes('казахстан')) {
-          response = 'Казахстан — государство в Центральной Азии, бывшая советская республика. Столица — Нур-Султан (бывшая Астана). Население составляет более 19 миллионов человек. Государственным языком является казахский, а русский имеет статус языка межнационального общения. Казахстан богат природными ресурсами, включая нефть, газ и минералы.';
-        } else if (input.toLowerCase().includes('ент')) {
-          response = 'ЕНТ (Единое национальное тестирование) — система оценки знаний выпускников школ Казахстана для поступления в высшие учебные заведения страны. Тестирование включает обязательные предметы (математическая грамотность, грамотность чтения, история Казахстана) и профильные предметы в зависимости от выбранной специальности.';
-        } else if (input.toLowerCase().includes('математик') || input.toLowerCase().includes('алгебр') || input.toLowerCase().includes('геометри')) {
-          response = 'В рамках школьной программы по математике изучаются алгебра, геометрия и начала математического анализа. Ключевые темы включают уравнения, функции, производные, интегралы, планиметрию и стереометрию. На ЕНТ часто встречаются задачи на решение уравнений, неравенств, задачи на оптимизацию и геометрические задачи.';
-        } else if (input.toLowerCase().includes('физик')) {
-          response = 'Школьный курс физики охватывает механику, термодинамику, электричество и магнетизм, оптику и элементы квантовой физики. На ЕНТ по физике проверяется умение применять формулы, законы и принципы для решения практических задач, понимание физических явлений и процессов.';
-        } else {
-          response = 'Я могу помочь вам с информацией по предметам ЕНТ, стратегиям подготовки и различным темам школьной программы. Вы можете задать более конкретный вопрос по интересующей вас теме, и я постараюсь предоставить полезную информацию.';
+          console.error('Error evaluating expression:', error);
         }
       }
       
-      const assistantMessage: Message = {
-        id: `assistant-${Date.now()}`,
-        role: 'assistant',
-        content: response,
-        timestamp: new Date(),
-      };
-      
-      setConversations(prevConversations => {
-        return prevConversations.map(conv => {
-          if (conv.id === activeConversation) {
-            const newTitle = conv.messages.length === 1 ? input.slice(0, 30) + (input.length > 30 ? '...' : '') : conv.title;
-            
-            return {
-              ...conv,
-              title: newTitle,
-              messages: [...conv.messages, assistantMessage],
-            };
-          }
-          return conv;
-        });
-      });
+      try {
+        const response = await axios.post('/api/ai-assistant/ask', { question: input });
+        const aiResponse = response.data.data.response;
+        
+        addAssistantResponse(aiResponse);
+      } catch (error) {
+        console.error('Error calling AI API:', error);
+        
+        let fallbackResponse = '';
+        
+        if (input.toLowerCase().includes('казахстан')) {
+          fallbackResponse = 'Казахстан — государство в Центральной Азии, бывшая советская республика. Столица — Астана. Население составляет более 19 миллионов человек. Государственным языком является казахский, а русский имеет статус языка межнационального общения. Казахстан богат природными ресурсами, включая нефть, газ и минералы.';
+        } else if (input.toLowerCase().includes('ент')) {
+          fallbackResponse = 'ЕНТ (Единое национальное тестирование) — система оценки знаний выпускников школ Казахстана для п��ступления в высшие учебные заведения страны. Тестирование включает обязательные предметы (математическая грамотность, грамотность чтения, история Казахстана) и профильные предметы в зависимости от выбранной специальности.';
+        } else if (input.toLowerCase().includes('математик') || input.toLowerCase().includes('алгебр') || input.toLowerCase().includes('геометри')) {
+          fallbackResponse = 'В рамках школьной программы по математике изучаются алгебра, геометрия и начала математического анализа. Ключевые темы включают уравнения, функции, производные, интегралы, планиметрию и стереометрию. На ЕНТ часто встречаются задачи на решение уравнений, неравенств, задачи на оптимизацию и геометрические задачи.';
+        } else if (input.toLowerCase().includes('физик')) {
+          fallbackResponse = 'Школьный курс физики охватывает механику, термодинамику, электричество и магнетизм, оптику и элементы квантовой физики. На ЕНТ по физике проверяется умение применять формулы, законы и принципы для решения практических задач, понимание физических явлений и процессов.';
+        } else {
+          fallbackResponse = 'Я могу помочь вам с информацией по предметам ЕНТ, стратегиям подготовки и различным темам школьной программы. Вы можете задать более конкретный вопрос по интересующей вас теме, и я постараюсь предоставить полезную информацию.';
+        }
+        
+        addAssistantResponse(fallbackResponse);
+      }
     } catch (error) {
       console.error('Error getting response:', error);
       toast.error('Не удалось получить ответ');
+      
+      addAssistantResponse('Извините, произошла ошибка при обработке вашего запроса. Пожалуйста, попробуйте еще раз.');
     } finally {
       setIsLoading(false);
     }
+  };
+  
+  const addAssistantResponse = (content: string) => {
+    const assistantMessage: Message = {
+      id: `assistant-${Date.now()}`,
+      role: 'assistant',
+      content,
+      timestamp: new Date(),
+    };
+    
+    setConversations(prevConversations => {
+      return prevConversations.map(conv => {
+        if (conv.id === activeConversation) {
+          const newTitle = conv.messages.length === 1 ? input.slice(0, 30) + (input.length > 30 ? '...' : '') : conv.title;
+          
+          return {
+            ...conv,
+            title: newTitle,
+            messages: [...conv.messages, assistantMessage],
+          };
+        }
+        return conv;
+      });
+    });
+    
+    setIsLoading(false);
   };
   
   const createNewConversation = () => {
@@ -628,4 +651,3 @@ const AIChatPage = () => {
 };
 
 export default AIChatPage;
-

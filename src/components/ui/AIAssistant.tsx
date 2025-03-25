@@ -6,9 +6,9 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, X, MessageSquare, SendHorizontal, Calculator, BookOpen, Brain, Sparkles, Link, ChevronRight } from 'lucide-react';
-import { aiApi } from '@/api';
-import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import axios from 'axios';
 
 interface Message {
   id: string;
@@ -87,41 +87,48 @@ const AIAssistant = () => {
         }
       }
       
-      // This would be an API call to a real AI model in production
-      // For now using mock responses based on keywords
-      let response = '';
-      
-      const getQueryResponse = async (query: string) => {
-        if (query.toLowerCase().includes('казахстан')) {
-          return 'Казахстан — государство в Центральной Азии, бывшая советская республика. Столица — Нур-Султан (бывшая Астана). Население составляет более 19 миллионов человек. Государственным языком является казахский, а русский имеет статус языка межнационального общения.';
-        } else if (query.toLowerCase().includes('ент')) {
-          return 'ЕНТ (Единое национальное тестирование) — система оценки знаний выпускников школ Казахстана для поступления в высшие учебные заведения страны. Тестирование включает обязательные предметы (математическая грамотность, грамотность чтения, история Казахстана) и профильные предметы в зависимости от выбранной специальности.';
-        } else if (query.toLowerCase().includes('математик') || query.toLowerCase().includes('алгебр') || query.toLowerCase().includes('геометри')) {
-          return 'В рамках школьной программы по математике изучаются алгебра, геометрия и начала математического анализа. Ключевые темы включают уравнения, функции, производные, интегралы, планиметрию и стереометрию. На ЕНТ часто встречаются задачи на решение уравнений, неравенств, задачи на оптимизацию и геометрические задачи.';
-        } else if (query.toLowerCase().includes('физик')) {
-          return 'Школьный курс физики охватывает механику, термодинамику, электричество и магнетизм, оптику и элементы квантовой физики. На ЕНТ по физике проверяется умение применять формулы, законы и принципы для решения практических задач, понимание физических явлений и процессов.';
-        } else if (query.toLowerCase().includes('привет') || query.toLowerCase().includes('здравствуй')) {
-          return 'Привет! Я Shabyt ЕНТ-ассистент. Я могу помочь вам с подготовкой к экзамену, ответить на вопросы по школьной программе или объяснить сложные темы. Что вас интересует?';
+      // Call to backend AI service
+      try {
+        const response = await axios.post('/api/ai-assistant/ask', { question: input });
+        const aiResponse = response.data.data.response;
+        
+        const assistantMessage: Message = {
+          id: `assistant-${Date.now()}`,
+          role: 'assistant',
+          content: aiResponse,
+          timestamp: new Date(),
+        };
+        
+        setMessages(prev => [...prev, assistantMessage]);
+      } catch (error) {
+        console.error('Error calling AI API:', error);
+        
+        // Use fallback responses if API call fails
+        let fallbackResponse = '';
+        
+        if (input.toLowerCase().includes('казахстан')) {
+          fallbackResponse = 'Казахстан — государство в Центральной Азии, бывшая советская республика. Столица — Астана. Население составляет более 19 миллионов человек. Государственным языком является казахский, а русский имеет статус языка межнационального общения.';
+        } else if (input.toLowerCase().includes('ент')) {
+          fallbackResponse = 'ЕНТ (Единое национальное тестирование) — система оценки знаний выпускников школ Казахстана для поступления в высшие учебные заведения страны.';
+        } else if (input.toLowerCase().includes('математик') || input.toLowerCase().includes('алгебр') || input.toLowerCase().includes('геометри')) {
+          fallbackResponse = 'В рамках школьной программы по математике изучаются алгебра, геометрия и начала математического анализа. Ключевые темы включают уравнения, функции, производные, интегралы, планиметрию и стереометрию.';
+        } else if (input.toLowerCase().includes('физик')) {
+          fallbackResponse = 'Школьный курс физики охватывает механику, термодинамику, электричество и магнетизм, оптику и элементы квантовой физики.';
+        } else if (input.toLowerCase().includes('привет') || input.toLowerCase().includes('здравствуй')) {
+          fallbackResponse = 'Привет! Я Shabyt ЕНТ-ассистент. Я могу помочь вам с подготовкой к экзамену, ответить на вопросы по школьной программе или объяснить сложные темы.';
         } else {
-          return 'Я могу помочь вам с информацией по предметам ЕНТ, стратегиям подготовки и различным темам школьной программы. Вы можете задать конкретный вопрос по интересующей вас теме, например, о математике, физике, истории Казахстана и т.д.';
+          fallbackResponse = 'Я могу помочь вам с информацией по предметам ЕНТ, стратегиям подготовки и темам школьной программы. Задайте мне конкретный вопрос по интересующей вас теме.';
         }
-      };
-      
-      // Simulating API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      response = await getQueryResponse(input);
-      
-      // In a real implementation, this would be:
-      // const response = await aiApi.askQuestion(input);
-      
-      const assistantMessage: Message = {
-        id: `assistant-${Date.now()}`,
-        role: 'assistant',
-        content: response,
-        timestamp: new Date(),
-      };
-      
-      setMessages(prev => [...prev, assistantMessage]);
+        
+        const assistantMessage: Message = {
+          id: `assistant-${Date.now()}`,
+          role: 'assistant',
+          content: fallbackResponse,
+          timestamp: new Date(),
+        };
+        
+        setMessages(prev => [...prev, assistantMessage]);
+      }
     } catch (error) {
       console.error('Error getting AI response:', error);
       toast.error('Не удалось получить ответ от ассистента');
