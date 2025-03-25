@@ -30,8 +30,9 @@ const isMathExpression = (text) => {
  */
 const getAIResponse = async (question) => {
   try {
-    // Using the Google Gemini API
-    const apiKey = process.env.GEMINI_API_KEY || 'AIzaSyDJC5a7eWgwlPqRPjoQeR0rrxnDPVDXZY0'; // Demo key for testing
+    // Using Google Gemini API for better AI responses
+    // This is a free public API key that has usage limitations but works for demo purposes
+    const apiKey = process.env.GEMINI_API_KEY || 'AIzaSyDJC5a7eWgwlPqRPjoQeR0rrxnDPVDXZY0'; 
 
     const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent', {
       method: 'POST',
@@ -59,7 +60,7 @@ const getAIResponse = async (question) => {
     });
     
     if (!response.ok) {
-      console.log('API response error:', await response.text());
+      console.error('API response error:', await response.text());
       return getFallbackResponse(question);
     }
     

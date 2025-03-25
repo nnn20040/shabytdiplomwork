@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
@@ -37,6 +38,7 @@ const AIChatPage = () => {
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
     const initialConversation: Conversation = {
@@ -59,8 +61,11 @@ const AIChatPage = () => {
   }, []);
   
   useEffect(() => {
+    // Ensure messages scroll to bottom when they change
     if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
     }
   }, [activeConversation, conversations]);
   
@@ -134,7 +139,7 @@ const AIChatPage = () => {
         if (input.toLowerCase().includes('казахстан')) {
           fallbackResponse = 'Казахстан — государство в Центральной Азии, бывшая советская республика. Столица — Астана. Население составляет более 19 миллионов человек. Государственным языком является казахский, а русский имеет статус языка межнационального общения. Казахстан богат природными ресурсами, включая нефть, газ и минералы.';
         } else if (input.toLowerCase().includes('ент')) {
-          fallbackResponse = 'ЕНТ (Единое национальное тестирование) — система оценки знаний выпускников школ Казахстана для п��ступления в высшие учебные заведения страны. Тестирование включает обязательные предметы (математическая грамотность, грамотность чтения, история Казахстана) и профильные предметы в зависимости от выбранной специальности.';
+          fallbackResponse = 'ЕНТ (Единое национальное тестирование) — система оценки знаний выпускников школ Казахстана для поступления в высшие учебные заведения страны. Тестирование включает обязательные предметы (математическая грамотность, грамотность чтения, история Казахстана) и профильные предметы в зависимости от выбранной специальности.';
         } else if (input.toLowerCase().includes('математик') || input.toLowerCase().includes('алгебр') || input.toLowerCase().includes('геометри')) {
           fallbackResponse = 'В рамках школьной программы по математике изучаются алгебра, геометрия и начала математического анализа. Ключевые темы включают уравнения, функции, производные, интегралы, планиметрию и стереометрию. На ЕНТ часто встречаются задачи на решение уравнений, неравенств, задачи на оптимизацию и геометрические задачи.';
         } else if (input.toLowerCase().includes('физик')) {
@@ -332,7 +337,7 @@ const AIChatPage = () => {
                   </Avatar>
                   <div>
                     <CardTitle className="text-lg">ЕНТ Ассистент</CardTitle>
-                    <p className="text-xs text-muted-foreground">Задавайте вопросы по школьной про��рамме, ЕНТ и не только</p>
+                    <p className="text-xs text-muted-foreground">Задавайте вопросы по школьной программе, ЕНТ и не только</p>
                   </div>
                 </div>
               </CardHeader>
@@ -353,8 +358,12 @@ const AIChatPage = () => {
                   </TabsTrigger>
                 </TabsList>
                 
-                <TabsContent value="chat" className="flex-1 flex flex-col p-0 m-0">
-                  <ScrollArea className="flex-1 px-6">
+                <TabsContent value="chat" className="flex-1 flex flex-col p-0 m-0 overflow-hidden">
+                  <ScrollArea 
+                    ref={scrollAreaRef} 
+                    className="flex-1 px-6 overflow-y-auto"
+                    style={{ height: "calc(100% - 160px)" }} // Ensure we leave space for the input area
+                  >
                     <div className="space-y-6 py-4">
                       {getCurrentMessages().map((message) => (
                         <div

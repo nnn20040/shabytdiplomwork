@@ -25,6 +25,7 @@ const AIAssistant = () => {
   const [activeTab, setActiveTab] = useState('chat');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -169,8 +170,8 @@ const AIAssistant = () => {
       
       {/* Assistant panel */}
       {isOpen && (
-        <Card className="fixed bottom-24 right-6 w-80 md:w-96 shadow-lg border-primary/10 max-h-[70vh] flex flex-col">
-          <CardHeader className="px-4 py-3 border-b flex flex-row justify-between items-center">
+        <Card className="fixed bottom-24 right-6 w-80 md:w-96 shadow-lg border-primary/10 max-h-[70vh] flex flex-col overflow-hidden">
+          <CardHeader className="px-4 py-3 border-b flex flex-row justify-between items-center shrink-0">
             <CardTitle className="text-lg flex items-center">
               <Brain className="h-5 w-5 mr-2" />
               <span>Shabyt ЕНТ Ассистент</span>
@@ -187,7 +188,7 @@ const AIAssistant = () => {
           </CardHeader>
           
           <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-            <TabsList className="mx-4 mt-2 mb-2 grid grid-cols-2">
+            <TabsList className="mx-4 mt-2 mb-2 grid grid-cols-2 shrink-0">
               <TabsTrigger value="chat">
                 <MessageSquare className="h-4 w-4 mr-2" />
                 Чат
@@ -198,8 +199,12 @@ const AIAssistant = () => {
               </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="chat" className="flex-1 flex flex-col p-0 m-0">
-              <ScrollArea className="flex-1 px-4">
+            <TabsContent value="chat" className="flex-1 flex flex-col p-0 m-0 overflow-hidden">
+              <ScrollArea 
+                ref={scrollAreaRef} 
+                className="flex-1 px-4 overflow-y-auto"
+                style={{ height: "calc(100% - 80px)" }}
+              >
                 <div className="space-y-4 py-2">
                   {messages.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
@@ -248,7 +253,7 @@ const AIAssistant = () => {
                 </div>
               </ScrollArea>
               
-              <CardFooter className="border-t p-2">
+              <CardFooter className="border-t p-2 shrink-0">
                 <form onSubmit={handleSubmit} className="flex gap-2 w-full">
                   <Input
                     ref={inputRef}
@@ -265,7 +270,7 @@ const AIAssistant = () => {
               </CardFooter>
             </TabsContent>
             
-            <TabsContent value="examples" className="p-0 m-0">
+            <TabsContent value="examples" className="p-0 m-0 overflow-hidden">
               <ScrollArea className="h-[300px] p-4">
                 <div className="space-y-4">
                   <div>

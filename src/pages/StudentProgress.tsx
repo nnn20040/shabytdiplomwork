@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
@@ -23,6 +22,7 @@ import {
   Pie,
   Cell,
 } from 'recharts';
+import { Badge } from "@/components/ui/badge";
 
 const StudentProgress = () => {
   const { id } = useParams();
