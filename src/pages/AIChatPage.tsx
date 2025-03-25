@@ -1,15 +1,13 @@
-
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Textarea } from '@/components/ui/textarea';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, Brain, Book, MessageSquare, Send, Calculator, Image, Crown, Search, Sparkles } from 'lucide-react';
+import { Brain, Send, ChevronRight, ArrowUp, Loader2, MessageSquare, X as CloseIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Message {
@@ -38,7 +36,6 @@ const AIChatPage = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   
-  // Initialize with a default conversation
   useEffect(() => {
     const initialConversation: Conversation = {
       id: 'default',
@@ -59,7 +56,6 @@ const AIChatPage = () => {
     setActiveConversation(initialConversation.id);
   }, []);
   
-  // Scroll to bottom when messages change
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -88,7 +84,6 @@ const AIChatPage = () => {
       timestamp: new Date(),
     };
     
-    // Update conversations state
     setConversations(prevConversations => {
       return prevConversations.map(conv => {
         if (conv.id === activeConversation) {
@@ -107,25 +102,20 @@ const AIChatPage = () => {
     setIsLoading(true);
     
     try {
-      // Simulate API call with setTimeout
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Check if it's a math expression
       const isMathExpression = /^[\d\s+\-*/().]+$/.test(input.trim());
       
       let response = '';
       
       if (isMathExpression) {
         try {
-          // For simple math expressions, evaluate directly
-          // eslint-disable-next-line no-eval
           const result = eval(input);
           response = `Результат вычисления: ${result}`;
         } catch (error) {
           response = 'Извините, не удалось выполнить вычисление. Проверьте корректность выражения.';
         }
       } else {
-        // Mock responses for different types of questions
         if (input.toLowerCase().includes('казахстан')) {
           response = 'Казахстан — государство в Центральной Азии, бывшая советская республика. Столица — Нур-Султан (бывшая Астана). Население составляет более 19 миллионов человек. Государственным языком является казахский, а русский имеет статус языка межнационального общения. Казахстан богат природными ресурсами, включая нефть, газ и минералы.';
         } else if (input.toLowerCase().includes('ент')) {
@@ -149,7 +139,6 @@ const AIChatPage = () => {
       setConversations(prevConversations => {
         return prevConversations.map(conv => {
           if (conv.id === activeConversation) {
-            // Update the title if this is the first user message
             const newTitle = conv.messages.length === 1 ? input.slice(0, 30) + (input.length > 30 ? '...' : '') : conv.title;
             
             return {
@@ -228,7 +217,6 @@ const AIChatPage = () => {
       <main className="flex-1 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-12rem)]">
-            {/* Sidebar */}
             <Card className="lg:col-span-1 h-full flex flex-col">
               <CardHeader className="px-4 py-3 space-y-2 border-b">
                 <div className="flex justify-between items-center">
@@ -258,7 +246,7 @@ const AIChatPage = () => {
                       className="absolute right-1 top-1.5 h-6 w-6"
                       onClick={() => setSearchInput('')}
                     >
-                      <X className="h-3 w-3" />
+                      <CloseIcon className="h-3 w-3" />
                     </Button>
                   )}
                 </div>
@@ -312,7 +300,6 @@ const AIChatPage = () => {
               </ScrollArea>
             </Card>
             
-            {/* Main Chat Area */}
             <Card className="lg:col-span-3 h-full flex flex-col">
               <CardHeader className="px-6 py-4 border-b">
                 <div className="flex items-center">
@@ -322,7 +309,7 @@ const AIChatPage = () => {
                   </Avatar>
                   <div>
                     <CardTitle className="text-lg">ЕНТ Ассистент</CardTitle>
-                    <p className="text-xs text-muted-foreground">Задавайте вопросы по школьной программе, ЕНТ и не только</p>
+                    <p className="text-xs text-muted-foreground">Задавайте вопросы по школьной про��рамме, ЕНТ и не только</p>
                   </div>
                 </div>
               </CardHeader>
@@ -568,7 +555,7 @@ const AIChatPage = () => {
                               <div>
                                 <p className="font-medium">Используйте контекст беседы</p>
                                 <p className="text-sm text-muted-foreground">
-                                  Ассистент запоминает предыдущие сообщения в разговоре, поэтому вы можете задавать уточняющие вопросы.
+                                  Ассистент запоминает предыдущие сообщения в разговор��, поэтому вы можете задавать уточняющие вопросы.
                                 </p>
                               </div>
                             </li>
@@ -641,3 +628,4 @@ const AIChatPage = () => {
 };
 
 export default AIChatPage;
+

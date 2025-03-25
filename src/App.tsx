@@ -4,6 +4,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+
+// Pages
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -17,8 +19,7 @@ import Courses from "./pages/Courses";
 import HowItWorks from "./pages/HowItWorks";
 import About from "./pages/About";
 import NotFound from "./pages/NotFound";
-import AIAssistant from "./components/ui/AIAssistant";
-import AIChatPage from "./pages/AIChatPage";
+import AIAssistant from "./pages/AIChatPage";
 import CreateTest from "./pages/CreateTest";
 import TakeTest from "./pages/TakeTest";
 import TeacherCourseManage from "./pages/TeacherCourseManage";
@@ -34,6 +35,15 @@ import NotificationsPage from "./pages/NotificationsPage";
 import ProfilePage from "./pages/ProfilePage";
 import SettingsPage from "./pages/SettingsPage";
 import SubjectPage from "./pages/SubjectPage";
+import Forum from "./pages/Forum";
+import ForumDetails from "./pages/ForumDetails";
+import NewForumTopic from "./pages/NewForumTopic";
+import Tests from "./pages/Tests";
+import StudentProgress from "./pages/StudentProgress";
+import QuestionDetails from "./pages/QuestionDetails";
+
+// Components
+import AIAssistantComponent from "./components/ui/AIAssistant";
 
 const queryClient = new QueryClient();
 
@@ -75,7 +85,21 @@ const App = () => (
           <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/ai-assistant" element={<AIChatPage />} />
+          <Route path="/ai-assistant" element={<AIAssistant />} />
+          
+          {/* Forum pages */}
+          <Route path="/forum" element={<Forum />} />
+          <Route path="/forum/:id" element={<ForumDetails />} />
+          <Route path="/forum/new" element={<NewForumTopic />} />
+          
+          {/* Tests page */}
+          <Route path="/tests" element={<Tests />} />
+          
+          {/* Student progress */}
+          <Route path="/student/:id/progress" element={<StudentProgress />} />
+          
+          {/* Question details */}
+          <Route path="/questions/:id" element={<QuestionDetails />} />
           
           {/* Static pages */}
           <Route path="/how-it-works" element={<HowItWorks />} />
@@ -84,7 +108,7 @@ const App = () => (
           {/* Catch-all route - must be last */}
           <Route path="*" element={<NotFound />} />
         </Routes>
-        <AIAssistant />
+        <AIAssistantComponent />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

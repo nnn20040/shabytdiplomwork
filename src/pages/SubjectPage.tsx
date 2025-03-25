@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
@@ -10,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { BookOpen, Calendar, CheckCircle, Clock, Search, Filter, ArrowRight } from 'lucide-react';
+import { BookOpen, Calendar, CheckCircle, Clock, Search, Filter, ArrowRight, Brain, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface SubjectInfo {
@@ -89,7 +88,7 @@ const subjectsData: { [key: string]: SubjectInfo } = {
   },
   english: {
     id: 'english',
-    title: 'Английский язык',
+    title: 'Английский язы��',
     description: 'Подготовка к ЕНТ по английскому языку: грамматика, лексика, аудирование',
     icon: '🔤',
     courses: 5,
@@ -107,7 +106,6 @@ const subjectsData: { [key: string]: SubjectInfo } = {
   },
 };
 
-// Mock course data
 const mockCourses = [
   {
     id: '1',
@@ -217,20 +215,17 @@ const SubjectPage = () => {
       setIsLoading(true);
       
       try {
-        // In a real app, this would be an API call
         await new Promise(resolve => setTimeout(resolve, 800));
         
         if (subject && subjectsData[subject]) {
           setSubjectInfo(subjectsData[subject]);
           
-          // Filter courses based on subject
           const filteredCourses = mockCourses.filter(
             course => course.category.toLowerCase() === subjectsData[subject].title.toLowerCase()
           );
           
           setCoursesData(filteredCourses);
         } else {
-          // Handle invalid subject
           toast.error('Предмет не найден');
         }
       } catch (error) {
@@ -255,7 +250,6 @@ const SubjectPage = () => {
   const getFilteredCourses = () => {
     let filtered = [...coursesData];
     
-    // Apply search filter
     if (searchTerm) {
       filtered = filtered.filter(
         course => course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -263,26 +257,22 @@ const SubjectPage = () => {
       );
     }
     
-    // Apply tab filter
     if (activeTab === 'free') {
       filtered = filtered.filter(course => course.price === 0);
     } else if (activeTab === 'paid') {
       filtered = filtered.filter(course => course.price > 0);
     }
     
-    // Apply level filter
     if (filterOptions.level !== 'all') {
       filtered = filtered.filter(course => course.level === filterOptions.level);
     }
     
-    // Apply language filter
     if (filterOptions.language !== 'all') {
       filtered = filtered.filter(
         course => course.language.toLowerCase().includes(filterOptions.language.toLowerCase())
       );
     }
     
-    // Apply sorting
     if (filterOptions.sorting === 'popular') {
       filtered.sort((a, b) => b.students - a.students);
     } else if (filterOptions.sorting === 'newest') {
@@ -344,7 +334,6 @@ const SubjectPage = () => {
       <Navbar />
       
       <main className="flex-1 py-16">
-        {/* Hero banner */}
         <div 
           className={`relative bg-gradient-to-r ${subjectInfo.color} mb-12`}
           style={{
@@ -375,7 +364,6 @@ const SubjectPage = () => {
         </div>
         
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
             <Card>
               <CardContent className="p-6 flex items-center">
@@ -426,7 +414,6 @@ const SubjectPage = () => {
             </Card>
           </div>
           
-          {/* Search and filter */}
           <div className="mb-8">
             <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
               <div className="relative w-full md:w-1/2">
@@ -510,7 +497,6 @@ const SubjectPage = () => {
             </Tabs>
           </div>
           
-          {/* Course list */}
           <div>
             {filteredCourses.length === 0 ? (
               <div className="text-center py-12">
@@ -540,7 +526,7 @@ const SubjectPage = () => {
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
                   {filteredCourses.map(course => (
-                    <CourseCard key={course.id} course={course} />
+                    <CourseCard key={course.id} {...course} />
                   ))}
                 </div>
                 
@@ -554,9 +540,8 @@ const SubjectPage = () => {
             )}
           </div>
           
-          {/* Featured sections */}
           <div className="mt-16 mb-8">
-            <h2 className="text-2xl font-bold mb-8">Почему стоит изучать {subjectInfo.title} с нами</h2>
+            <h2 className="text-2xl font-bold mb-8">Почему стоит изучать {subjectInfo?.title} с нами</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <Card>
