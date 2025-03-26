@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
@@ -244,7 +243,7 @@ const TeacherCourseManage = () => {
                       <TableCell>{lesson.description}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Button variant="outline" size="sm" onClick={() => navigate(`/course/${courseId}/lesson/${lesson.id}/edit`)}>
+                          <Button variant="outline" size="sm" onClick={() => navigate(`/course/${courseId}/lesson/${Number(lesson.id)}/edit`)}>
                             <Edit className="h-4 w-4" />
                           </Button>
                           <Button variant="outline" size="sm" onClick={() => navigate(`/course/${courseId}/lesson/${lesson.id}`)}>
