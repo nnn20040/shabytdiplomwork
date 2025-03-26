@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,20 +28,17 @@ const AIAssistant = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Scroll to bottom when messages change
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
 
   useEffect(() => {
-    // Focus input when assistant is opened
     if (isOpen && inputRef.current) {
       inputRef.current.focus();
     }
   }, [isOpen]);
 
-  // Helper to check if input is a math expression
   const isMathExpression = (text: string) => {
     return /^[\d\s+\-*/().]+$/.test(text.trim());
   };
@@ -64,12 +60,8 @@ const AIAssistant = () => {
     setIsLoading(true);
     
     try {
-      // Check if it's a math expression
       if (isMathExpression(input)) {
         try {
-          // Simple eval for math expressions - only for demo purposes
-          // In production, this should be done securely on the server
-          // eslint-disable-next-line no-eval
           const result = eval(input);
           
           const calculationResponse: Message = {
@@ -84,11 +76,9 @@ const AIAssistant = () => {
           return;
         } catch (error) {
           console.error('Error evaluating expression:', error);
-          // Continue to API call if evaluation fails
         }
       }
       
-      // Call to backend AI service
       try {
         const response = await axios.post('/api/ai-assistant/ask', { question: input });
         const aiResponse = response.data.data.response;
@@ -104,7 +94,6 @@ const AIAssistant = () => {
       } catch (error) {
         console.error('Error calling AI API:', error);
         
-        // Use fallback responses if API call fails
         let fallbackResponse = '';
         
         if (input.toLowerCase().includes('казахстан')) {
@@ -158,7 +147,6 @@ const AIAssistant = () => {
 
   return (
     <>
-      {/* Floating button */}
       <Button
         onClick={toggle}
         className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg"
@@ -168,9 +156,8 @@ const AIAssistant = () => {
         {isOpen ? <X className="h-6 w-6" /> : <MessageSquare className="h-6 w-6" />}
       </Button>
       
-      {/* Assistant panel */}
       {isOpen && (
-        <Card className="fixed bottom-24 right-6 w-80 md:w-96 shadow-lg border-primary/10 max-h-[70vh] flex flex-col overflow-hidden">
+        <Card className="fixed bottom-24 right-6 w-80 md:w-96 shadow-lg border-primary/10 h-[600px] flex flex-col overflow-hidden">
           <CardHeader className="px-4 py-3 border-b flex flex-row justify-between items-center shrink-0">
             <CardTitle className="text-lg flex items-center">
               <Brain className="h-5 w-5 mr-2" />
@@ -199,13 +186,13 @@ const AIAssistant = () => {
               </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="chat" className="flex-1 flex flex-col p-0 m-0 overflow-hidden">
+            <TabsContent value="chat" className="flex-1 flex flex-col p-0 m-0">
               <ScrollArea 
                 ref={scrollAreaRef} 
-                className="flex-1 px-4 overflow-y-auto"
-                style={{ height: "calc(100% - 80px)" }}
+                className="flex-1"
+                style={{ height: "calc(100% - 64px)" }}
               >
-                <div className="space-y-4 py-2">
+                <div className="space-y-4 p-4">
                   {messages.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
                       <Brain className="h-12 w-12 mx-auto mb-2 opacity-50" />
@@ -253,7 +240,7 @@ const AIAssistant = () => {
                 </div>
               </ScrollArea>
               
-              <CardFooter className="border-t p-2 shrink-0">
+              <CardFooter className="border-t p-2 shrink-0 mt-auto">
                 <form onSubmit={handleSubmit} className="flex gap-2 w-full">
                   <Input
                     ref={inputRef}
@@ -270,8 +257,8 @@ const AIAssistant = () => {
               </CardFooter>
             </TabsContent>
             
-            <TabsContent value="examples" className="p-0 m-0 overflow-hidden">
-              <ScrollArea className="h-[300px] p-4">
+            <TabsContent value="examples" className="p-0 m-0">
+              <ScrollArea className="h-[500px] p-4">
                 <div className="space-y-4">
                   <div>
                     <h3 className="font-medium mb-2">Примеры запросов</h3>

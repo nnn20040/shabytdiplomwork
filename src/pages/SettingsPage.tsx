@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,7 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
-import { AlertTriangle, Bell, CheckCircle, Globe, Lock, Moon, Shield, Smartphone, Volume2 } from 'lucide-react';
+import { AlertTriangle, Bell, CheckCircle, Lock, Moon, Shield, Smartphone, Volume2 } from 'lucide-react';
 
 const SettingsPage = () => {
   const [activeTab, setActiveTab] = useState('account');
@@ -22,31 +21,25 @@ const SettingsPage = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   
   // Notification settings
-  const [notificationSettings, setNotificationSettings] = useState({
+  const [notificationSettings, setNotificationSettings = useState({
     emailNotifications: true,
-    pushNotifications: true,
-    marketingEmails: false,
     courseUpdates: true,
     newMessages: true,
     testReminders: true,
-    achievements: true,
     sound: true,
   });
   
   // Appearance settings
-  const [appearanceSettings, setAppearanceSettings] = useState({
+  const [appearanceSettings, setAppearanceSettings = useState({
     darkMode: false,
     highContrast: false,
-    reducedMotion: false,
     fontSize: 'medium',
     language: 'ru',
   });
   
   // Privacy settings
-  const [privacySettings, setPrivacySettings] = useState({
-    showOnlineStatus: true,
+  const [privacySettings, setPrivacySettings = useState({
     showCourseProgress: true,
-    allowProfileView: true,
     shareActivity: true,
     twoFactorAuth: false,
   });
@@ -115,6 +108,46 @@ const SettingsPage = () => {
       window.location.href = '/';
     }
   };
+
+  // Handle font size change
+  const handleFontSizeChange = (size: string) => {
+    setAppearanceSettings(prev => ({ ...prev, fontSize: size }));
+    document.documentElement.style.fontSize = {
+      small: '14px',
+      medium: '16px',
+      large: '18px'
+    }[size] || '16px';
+  };
+
+  // Handle theme change
+  const handleThemeChange = (setting: 'darkMode' | 'highContrast') => {
+    setAppearanceSettings(prev => {
+      const newSettings = { ...prev, [setting]: !prev[setting] };
+      
+      // Apply theme changes
+      document.documentElement.classList.toggle('dark', newSettings.darkMode);
+      document.documentElement.classList.toggle('high-contrast', newSettings.highContrast);
+      
+      return newSettings;
+    });
+  };
+
+  // Handle language change
+  const handleLanguageChange = (lang: string) => {
+    setAppearanceSettings(prev => ({ ...prev, language: lang }));
+    // Apply language change (you'll need to implement your translation system)
+  };
+
+  // Initialize theme and font size on mount
+  useEffect(() => {
+    if (appearanceSettings.darkMode) {
+      document.documentElement.classList.add('dark');
+    }
+    if (appearanceSettings.highContrast) {
+      document.documentElement.classList.add('high-contrast');
+    }
+    handleFontSizeChange(appearanceSettings.fontSize);
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -273,20 +306,6 @@ const SettingsPage = () => {
                       
                       <div className="flex items-center justify-between">
                         <div className="space-y-0.5">
-                          <Label htmlFor="pushNotifications">Push-уведомления</Label>
-                          <p className="text-sm text-muted-foreground">
-                            Получать уведомления в браузере
-                          </p>
-                        </div>
-                        <Switch
-                          id="pushNotifications"
-                          checked={notificationSettings.pushNotifications}
-                          onCheckedChange={() => handleNotificationToggle('pushNotifications')}
-                        />
-                      </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
                           <Label htmlFor="sound">Звуковые уведомления</Label>
                           <p className="text-sm text-muted-foreground">
                             Воспроизводить звук при получении уведомлений
@@ -346,34 +365,6 @@ const SettingsPage = () => {
                           onCheckedChange={() => handleNotificationToggle('testReminders')}
                         />
                       </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <Label htmlFor="achievements">Достижения</Label>
-                          <p className="text-sm text-muted-foreground">
-                            Уведомления о новых достижениях и наградах
-                          </p>
-                        </div>
-                        <Switch
-                          id="achievements"
-                          checked={notificationSettings.achievements}
-                          onCheckedChange={() => handleNotificationToggle('achievements')}
-                        />
-                      </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <Label htmlFor="marketingEmails">Маркетинговые рассылки</Label>
-                          <p className="text-sm text-muted-foreground">
-                            Получать информацию о новых курсах и акциях
-                          </p>
-                        </div>
-                        <Switch
-                          id="marketingEmails"
-                          checked={notificationSettings.marketingEmails}
-                          onCheckedChange={() => handleNotificationToggle('marketingEmails')}
-                        />
-                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -383,9 +374,7 @@ const SettingsPage = () => {
                 <Card>
                   <CardHeader>
                     <CardTitle>Настройки внешнего вида</CardTitle>
-                    <CardDescription>
-                      Настройте внешний вид платформы под свои предпочтения
-                    </CardDescription>
+                    <CardDescription>Настройте внешний вид платформы под свои предпочтения</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <div className="space-y-4">
@@ -393,95 +382,51 @@ const SettingsPage = () => {
                       
                       <div className="flex items-center justify-between">
                         <div className="space-y-0.5">
-                          <Label htmlFor="darkMode">Темная тема</Label>
-                          <p className="text-sm text-muted-foreground">
-                            Использовать темную тему интерфейса
-                          </p>
+                          <Label>Темная тема</Label>
+                          <p className="text-sm text-muted-foreground">Использовать темную тему интерфейса</p>
                         </div>
                         <Switch
-                          id="darkMode"
                           checked={appearanceSettings.darkMode}
-                          onCheckedChange={() => handleAppearanceToggle('darkMode')}
+                          onCheckedChange={() => handleThemeChange('darkMode')}
                         />
                       </div>
-                      
+
+                      {/* High contrast */}
                       <div className="flex items-center justify-between">
                         <div className="space-y-0.5">
-                          <Label htmlFor="highContrast">Высокий контраст</Label>
-                          <p className="text-sm text-muted-foreground">
-                            Увеличить контрастность элементов интерфейса
-                          </p>
+                          <Label>Высокий контраст</Label>
+                          <p className="text-sm text-muted-foreground">Увеличить контрастность элементов</p>
                         </div>
                         <Switch
-                          id="highContrast"
                           checked={appearanceSettings.highContrast}
-                          onCheckedChange={() => handleAppearanceToggle('highContrast')}
+                          onCheckedChange={() => handleThemeChange('highContrast')}
                         />
                       </div>
-                    </div>
-                    
-                    <Separator />
-                    
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-medium">Доступность</h3>
-                      
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <Label htmlFor="reducedMotion">Уменьшение анимации</Label>
-                          <p className="text-sm text-muted-foreground">
-                            Уменьшить или отключить анимацию интерфейса
-                          </p>
-                        </div>
-                        <Switch
-                          id="reducedMotion"
-                          checked={appearanceSettings.reducedMotion}
-                          onCheckedChange={() => handleAppearanceToggle('reducedMotion')}
-                        />
-                      </div>
-                      
+
+                      {/* Font size */}
                       <div className="space-y-2">
-                        <Label htmlFor="fontSize">Размер шрифта</Label>
+                        <Label>Размер шрифта</Label>
                         <select
-                          id="fontSize"
                           className="w-full p-2 rounded-md border border-input bg-background"
                           value={appearanceSettings.fontSize}
-                          onChange={(e) => {
-                            setAppearanceSettings({
-                              ...appearanceSettings,
-                              fontSize: e.target.value,
-                            });
-                            toast.success('Размер шрифта обновлен');
-                          }}
+                          onChange={(e) => handleFontSizeChange(e.target.value)}
                         >
                           <option value="small">Маленький</option>
                           <option value="medium">Средний</option>
                           <option value="large">Большой</option>
                         </select>
                       </div>
-                    </div>
-                    
-                    <Separator />
-                    
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-medium">Язык</h3>
-                      
+
+                      {/* Language */}
                       <div className="space-y-2">
-                        <Label htmlFor="language">Язык интерфейса</Label>
+                        <Label>Язык интерфейса</Label>
                         <select
-                          id="language"
                           className="w-full p-2 rounded-md border border-input bg-background"
                           value={appearanceSettings.language}
-                          onChange={(e) => {
-                            setAppearanceSettings({
-                              ...appearanceSettings,
-                              language: e.target.value,
-                            });
-                            toast.success('Язык интерфейса обновлен');
-                          }}
+                          onChange={(e) => handleLanguageChange(e.target.value)}
                         >
                           <option value="ru">Русский</option>
-                          <option value="kk">Казахский</option>
-                          <option value="en">English</option>
+                          <option value="kk">Қазақша</option>
                         </select>
                       </div>
                     </div>
@@ -498,40 +443,6 @@ const SettingsPage = () => {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-medium">Видимость профиля</h3>
-                      
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <Label htmlFor="showOnlineStatus">Показывать статус онлайн</Label>
-                          <p className="text-sm text-muted-foreground">
-                            Другие пользователи смогут видеть, когда вы онлайн
-                          </p>
-                        </div>
-                        <Switch
-                          id="showOnlineStatus"
-                          checked={privacySettings.showOnlineStatus}
-                          onCheckedChange={() => handlePrivacyToggle('showOnlineStatus')}
-                        />
-                      </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <Label htmlFor="allowProfileView">Доступ к профилю</Label>
-                          <p className="text-sm text-muted-foreground">
-                            Разрешить другим пользователям просматривать ваш профиль
-                          </p>
-                        </div>
-                        <Switch
-                          id="allowProfileView"
-                          checked={privacySettings.allowProfileView}
-                          onCheckedChange={() => handlePrivacyToggle('allowProfileView')}
-                        />
-                      </div>
-                    </div>
-                    
-                    <Separator />
-                    
                     <div className="space-y-4">
                       <h3 className="text-lg font-medium">Активность</h3>
                       
