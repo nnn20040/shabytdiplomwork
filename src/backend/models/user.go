@@ -170,7 +170,7 @@ func VerifyResetToken(ctx context.Context, id, token string) (bool, error) {
 // ClearResetToken clears a user's password reset token
 func ClearResetToken(ctx context.Context, id string) error {
 	_, err := config.ExecContext(ctx,
-		"UPDATE users SET reset_token = NULL, reset_token_expiry = NULL WHERE id = $3",
+		"UPDATE users SET reset_token = NULL, reset_token_expiry = NULL WHERE id = $1",
 		id)
 	if err != nil {
 		return fmt.Errorf("error clearing reset token: %w", err)

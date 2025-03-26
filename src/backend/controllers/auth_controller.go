@@ -5,9 +5,11 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"backend/middleware"
@@ -318,28 +320,28 @@ func ForgotPassword(w http.ResponseWriter, r *http.Request) {
 		// Don't reveal that the user doesn't exist
 		response := Response{
 			Success: true,
-			Message: "If an account with that email exists, a password reset code has been sent",
+			Message: "Если аккаунт с таким email существует, код для сброса пароля был отправлен",
 		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(response)
 		return
 	}
 
-	// Generate reset token (4-digit hex code)
-	tokenBytes := make([]byte, 2)
+	// Generate reset token (6-digit hex code for better visibility)
+	tokenBytes := make([]byte, 3)
 	if _, err := rand.Read(tokenBytes); err != nil {
 		log.Printf("Error generating reset token: %v", err)
-		http.Error(w, "Server error during password reset request", http.StatusInternalServerError)
+		http.Error(w, "Ошибка сервера при обработке запроса на сброс пароля", http.StatusInternalServerError)
 		return
 	}
-	resetToken := hex.EncodeToString(tokenBytes)
+	resetToken := hex.EncodeToString(tokenBytes)[:6]
 	resetTokenExpiry := time.Now().Add(15 * time.Minute).Unix()
 
 	// Save token to database
 	err = models.SaveResetToken(r.Context(), user.ID, resetToken, resetTokenExpiry)
 	if err != nil {
 		log.Printf("Error saving reset token: %v", err)
-		http.Error(w, "Server error during password reset request", http.StatusInternalServerError)
+		http.Error(w, "Ошибка сервера при обработке запроса на сброс пароля", http.StatusInternalServerError)
 		return
 	}
 
@@ -347,13 +349,21 @@ func ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	err = sendResetEmail(user.Email, resetToken)
 	if err != nil {
 		log.Printf("Error sending reset email: %v", err)
-		// Continue anyway, we can still show the token to the user
+		// Log the token temporarily for debugging
+		fmt.Printf("DEBUG RESET TOKEN for %s: %s\n", user.Email, resetToken)
 	}
 
-	// Return success response
+	// Return success response with token in dev environments
 	response := Response{
 		Success: true,
-		Message: "Password reset code sent to your email",
+		Message: "Код для сброса пароля отправлен на ваш email",
+	}
+
+	// Include the reset token in development environment
+	if os.Getenv("GO_ENV") != "production" {
+		response.Data = map[string]string{
+			"resetToken": resetToken,
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -426,6 +436,7 @@ func generateJWTToken(user *models.User) (string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
 	claims["id"] = user.ID
+	claims["name"] = user.Name
 	claims["email"] = user.Email
 	claims["role"] = user.Role
 	claims["exp"] = time.Now().Add(30 * 24 * time.Hour).Unix() // 30 days expiry
@@ -437,7 +448,7 @@ func generateJWTToken(user *models.User) (string, error) {
 func sendResetEmail(email, resetToken string) error {
 	host := os.Getenv("EMAIL_HOST")
 	if host == "" {
-		host = "smtp.example.com"
+		host = "smtp.gmail.com"
 	}
 
 	port := 587
@@ -449,27 +460,27 @@ func sendResetEmail(email, resetToken string) error {
 
 	username := os.Getenv("EMAIL_USER")
 	if username == "" {
-		username = "user@example.com"
+		username = "shabyt.education@gmail.com"
 	}
 
 	password := os.Getenv("EMAIL_PASS")
 	if password == "" {
-		password = "password"
+		password = "your-email-password" // In production, this should come from environment variables
 	}
 
 	from := os.Getenv("EMAIL_FROM")
 	if from == "" {
-		from = "noreply@studyhub.kz"
+		from = "noreply@shabyt.kz"
 	}
 
 	m := gomail.NewMessage()
 	m.SetHeader("From", from)
 	m.SetHeader("To", email)
-	m.SetHeader("Subject", "StudyHub - Сброс пароля")
+	m.SetHeader("Subject", "Shabyt - Сброс пароля")
 	m.SetBody("text/plain", "Ваш код для сброса пароля: "+resetToken+". Код действителен в течение 15 минут.")
 	m.SetBody("text/html", `
 		<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-			<h2 style="color: #4f46e5;">StudyHub - Сброс пароля</h2>
+			<h2 style="color: #4f46e5;">Shabyt - Сброс пароля</h2>
 			<p>Вы запросили сброс пароля. Используйте следующий код для восстановления доступа:</p>
 			<div style="background-color: #f3f4f6; padding: 15px; border-radius: 5px; text-align: center; font-size: 24px; letter-spacing: 5px; font-weight: bold;">
 				`+resetToken+`

@@ -9,6 +9,7 @@ import { toast } from '@/components/ui/use-toast';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { Mail, ArrowLeft, KeyRound } from 'lucide-react';
+import { APP_NAME } from '@/config/constants';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
@@ -48,6 +49,16 @@ const ForgotPassword = () => {
           title: "Код отправлен",
           description: "Проверьте вашу электронную почту для получения кода сброса пароля",
         });
+        
+        // If we're in development, we can show the token from the response for testing
+        if (import.meta.env.DEV && data.data?.resetToken) {
+          console.log("Код восстановления (только для разработки):", data.data.resetToken);
+          toast({
+            title: "Код для тестирования",
+            description: `Код: ${data.data.resetToken} (только для разработки)`,
+          });
+        }
+        
         setStep(2);
       } else {
         toast({
@@ -62,6 +73,7 @@ const ForgotPassword = () => {
         description: "Не удалось подключиться к серверу",
         variant: "destructive",
       });
+      console.error("Forgot password error:", error);
     } finally {
       setIsLoading(false);
     }
@@ -83,6 +95,15 @@ const ForgotPassword = () => {
       toast({
         title: "Ошибка",
         description: "Пароли не совпадают",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (newPassword.length < 8) {
+      toast({
+        title: "Ошибка",
+        description: "Пароль должен содержать не менее 8 символов",
         variant: "destructive",
       });
       return;
@@ -126,6 +147,7 @@ const ForgotPassword = () => {
         description: "Не удалось подключиться к серверу",
         variant: "destructive",
       });
+      console.error("Reset password error:", error);
     } finally {
       setIsLoading(false);
     }

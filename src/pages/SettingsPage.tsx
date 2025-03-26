@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
@@ -10,7 +11,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
-import { AlertTriangle, Bell, CheckCircle, Lock, Moon, Shield, Smartphone, Volume2 } from 'lucide-react';
+import { AlertTriangle, Bell, CheckCircle, Lock, Moon, Shield } from 'lucide-react';
 
 const SettingsPage = () => {
   const [activeTab, setActiveTab] = useState('account');
@@ -21,7 +22,7 @@ const SettingsPage = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   
   // Notification settings
-  const [notificationSettings, setNotificationSettings = useState({
+  const [notificationSettings, setNotificationSettings] = useState({
     emailNotifications: true,
     courseUpdates: true,
     newMessages: true,
@@ -30,7 +31,7 @@ const SettingsPage = () => {
   });
   
   // Appearance settings
-  const [appearanceSettings, setAppearanceSettings = useState({
+  const [appearanceSettings, setAppearanceSettings] = useState({
     darkMode: false,
     highContrast: false,
     fontSize: 'medium',
@@ -38,7 +39,7 @@ const SettingsPage = () => {
   });
   
   // Privacy settings
-  const [privacySettings, setPrivacySettings = useState({
+  const [privacySettings, setPrivacySettings] = useState({
     showCourseProgress: true,
     shareActivity: true,
     twoFactorAuth: false,
@@ -112,11 +113,16 @@ const SettingsPage = () => {
   // Handle font size change
   const handleFontSizeChange = (size: string) => {
     setAppearanceSettings(prev => ({ ...prev, fontSize: size }));
-    document.documentElement.style.fontSize = {
+    
+    // Apply font size changes to document
+    const fontSizes: Record<string, string> = {
       small: '14px',
       medium: '16px',
       large: '18px'
-    }[size] || '16px';
+    };
+    
+    document.documentElement.style.fontSize = fontSizes[size] || '16px';
+    localStorage.setItem('fontSize', size);
   };
 
   // Handle theme change
@@ -128,6 +134,10 @@ const SettingsPage = () => {
       document.documentElement.classList.toggle('dark', newSettings.darkMode);
       document.documentElement.classList.toggle('high-contrast', newSettings.highContrast);
       
+      // Save to localStorage
+      localStorage.setItem('darkMode', String(newSettings.darkMode));
+      localStorage.setItem('highContrast', String(newSettings.highContrast));
+      
       return newSettings;
     });
   };
@@ -135,18 +145,38 @@ const SettingsPage = () => {
   // Handle language change
   const handleLanguageChange = (lang: string) => {
     setAppearanceSettings(prev => ({ ...prev, language: lang }));
-    // Apply language change (you'll need to implement your translation system)
+    localStorage.setItem('language', lang);
+    // In a real application, this would trigger language change
+    toast.success(`Язык успешно изменен на ${lang === 'kk' ? 'қазақша' : 'русский'}`);
   };
 
-  // Initialize theme and font size on mount
+  // Initialize theme, font size, and language on mount
   useEffect(() => {
-    if (appearanceSettings.darkMode) {
-      document.documentElement.classList.add('dark');
-    }
-    if (appearanceSettings.highContrast) {
-      document.documentElement.classList.add('high-contrast');
-    }
-    handleFontSizeChange(appearanceSettings.fontSize);
+    // Load saved settings from localStorage
+    const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+    const savedHighContrast = localStorage.getItem('highContrast') === 'true';
+    const savedFontSize = localStorage.getItem('fontSize') || 'medium';
+    const savedLanguage = localStorage.getItem('language') || 'ru';
+    
+    setAppearanceSettings(prev => ({
+      ...prev,
+      darkMode: savedDarkMode,
+      highContrast: savedHighContrast,
+      fontSize: savedFontSize,
+      language: savedLanguage
+    }));
+    
+    // Apply saved settings
+    document.documentElement.classList.toggle('dark', savedDarkMode);
+    document.documentElement.classList.toggle('high-contrast', savedHighContrast);
+    
+    const fontSizes: Record<string, string> = {
+      small: '14px',
+      medium: '16px',
+      large: '18px'
+    };
+    
+    document.documentElement.style.fontSize = fontSizes[savedFontSize] || '16px';
   }, []);
 
   return (
@@ -439,7 +469,7 @@ const SettingsPage = () => {
                   <CardHeader>
                     <CardTitle>Настройки приватности</CardTitle>
                     <CardDescription>
-                      Управляйте тем, кто может видеть вашу информацию и активность
+                      Управляйте вашими настройками приватности
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
@@ -457,20 +487,6 @@ const SettingsPage = () => {
                           id="showCourseProgress"
                           checked={privacySettings.showCourseProgress}
                           onCheckedChange={() => handlePrivacyToggle('showCourseProgress')}
-                        />
-                      </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <Label htmlFor="shareActivity">Делиться активностью</Label>
-                          <p className="text-sm text-muted-foreground">
-                            Показывать вашу активность в ленте новостей
-                          </p>
-                        </div>
-                        <Switch
-                          id="shareActivity"
-                          checked={privacySettings.shareActivity}
-                          onCheckedChange={() => handlePrivacyToggle('shareActivity')}
                         />
                       </div>
                     </div>
