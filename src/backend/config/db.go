@@ -38,7 +38,7 @@ func InitDB() error {
 	
 	dbname := os.Getenv("DB_NAME")
 	if dbname == "" {
-		dbname = "ent_prep_db"
+		dbname = "shabyt_db"
 	}
 	
 	sslMode := "disable"
