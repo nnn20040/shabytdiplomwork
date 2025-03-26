@@ -23,9 +23,21 @@ func main() {
 		log.Println("No .env file found, using environment variables")
 	}
 
+	// Set default environment variable for mock database if needed
+	if os.Getenv("USE_MOCK_DB") == "" {
+		// Check if we should default to mock DB
+		if os.Getenv("DB_HOST") == "" || os.Getenv("DB_USER") == "" {
+			os.Setenv("USE_MOCK_DB", "true")
+			log.Println("No database configuration found, defaulting to mock database")
+		}
+	}
+
 	// Initialize database
 	if err := config.InitDB(); err != nil {
-		log.Fatalf("Failed to initialize database: %v", err)
+		log.Printf("Failed to initialize database: %v", err)
+		log.Println("Continuing with mock database...")
+		os.Setenv("USE_MOCK_DB", "true")
+		config.InitMockDB()
 	}
 
 	// Create router
@@ -68,6 +80,14 @@ func main() {
 	}
 	
 	log.Printf("Server running on port %s", port)
+	if config.UseMockDB() {
+		log.Println("⚠️ USING MOCK DATABASE - Data will not persist between restarts")
+		log.Println("Login with:")
+		log.Println("  - Email: alibek@shabyt.kz, Password: password (Admin)")
+		log.Println("  - Email: aigul@shabyt.kz, Password: password (Teacher)")
+		log.Println("  - Email: nurlan@shabyt.kz, Password: password (Student)")
+	}
+	
 	if err := http.ListenAndServe(":"+port, corsMiddleware.Handler(router)); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}

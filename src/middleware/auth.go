@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"backend/models"
+	"backend/config"
 
 	"github.com/dgrijalva/jwt-go"
 )
