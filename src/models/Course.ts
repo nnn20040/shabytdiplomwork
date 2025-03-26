@@ -9,6 +9,9 @@ export interface Lesson {
   type?: string;
   duration?: string;
   order_index?: number;
+  // Support for both property naming styles
+  question?: string;
+  text?: string;
 }
 
 export interface Section {
@@ -67,28 +70,32 @@ export interface Test {
   title: string;
   description: string;
   timeLimit: number;
-  time_limit?: number;
+  time_limit?: number; // Support for snake_case property
   questions: Question[];
   passingScore: number;
-  passing_score?: number;
+  passing_score?: number; // Support for snake_case property
   course_id?: number;
   lesson_id?: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface TestResult {
   id: string | number;
   testId: string | number;
+  test_id?: number;
   score: number;
   passed: boolean;
   completedAt: string;
   created_at?: string;
-  time_spent?: string;
+  time_spent?: number | string;
   student_id?: number;
+  completed?: boolean;
   answers: Array<{
     questionId: string | number;
     userAnswer: string[] | string;
     correct: boolean;
-  }>;
+  }> | any; // Handle different answer formats
 }
 
 export interface ForumPost {
