@@ -126,7 +126,7 @@ const CourseDiscussions = () => {
     ? posts.filter(post => 
         post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         post.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        post.user_name.toLowerCase().includes(searchTerm.toLowerCase())
+        (post.user_name?.toLowerCase() || '').includes(searchTerm.toLowerCase())
       )
     : posts;
 
@@ -197,13 +197,13 @@ const CourseDiscussions = () => {
                               <div className="flex items-center gap-2">
                                 <Avatar className="h-6 w-6">
                                   <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${post.user_name}`} />
-                                  <AvatarFallback>{post.user_name.substring(0, 2)}</AvatarFallback>
+                                  <AvatarFallback>{post.user_name?.substring(0, 2)}</AvatarFallback>
                                 </Avatar>
                                 <span className="text-sm">{post.user_name}</span>
                               </div>
                               <div className="flex items-center text-sm text-muted-foreground">
                                 <Calendar className="h-4 w-4 mr-1" />
-                                <span>{formatDate(post.created_at)}</span>
+                                <span>{formatDate(post.created_at || '')}</span>
                               </div>
                             </div>
                           </div>
@@ -302,7 +302,7 @@ const CourseDiscussions = () => {
                       <h4 className="font-medium line-clamp-1">{post.title}</h4>
                       <div className="flex justify-between items-center mt-1">
                         <span className="text-xs text-muted-foreground">{post.user_name}</span>
-                        <span className="text-xs text-muted-foreground">{formatDate(post.created_at)}</span>
+                        <span className="text-xs text-muted-foreground">{formatDate(post.created_at || '')}</span>
                       </div>
                     </div>
                   ))}

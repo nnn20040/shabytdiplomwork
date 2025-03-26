@@ -197,13 +197,13 @@ const DiscussionDetails = () => {
               <div className="flex items-center mt-2">
                 <Avatar className="h-10 w-10 mr-3">
                   <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${post.user_name}`} />
-                  <AvatarFallback>{post.user_name.substring(0, 2)}</AvatarFallback>
+                  <AvatarFallback>{post.user_name?.substring(0, 2)}</AvatarFallback>
                 </Avatar>
                 <div>
                   <p className="font-medium">{post.user_name}</p>
                   <div className="flex items-center text-sm text-muted-foreground">
                     <Clock className="h-3 w-3 mr-1" />
-                    <span>{formatDate(post.created_at)}</span>
+                    <span>{formatDate(post.created_at || '')}</span>
                   </div>
                 </div>
               </div>
@@ -236,14 +236,14 @@ const DiscussionDetails = () => {
                 <div className="flex items-start">
                   <Avatar className="h-10 w-10 mr-3">
                     <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${comment.user_name}`} />
-                    <AvatarFallback>{comment.user_name.substring(0, 2)}</AvatarFallback>
+                    <AvatarFallback>{comment.user_name?.substring(0, 2)}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
                     <div className="bg-secondary p-4 rounded-lg">
                       <div className="flex justify-between items-center mb-2">
                         <p className="font-medium">{comment.user_name}</p>
                         <span className="text-xs text-muted-foreground">
-                          {formatDate(comment.created_at)}
+                          {formatDate(comment.created_at || '')}
                         </span>
                       </div>
                       <div className="prose prose-sm dark:prose-invert max-w-none">
