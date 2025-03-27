@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useQuery } from '@tanstack/react-query';
-import Layout from '@/components/layout/Layout';
+import { Layout } from '@/components/layout/Layout';
 import { Loader2, ArrowLeft, BookOpen, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -44,7 +44,7 @@ const markLessonCompleted = async (courseId: string, lessonId: string) => {
 };
 
 const LessonView = () => {
-  const { id: courseId, id: lessonId } = useParams<{ id: string; id: string }>();
+  const { courseId, id: lessonId } = useParams<{ courseId: string; id: string }>();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('content');
   const [isMarkingComplete, setIsMarkingComplete] = useState(false);
