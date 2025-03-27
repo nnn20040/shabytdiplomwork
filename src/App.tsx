@@ -43,6 +43,8 @@ import StudentProgress from "./pages/StudentProgress";
 import QuestionDetails from "./pages/QuestionDetails";
 import LessonView from "./pages/LessonView";
 import StudentMessage from "./pages/StudentMessage";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfUse from "./pages/TermsOfUse";
 
 // Components
 import AIAssistantComponent from "./components/ui/AIAssistant";
@@ -108,6 +110,8 @@ const App = () => (
           {/* Static pages */}
           <Route path="/how-it-works" element={<HowItWorks />} />
           <Route path="/about" element={<About />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfUse />} />
           
           {/* Catch-all route - must be last */}
           <Route path="*" element={<NotFound />} />
