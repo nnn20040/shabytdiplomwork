@@ -1,17 +1,15 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useQuery } from '@tanstack/react-query';
-import { Layout } from '@/components/layout/Layout';
+import Layout from '@/components/layout/Layout';
 import { Loader2, ArrowLeft, BookOpen, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { coursesApi } from '@/api';
-import { Lesson as LessonType } from '@/models/Course';
 
 interface LessonData {
   id: string;
@@ -27,48 +25,8 @@ interface LessonData {
 
 const fetchLesson = async ({ courseId, lessonId }: { courseId: string; lessonId: string }) => {
   try {
-    // Get course details which includes lessons
-    const response = await coursesApi.getCourseDetails(Number(courseId));
-    
-    if (!response.success || !response.data) {
-      throw new Error('Failed to fetch course data');
-    }
-    
-    // Find the specific lesson by its order_index
-    const lesson = response.data.lessons.find(l => l.order_index === Number(lessonId));
-    
-    if (!lesson) {
-      throw new Error('Lesson not found');
-    }
-
-    // Format the lesson data to match our expected interface
-    const formattedLesson: LessonData = {
-      id: String(lesson.id),
-      title: lesson.title,
-      content: lesson.content || '<p>Содержание для этого урока ещё не добавлено.</p>',
-      // Set a default duration if the property doesn't exist
-      duration: 30,
-      course_id: String(courseId),
-      course_title: response.data.title,
-      order_index: lesson.order_index || 0,
-      total_lessons: response.data.lessons.length,
-      completed: false // Default to false if not provided
-    };
-    
-    // Now try to assign optional properties if they exist
-    if ('duration' in lesson && lesson.duration !== undefined) {
-      if (typeof lesson.duration === 'string') {
-        formattedLesson.duration = parseInt(lesson.duration, 10);
-      } else if (typeof lesson.duration === 'number') {
-        formattedLesson.duration = lesson.duration;
-      }
-    }
-    
-    if ('completed' in lesson) {
-      formattedLesson.completed = Boolean(lesson.completed);
-    }
-    
-    return formattedLesson;
+    const { data } = await axios.get(`/api/courses/${courseId}/lessons/${lessonId}`);
+    return data.data as LessonData;
   } catch (error) {
     console.error('Error fetching lesson:', error);
     throw new Error('Failed to fetch lesson data');
@@ -77,9 +35,7 @@ const fetchLesson = async ({ courseId, lessonId }: { courseId: string; lessonId:
 
 const markLessonCompleted = async (courseId: string, lessonId: string) => {
   try {
-    // In a real app, we would make an API request
-    // Simulate a successful API call
-    console.log(`Marking lesson ${lessonId} in course ${courseId} as completed`);
+    await axios.post(`/api/courses/${courseId}/lessons/${lessonId}/complete`);
     return true;
   } catch (error) {
     console.error('Error marking lesson as completed:', error);
@@ -88,7 +44,7 @@ const markLessonCompleted = async (courseId: string, lessonId: string) => {
 };
 
 const LessonView = () => {
-  const { courseId, id: lessonId } = useParams<{ courseId: string; id: string }>();
+  const { id: courseId, id: lessonId } = useParams<{ id: string; id: string }>();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('content');
   const [isMarkingComplete, setIsMarkingComplete] = useState(false);
