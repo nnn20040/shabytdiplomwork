@@ -46,12 +46,11 @@ const RegisterForm = () => {
       toast.success("Регистрация успешна! Добро пожаловать в StudyHub!");
       
       // Redirect based on user role
-      navigate('/2fa-setup', { 
-        state: { 
-            fromRegistration: true,
-            user: response.data.user 
-        } 
-      });
+      if (role === 'teacher') {
+        navigate('/teacher-dashboard');
+      } else {
+        navigate('/student-dashboard');
+      }
     } catch (error) {
       console.error('Registration error:', error);
       toast.error(error instanceof Error ? error.message : "Проблема с подключением к серверу");

@@ -1,6 +1,7 @@
+
 import { useState } from 'react';
 import { Layout } from '@/components/layout/Layout';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,23 +12,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { AlertCircle, Smartphone, Mail, Lock, Check } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { authApi } from '@/api/authApi';
 
 const TwoFactorSetup = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
-  const location = useLocation();
-  const fromRegistration = location.state?.fromRegistration;
-  const user = location.state?.user;
-
   const [step, setStep] = useState(1);
   const [method, setMethod] = useState<'app' | 'sms' | 'email'>('app');
   const [verificationCode, setVerificationCode] = useState('');
-
+  
   // Mock QR code and secret key
   const qrCodeUrl = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=otpauth://totp/Shabyt:alibek@shabyt.kz?secret=JBSWY3DPEHPK3PXP&issuer=Shabyt";
   const secretKey = "JBSWY3DPEHPK3PXP";
-
+  
   const handleVerify = () => {
     if (verificationCode.length < 6) {
       toast.error(t('2fa.code_too_short'));
@@ -39,21 +35,11 @@ const TwoFactorSetup = () => {
     toast.success(t('2fa.setup_complete'));
     navigate('/settings');
   };
-
+  
   const handleCancel = () => {
     navigate('/settings');
   };
-
-  const handleSkip = async () => {
-    try {
-      // API вызов для обновления статуса 2FA
-      await authApi.skipTwoFactorSetup(user.id);
-      navigate('/dashboard');
-    } catch (error) {
-      toast.error("Не удалось пропустить настройку");
-    }
-  };
-
+  
   return (
     <Layout>
       <div className="container max-w-3xl py-10">
@@ -217,12 +203,6 @@ const TwoFactorSetup = () => {
           )}
         </Card>
       </div>
-      
-      {fromRegistration && (
-        <Button variant="outline" onClick={handleSkip}>
-          Пропустить настройку
-        </Button>
-      )}
     </Layout>
   );
 };

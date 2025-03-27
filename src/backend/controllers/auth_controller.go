@@ -1,3 +1,4 @@
+
 package controllers
 
 import (
@@ -91,7 +92,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create user
-	user, err := models.CreateUser(r.Context(), req.Name, req.Email, req.Password, req.Role, false, false)
+	user, err := models.CreateUser(r.Context(), req.Name, req.Email, req.Password, req.Role)
 	if err != nil {
 		if err.Error() == "user with this email already exists" {
 			http.Error(w, err.Error(), http.StatusBadRequest)
