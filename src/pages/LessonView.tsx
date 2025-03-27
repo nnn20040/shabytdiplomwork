@@ -11,6 +11,7 @@ import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { coursesApi } from '@/api';
+import { Lesson as LessonType } from '@/models/Course';
 
 interface LessonData {
   id: string;
@@ -45,12 +46,14 @@ const fetchLesson = async ({ courseId, lessonId }: { courseId: string; lessonId:
       id: String(lesson.id),
       title: lesson.title,
       content: lesson.content || '<p>Содержание для этого урока ещё не добавлено.</p>',
-      duration: lesson.duration ? parseInt(String(lesson.duration)) : 30,
+      // Use type-safe approach to handle possible undefined properties
+      duration: typeof lesson.duration === 'string' ? parseInt(lesson.duration) : 
+               typeof lesson.duration === 'number' ? lesson.duration : 30,
       course_id: String(courseId),
       course_title: response.data.title,
-      order_index: lesson.order_index,
+      order_index: lesson.order_index || 0,
       total_lessons: response.data.lessons.length,
-      completed: lesson.completed || false
+      completed: Boolean(lesson.completed) // Explicitly convert to boolean
     };
     
     return formattedLesson;
