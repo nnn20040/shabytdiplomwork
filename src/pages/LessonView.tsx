@@ -46,15 +46,27 @@ const fetchLesson = async ({ courseId, lessonId }: { courseId: string; lessonId:
       id: String(lesson.id),
       title: lesson.title,
       content: lesson.content || '<p>Содержание для этого урока ещё не добавлено.</p>',
-      // Use type-safe approach to handle possible undefined properties
-      duration: typeof lesson.duration === 'string' ? parseInt(lesson.duration) : 
-               typeof lesson.duration === 'number' ? lesson.duration : 30,
+      // Set a default duration if the property doesn't exist
+      duration: 30,
       course_id: String(courseId),
       course_title: response.data.title,
       order_index: lesson.order_index || 0,
       total_lessons: response.data.lessons.length,
-      completed: Boolean(lesson.completed) // Explicitly convert to boolean
+      completed: false // Default to false if not provided
     };
+    
+    // Now try to assign optional properties if they exist
+    if ('duration' in lesson && lesson.duration !== undefined) {
+      if (typeof lesson.duration === 'string') {
+        formattedLesson.duration = parseInt(lesson.duration, 10);
+      } else if (typeof lesson.duration === 'number') {
+        formattedLesson.duration = lesson.duration;
+      }
+    }
+    
+    if ('completed' in lesson) {
+      formattedLesson.completed = Boolean(lesson.completed);
+    }
     
     return formattedLesson;
   } catch (error) {
