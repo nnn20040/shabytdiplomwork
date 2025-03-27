@@ -1,172 +1,304 @@
 
--- Database schema for ENT preparation platform
-
 -- Users table
-CREATE TABLE users (
-  id SERIAL PRIMARY KEY,
-  name VARCHAR(255) NOT NULL,
-  email VARCHAR(255) UNIQUE NOT NULL,
-  password VARCHAR(255) NOT NULL,
-  role VARCHAR(50) NOT NULL CHECK (role IN ('student', 'teacher', 'admin')),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE IF NOT EXISTS users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    role VARCHAR(20) NOT NULL DEFAULT 'student', -- student, teacher, admin
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_login TIMESTAMP,
+    profile_image_url VARCHAR(255),
+    is_active BOOLEAN DEFAULT TRUE,
+    language_preference VARCHAR(10) DEFAULT 'ru', -- ru, kk, en
+    two_factor_enabled BOOLEAN DEFAULT FALSE,
+    two_factor_secret VARCHAR(255)
+);
+
+-- User Settings table
+CREATE TABLE IF NOT EXISTS user_settings (
+    user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    email_notifications BOOLEAN DEFAULT TRUE,
+    theme VARCHAR(10) DEFAULT 'light',
+    auto_play_videos BOOLEAN DEFAULT TRUE,
+    show_progress BOOLEAN DEFAULT TRUE,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Courses table
-CREATE TABLE courses (
-  id SERIAL PRIMARY KEY,
-  title VARCHAR(255) NOT NULL,
-  description TEXT,
-  category VARCHAR(100),
-  image VARCHAR(255),
-  teacher_id INT NOT NULL REFERENCES users(id),
-  duration VARCHAR(100),
-  featured BOOLEAN DEFAULT false,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE IF NOT EXISTS courses (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    title VARCHAR(255) NOT NULL,
+    title_kk VARCHAR(255),
+    description TEXT NOT NULL,
+    description_kk TEXT,
+    subject VARCHAR(100) NOT NULL,
+    image_url VARCHAR(255),
+    difficulty_level VARCHAR(20) NOT NULL, -- beginner, intermediate, advanced
+    is_published BOOLEAN DEFAULT FALSE,
+    creator_id UUID REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    duration_minutes INTEGER DEFAULT 0,
+    price DECIMAL(10, 2) DEFAULT 0.00,
+    avg_rating DECIMAL(3, 2) DEFAULT 0.00
 );
 
 -- Lessons table
-CREATE TABLE lessons (
-  id SERIAL PRIMARY KEY,
-  course_id INT NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
-  title VARCHAR(255) NOT NULL,
-  description TEXT,
-  video_url TEXT,
-  content TEXT,
-  order_index INT NOT NULL DEFAULT 1,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE IF NOT EXISTS lessons (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    course_id UUID REFERENCES courses(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    title_kk VARCHAR(255),
+    content TEXT NOT NULL,
+    content_kk TEXT,
+    duration_minutes INTEGER DEFAULT 0,
+    order_index INTEGER NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_published BOOLEAN DEFAULT TRUE
+);
+
+-- Course enrollments
+CREATE TABLE IF NOT EXISTS enrollments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    course_id UUID REFERENCES courses(id) ON DELETE CASCADE,
+    enrolled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    completed_at TIMESTAMP,
+    progress INTEGER DEFAULT 0, -- percentage of completion
+    last_accessed_at TIMESTAMP,
+    UNIQUE (user_id, course_id)
+);
+
+-- Lesson progress
+CREATE TABLE IF NOT EXISTS lesson_progress (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    lesson_id UUID REFERENCES lessons(id) ON DELETE CASCADE,
+    status VARCHAR(20) DEFAULT 'not_started', -- not_started, in_progress, completed
+    completion_date TIMESTAMP,
+    time_spent_seconds INTEGER DEFAULT 0,
+    last_position_seconds INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (user_id, lesson_id)
 );
 
 -- Tests table
-CREATE TABLE tests (
-  id SERIAL PRIMARY KEY,
-  course_id INT NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
-  lesson_id INT REFERENCES lessons(id) ON DELETE SET NULL,
-  title VARCHAR(255) NOT NULL,
-  description TEXT,
-  time_limit INT NOT NULL DEFAULT 30,
-  passing_score INT NOT NULL DEFAULT 70,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE IF NOT EXISTS tests (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    course_id UUID REFERENCES courses(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    title_kk VARCHAR(255),
+    description TEXT,
+    description_kk TEXT,
+    time_limit_minutes INTEGER DEFAULT 30,
+    passing_score INTEGER DEFAULT 70, -- percentage
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_published BOOLEAN DEFAULT TRUE,
+    order_index INTEGER NOT NULL
 );
 
--- Test questions table
-CREATE TABLE test_questions (
-  id SERIAL PRIMARY KEY,
-  test_id INT NOT NULL REFERENCES tests(id) ON DELETE CASCADE,
-  text TEXT NOT NULL,
-  type VARCHAR(50) NOT NULL CHECK (type IN ('radio', 'checkbox', 'text')),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+-- Questions table
+CREATE TABLE IF NOT EXISTS questions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    test_id UUID REFERENCES tests(id) ON DELETE CASCADE,
+    question_text TEXT NOT NULL,
+    question_text_kk TEXT,
+    question_type VARCHAR(50) NOT NULL, -- multiple_choice, true_false, short_answer, essay
+    correct_answer TEXT,
+    explanation TEXT,
+    explanation_kk TEXT,
+    points INTEGER DEFAULT 1,
+    difficulty VARCHAR(20) DEFAULT 'medium', -- easy, medium, hard
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Question options table (for multiple choice questions)
-CREATE TABLE question_options (
-  id SERIAL PRIMARY KEY,
-  question_id INT NOT NULL REFERENCES test_questions(id) ON DELETE CASCADE,
-  text TEXT NOT NULL,
-  is_correct BOOLEAN DEFAULT false,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+-- Options for multiple choice questions
+CREATE TABLE IF NOT EXISTS question_options (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    question_id UUID REFERENCES questions(id) ON DELETE CASCADE,
+    option_text TEXT NOT NULL,
+    option_text_kk TEXT,
+    is_correct BOOLEAN DEFAULT FALSE,
+    order_index INTEGER NOT NULL
 );
 
--- Course enrollments table
-CREATE TABLE enrollments (
-  id SERIAL PRIMARY KEY,
-  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  course_id INT NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
-  progress INT DEFAULT 0,
-  status VARCHAR(50) DEFAULT 'active' CHECK (status IN ('active', 'completed', 'dropped')),
-  enrolled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE(user_id, course_id)
+-- Test attempts
+CREATE TABLE IF NOT EXISTS test_attempts (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    test_id UUID REFERENCES tests(id) ON DELETE CASCADE,
+    started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    completed_at TIMESTAMP,
+    score INTEGER,
+    time_spent_seconds INTEGER,
+    status VARCHAR(20) DEFAULT 'in_progress', -- in_progress, completed, abandoned
+    attempt_number INTEGER DEFAULT 1
 );
 
--- Lesson completions table
-CREATE TABLE lesson_completions (
-  id SERIAL PRIMARY KEY,
-  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  lesson_id INT NOT NULL REFERENCES lessons(id) ON DELETE CASCADE,
-  completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE(user_id, lesson_id)
+-- User answers for test questions
+CREATE TABLE IF NOT EXISTS user_answers (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    attempt_id UUID REFERENCES test_attempts(id) ON DELETE CASCADE,
+    question_id UUID REFERENCES questions(id) ON DELETE CASCADE,
+    answer TEXT,
+    is_correct BOOLEAN,
+    points_earned INTEGER DEFAULT 0,
+    reviewed BOOLEAN DEFAULT FALSE,
+    reviewer_id UUID REFERENCES users(id),
+    reviewer_feedback TEXT,
+    review_date TIMESTAMP
 );
 
--- Test attempts table
-CREATE TABLE test_attempts (
-  id SERIAL PRIMARY KEY,
-  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  test_id INT NOT NULL REFERENCES tests(id) ON DELETE CASCADE,
-  score DECIMAL(5,2) NOT NULL,
-  passed BOOLEAN DEFAULT false,
-  time_spent INT, -- in seconds
-  started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+-- Forum discussions
+CREATE TABLE IF NOT EXISTS discussions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    course_id UUID REFERENCES courses(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES users(id),
+    title VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_pinned BOOLEAN DEFAULT FALSE,
+    is_closed BOOLEAN DEFAULT FALSE,
+    view_count INTEGER DEFAULT 0,
+    helpful_count INTEGER DEFAULT 0
 );
 
--- Test answers table
-CREATE TABLE test_answers (
-  id SERIAL PRIMARY KEY,
-  attempt_id INT NOT NULL REFERENCES test_attempts(id) ON DELETE CASCADE,
-  question_id INT NOT NULL REFERENCES test_questions(id) ON DELETE CASCADE,
-  selected_options INT[], -- Array of selected option IDs
-  text_answer TEXT, -- For text questions
-  is_correct BOOLEAN,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+-- Discussion replies
+CREATE TABLE IF NOT EXISTS discussion_replies (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    discussion_id UUID REFERENCES discussions(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES users(id),
+    content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_solution BOOLEAN DEFAULT FALSE,
+    helpful_count INTEGER DEFAULT 0
 );
 
--- Course discussions table
-CREATE TABLE discussions (
-  id SERIAL PRIMARY KEY,
-  course_id INT NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
-  title VARCHAR(255) NOT NULL,
-  content TEXT NOT NULL,
-  author_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+-- Notifications
+CREATE TABLE IF NOT EXISTS notifications (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    title_kk VARCHAR(255),
+    content TEXT NOT NULL,
+    content_kk TEXT,
+    notification_type VARCHAR(50) NOT NULL, -- system, course, achievement, etc.
+    read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    action_url VARCHAR(255)
 );
 
--- Discussion replies table
-CREATE TABLE discussion_replies (
-  id SERIAL PRIMARY KEY,
-  discussion_id INT NOT NULL REFERENCES discussions(id) ON DELETE CASCADE,
-  content TEXT NOT NULL,
-  author_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+-- User achievements
+CREATE TABLE IF NOT EXISTS achievements (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(100) NOT NULL,
+    name_kk VARCHAR(100),
+    description TEXT NOT NULL,
+    description_kk TEXT,
+    image_url VARCHAR(255),
+    requirements TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- AI assistant interactions table
-CREATE TABLE ai_assistant (
-  id SERIAL PRIMARY KEY,
-  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  question TEXT NOT NULL,
-  response TEXT NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+-- User earned achievements
+CREATE TABLE IF NOT EXISTS user_achievements (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    achievement_id UUID REFERENCES achievements(id) ON DELETE CASCADE,
+    earned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Notifications table
-CREATE TABLE notifications (
-  id SERIAL PRIMARY KEY,
-  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  title VARCHAR(255) NOT NULL,
-  content TEXT NOT NULL,
-  type VARCHAR(50) NOT NULL,
-  is_read BOOLEAN DEFAULT FALSE,
-  related_entity_type VARCHAR(50), -- 'course', 'test', 'discussion', etc.
-  related_entity_id INT, -- ID of the related entity
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+-- User messages
+CREATE TABLE IF NOT EXISTS user_messages (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    sender_id UUID REFERENCES users(id),
+    recipient_id UUID REFERENCES users(id),
+    subject VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    replied_to_id UUID REFERENCES user_messages(id)
 );
 
--- Create indexes for better performance
-CREATE INDEX idx_lessons_course_id ON lessons(course_id);
-CREATE INDEX idx_tests_course_id ON tests(course_id);
-CREATE INDEX idx_questions_test_id ON test_questions(test_id);
-CREATE INDEX idx_options_question_id ON question_options(question_id);
-CREATE INDEX idx_enrollments_user_course ON enrollments(user_id, course_id);
-CREATE INDEX idx_completions_user_lesson ON lesson_completions(user_id, lesson_id);
-CREATE INDEX idx_attempts_user_test ON test_attempts(user_id, test_id);
-CREATE INDEX idx_discussions_course_id ON discussions(course_id);
-CREATE INDEX idx_replies_discussion_id ON discussion_replies(discussion_id);
-CREATE INDEX idx_ai_user_id ON ai_assistant(user_id);
-CREATE INDEX idx_notifications_user_id ON notifications(user_id);
+-- AI Assistant interactions
+CREATE TABLE IF NOT EXISTS ai_assistant (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    question TEXT NOT NULL,
+    response TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Forum topics (general discussion forum, not course-specific)
+CREATE TABLE IF NOT EXISTS forum_topics (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    title VARCHAR(255) NOT NULL,
+    category VARCHAR(100) NOT NULL,
+    user_id UUID REFERENCES users(id),
+    content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_pinned BOOLEAN DEFAULT FALSE,
+    is_closed BOOLEAN DEFAULT FALSE,
+    view_count INTEGER DEFAULT 0
+);
+
+-- Forum replies
+CREATE TABLE IF NOT EXISTS forum_replies (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    topic_id UUID REFERENCES forum_topics(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES users(id),
+    content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_solution BOOLEAN DEFAULT FALSE
+);
+
+-- Course ratings and reviews
+CREATE TABLE IF NOT EXISTS course_reviews (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    course_id UUID REFERENCES courses(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES users(id),
+    rating INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
+    review_text TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_hidden BOOLEAN DEFAULT FALSE,
+    helpful_count INTEGER DEFAULT 0,
+    UNIQUE (user_id, course_id)
+);
+
+-- User activity logs
+CREATE TABLE IF NOT EXISTS user_activity_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    activity_type VARCHAR(50) NOT NULL,
+    entity_type VARCHAR(50), -- course, lesson, test, etc.
+    entity_id UUID,
+    details JSONB,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ip_address VARCHAR(50)
+);
+
+-- Create indexes for performance
+CREATE INDEX IF NOT EXISTS idx_enrollments_user_id ON enrollments(user_id);
+CREATE INDEX IF NOT EXISTS idx_enrollments_course_id ON enrollments(course_id);
+CREATE INDEX IF NOT EXISTS idx_lessons_course_id ON lessons(course_id);
+CREATE INDEX IF NOT EXISTS idx_lesson_progress_user_id ON lesson_progress(user_id);
+CREATE INDEX IF NOT EXISTS idx_lesson_progress_lesson_id ON lesson_progress(lesson_id);
+CREATE INDEX IF NOT EXISTS idx_tests_course_id ON tests(course_id);
+CREATE INDEX IF NOT EXISTS idx_questions_test_id ON questions(test_id);
+CREATE INDEX IF NOT EXISTS idx_test_attempts_user_id ON test_attempts(user_id);
+CREATE INDEX IF NOT EXISTS idx_test_attempts_test_id ON test_attempts(test_id);
+CREATE INDEX IF NOT EXISTS idx_discussions_course_id ON discussions(course_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_achievements_user_id ON user_achievements(user_id);

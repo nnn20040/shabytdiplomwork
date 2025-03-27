@@ -1,4 +1,5 @@
 
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Facebook, 
@@ -11,6 +12,15 @@ import {
 } from 'lucide-react';
 
 const Footer = () => {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    // Check if user is logged in using localStorage
+    const user = localStorage.getItem('user');
+    const sessionLogin = sessionStorage.getItem('isLoggedIn');
+    setIsLoggedIn(!!user || !!sessionLogin);
+  }, []);
+
   return (
     <footer className="bg-secondary/50 pt-16 pb-8 border-t border-border/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -61,11 +71,13 @@ const Footer = () => {
                   О нас
                 </Link>
               </li>
-              <li>
-                <Link to="/login" className="text-muted-foreground hover:text-primary transition-colors">
-                  Войти
-                </Link>
-              </li>
+              {!isLoggedIn && (
+                <li>
+                  <Link to="/login" className="text-muted-foreground hover:text-primary transition-colors">
+                    Войти
+                  </Link>
+                </li>
+              )}
             </ul>
           </div>
 

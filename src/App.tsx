@@ -41,6 +41,8 @@ import NewForumTopic from "./pages/NewForumTopic";
 import Tests from "./pages/Tests";
 import StudentProgress from "./pages/StudentProgress";
 import QuestionDetails from "./pages/QuestionDetails";
+import LessonView from "./pages/LessonView";
+import StudentMessage from "./pages/StudentMessage";
 
 // Components
 import AIAssistantComponent from "./components/ui/AIAssistant";
@@ -65,6 +67,7 @@ const App = () => (
           {/* Course routes */}
           <Route path="/course/:id" element={<CourseDetails />} />
           <Route path="/course/:id/learn" element={<CourseLearn />} />
+          <Route path="/course/:courseId/lesson/:id" element={<LessonView />} />
           <Route path="/course/:courseId/test/create" element={<CreateTest />} />
           <Route path="/course/:courseId/test/:testId" element={<TakeTest />} />
           <Route path="/course/:courseId/test/:testId/edit" element={<EditTest />} />
@@ -95,8 +98,9 @@ const App = () => (
           {/* Tests page */}
           <Route path="/tests" element={<Tests />} />
           
-          {/* Student progress */}
+          {/* Student progress and messaging */}
           <Route path="/student/:id/progress" element={<StudentProgress />} />
+          <Route path="/student/:id/message" element={<StudentMessage />} />
           
           {/* Question details */}
           <Route path="/questions/:id" element={<QuestionDetails />} />
