@@ -49,6 +49,7 @@ import AIAssistant from '@/components/ui/AIAssistant';
 import Students from './pages/Students';
 import AIChatPage from './pages/AIChatPage';
 import Tests from './pages/Tests';
+import TestManagement from './pages/TestManagement';
 
 function App() {
   const [queryClient] = useState(() => new QueryClient());
@@ -104,13 +105,14 @@ function App() {
                 <Route path="/teacher/dashboard" element={<RequireAuth><TeacherDashboard /></RequireAuth>} />
                 <Route path="/teacher/courses" element={<RequireAuth><TeacherCourseManage /></RequireAuth>} />
                 <Route path="/teacher/students" element={<RequireAuth><Students /></RequireAuth>} />
+                <Route path="/teacher/tests" element={<RequireAuth><TestManagement /></RequireAuth>} />
                 <Route path="/course/:courseId/analytics" element={<RequireAuth><CourseAnalytics /></RequireAuth>} />
                 <Route path="/course/:courseId/manage" element={<RequireAuth><TeacherCourseManage /></RequireAuth>} />
                 <Route path="/create-course" element={<RequireAuth><CreateCourse /></RequireAuth>} />
                 <Route path="/course/:courseId/create-lesson" element={<RequireAuth><CreateLesson /></RequireAuth>} />
                 <Route path="/course/:courseId/edit-lesson/:lessonId" element={<RequireAuth><EditLesson /></RequireAuth>} />
                 <Route path="/course/:courseId/create-test" element={<RequireAuth><CreateTest /></RequireAuth>} />
-                <Route path="/course/:courseId/edit-test/:testId" element={<RequireAuth><EditTest /></RequireAuth>} />
+                <Route path="/course/:courseId/test/:testId/edit" element={<RequireAuth><EditTest /></RequireAuth>} />
                 
                 {/* Subject routes */}
                 <Route path="/subject/:subjectId" element={<SubjectPage />} />
