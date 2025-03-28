@@ -45,10 +45,33 @@ const translations = {
     'settings.language.ru': 'Русский',
     'settings.language.kz': 'Қазақша',
     'settings.contrast': 'Высокий контраст',
-    'settings.2fa': 'Двухфакторная аутентификация',
-    'settings.2fa.enable': 'Включить 2FA',
-    'settings.2fa.disable': 'Отключить 2FA',
     'settings.save': 'Сохранить изменения',
+    'settings.profile': 'Профиль',
+    'settings.account': 'Аккаунт',
+    'settings.appearance': 'Внешний вид',
+    'settings.notifications': 'Уведомления',
+    'settings.profile_information': 'Информация профиля',
+    'settings.profile_description': 'Обновите информацию вашего профиля',
+    'settings.name': 'Имя',
+    'settings.email': 'Email',
+    'settings.change_password': 'Изменить пароль',
+    'settings.password_description': 'Обновите пароль для вашего аккаунта',
+    'settings.current_password': 'Текущий пароль',
+    'settings.new_password': 'Новый пароль',
+    'settings.confirm_password': 'Подтвердите пароль',
+    'settings.update_password': 'Обновить пароль',
+    'settings.appearance_description': 'Настройте внешний вид',
+    'settings.select_language': 'Выберите язык',
+    'settings.contrast_description': 'Увеличивает контрастность для улучшения читаемости',
+    'settings.notifications_description': 'Настройте уведомления',
+    'settings.push_notifications': 'Push-уведомления',
+    'settings.push_description': 'Получайте уведомления в браузере',
+    'settings.email_notifications': 'Email-уведомления',
+    'settings.email_description': 'Получайте уведомления на почту',
+    'settings.saved_profile': 'Профиль успешно обновлен',
+    'settings.password_mismatch': 'Пароли не совпадают',
+    'settings.password_short': 'Пароль должен быть не менее 8 символов',
+    'settings.password_changed': 'Пароль успешно изменен',
   },
   kz: {
     // Common
@@ -82,10 +105,33 @@ const translations = {
     'settings.language.ru': 'Орысша',
     'settings.language.kz': 'Қазақша',
     'settings.contrast': 'Жоғары контраст',
-    'settings.2fa': 'Екі факторлы аутентификация',
-    'settings.2fa.enable': '2FA қосу',
-    'settings.2fa.disable': '2FA өшіру',
     'settings.save': 'Өзгерістерді сақтау',
+    'settings.profile': 'Профиль',
+    'settings.account': 'Аккаунт',
+    'settings.appearance': 'Сыртқы түрі',
+    'settings.notifications': 'Хабарландырулар',
+    'settings.profile_information': 'Профиль ақпараты',
+    'settings.profile_description': 'Профиль ақпаратын жаңарту',
+    'settings.name': 'Аты',
+    'settings.email': 'Email',
+    'settings.change_password': 'Құпия сөзді өзгерту',
+    'settings.password_description': 'Аккаунтыңыздың құпия сөзін жаңарту',
+    'settings.current_password': 'Ағымдағы құпия сөз',
+    'settings.new_password': 'Жаңа құпия сөз',
+    'settings.confirm_password': 'Құпия сөзді растау',
+    'settings.update_password': 'Құпия сөзді жаңарту',
+    'settings.appearance_description': 'Сыртқы түрін баптау',
+    'settings.select_language': 'Тілді таңдаңыз',
+    'settings.contrast_description': 'Оқуды жақсарту үшін контрастты арттыру',
+    'settings.notifications_description': 'Хабарландыруларды баптау',
+    'settings.push_notifications': 'Push-хабарландырулар',
+    'settings.push_description': 'Браузердегі хабарландыруларды алу',
+    'settings.email_notifications': 'Email-хабарландырулар',
+    'settings.email_description': 'Электрондық поштаға хабарландыруларды алу',
+    'settings.saved_profile': 'Профиль сәтті жаңартылды',
+    'settings.password_mismatch': 'Құпия сөздер сәйкес келмейді',
+    'settings.password_short': 'Құпия сөз кемінде 8 таңбадан тұруы керек',
+    'settings.password_changed': 'Құпия сөз сәтті өзгертілді',
   }
 };
 
@@ -102,7 +148,8 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   // Translation function
   const t = (key: string): string => {
-    return translations[language][key as keyof typeof translations[typeof language]] || key;
+    const langDict = translations[language];
+    return langDict[key as keyof typeof langDict] || key;
   };
 
   useEffect(() => {
