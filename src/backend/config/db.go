@@ -13,9 +13,15 @@ import (
 )
 
 var DB *sql.DB
+var mockDB bool
 
 // InitDB initializes the database connection
 func InitDB() error {
+	// Check if we're using mock database
+	if os.Getenv("USE_MOCK_DB") == "true" {
+		return InitMockDB()
+	}
+
 	user := os.Getenv("DB_USER")
 	if user == "" {
 		user = "postgres"
@@ -73,8 +79,21 @@ func InitDB() error {
 		return fmt.Errorf("failed to query database: %w", err)
 	}
 
+	mockDB = false
 	log.Printf("Database connected successfully at: %v", now)
 	return nil
+}
+
+// InitMockDB initializes a mock database for testing or when a real database is not available
+func InitMockDB() error {
+	log.Println("Initializing mock database")
+	mockDB = true
+	return nil
+}
+
+// UseMockDB returns true if the app is using a mock database
+func UseMockDB() bool {
+	return mockDB || os.Getenv("USE_MOCK_DB") == "true"
 }
 
 // QueryContext executes a query that returns rows
