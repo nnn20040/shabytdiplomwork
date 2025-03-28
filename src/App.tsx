@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { ThemeProvider } from "@/components/theme-provider"
-import { QueryClient, QueryClientProvider } from 'react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 
 import Index from './pages/Index';
@@ -87,29 +88,25 @@ function App() {
               <Route path="/course/:courseId/discussions/new" element={<CreateDiscussion />} />
               
               {/* Protected student routes */}
-              <Route element={<RequireAuth allowedRoles={['student']} />} >
-                <Route path="/dashboard" element={<StudentDashboard />} />
-                <Route path="/profile" element={<ProfilePage />} />
-                <Route path="/notifications" element={<NotificationsPage />} />
-                <Route path="/settings" element={<SettingsPage />} />
-                <Route path="/questions" element={<QuestionDetails />} />
-                <Route path="/student/progress" element={<StudentProgress />} />
-                <Route path="/student/message" element={<StudentMessage />} />
-              </Route>
+              <Route path="/dashboard" element={<RequireAuth><StudentDashboard /></RequireAuth>} />
+              <Route path="/profile" element={<RequireAuth><ProfilePage /></RequireAuth>} />
+              <Route path="/notifications" element={<RequireAuth><NotificationsPage /></RequireAuth>} />
+              <Route path="/settings" element={<RequireAuth><SettingsPage /></RequireAuth>} />
+              <Route path="/questions" element={<RequireAuth><QuestionDetails /></RequireAuth>} />
+              <Route path="/student/progress" element={<RequireAuth><StudentProgress /></RequireAuth>} />
+              <Route path="/student/message" element={<RequireAuth><StudentMessage /></RequireAuth>} />
               
               {/* Protected teacher routes */}
-              <Route element={<RequireAuth allowedRoles={['teacher', 'admin']} />} >
-                <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
-                <Route path="/teacher/courses" element={<TeacherCourseManage />} />
-                <Route path="/teacher/students" element={<Students />} />
-                <Route path="/course/:courseId/analytics" element={<CourseAnalytics />} />
-                <Route path="/course/:courseId/manage" element={<TeacherCourseManage />} />
-                <Route path="/create-course" element={<CreateCourse />} />
-                <Route path="/course/:courseId/create-lesson" element={<CreateLesson />} />
-                <Route path="/course/:courseId/edit-lesson/:lessonId" element={<EditLesson />} />
-                <Route path="/course/:courseId/create-test" element={<CreateTest />} />
-                <Route path="/course/:courseId/edit-test/:testId" element={<EditTest />} />
-              </Route>
+              <Route path="/teacher/dashboard" element={<RequireAuth><TeacherDashboard /></RequireAuth>} />
+              <Route path="/teacher/courses" element={<RequireAuth><TeacherCourseManage /></RequireAuth>} />
+              <Route path="/teacher/students" element={<RequireAuth><Students /></RequireAuth>} />
+              <Route path="/course/:courseId/analytics" element={<RequireAuth><CourseAnalytics /></RequireAuth>} />
+              <Route path="/course/:courseId/manage" element={<RequireAuth><TeacherCourseManage /></RequireAuth>} />
+              <Route path="/create-course" element={<RequireAuth><CreateCourse /></RequireAuth>} />
+              <Route path="/course/:courseId/create-lesson" element={<RequireAuth><CreateLesson /></RequireAuth>} />
+              <Route path="/course/:courseId/edit-lesson/:lessonId" element={<RequireAuth><EditLesson /></RequireAuth>} />
+              <Route path="/course/:courseId/create-test" element={<RequireAuth><CreateTest /></RequireAuth>} />
+              <Route path="/course/:courseId/edit-test/:testId" element={<RequireAuth><EditTest /></RequireAuth>} />
               
               {/* Subject routes */}
               <Route path="/subject/:subjectId" element={<SubjectPage />} />
