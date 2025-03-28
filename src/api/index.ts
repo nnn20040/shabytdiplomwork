@@ -1,3 +1,4 @@
+
 /**
  * API client for handling requests to backend
  */
@@ -133,7 +134,7 @@ export const authApi = {
 export const aiApi = {
   askQuestion: async (question) => {
     try {
-      const response = await fetch('/api/ai-assistant/ask', {
+      const response = await fetch(`${API_URL}/api/ai-assistant/ask`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -154,7 +155,7 @@ export const aiApi = {
   
   getHistory: async () => {
     try {
-      const response = await fetch('/api/ai-assistant/history');
+      const response = await fetch(`${API_URL}/api/ai-assistant/history`);
       
       if (!response.ok) {
         throw new Error('Failed to get AI history');
@@ -168,8 +169,40 @@ export const aiApi = {
   }
 };
 
-// Helper function to get fallback response for AI assistant
-const getFallbackResponse = (question) => {
+/**
+ * Helper function to get fallback response for AI assistant
+ * Used when backend connection fails or for testing
+ */
+export const getFallbackResponse = async (question: string) => {
+  try {
+    // First attempt to get response from backend
+    const response = await fetch(`${API_URL}/api/ai-assistant/ask`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ question }),
+      credentials: 'include',
+    });
+    
+    if (!response.ok) {
+      // Fall back to local responses if backend fails
+      return generateLocalFallbackResponse(question);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error getting fallback response:', error);
+    
+    // If server connection fails, use the local mock responses
+    return generateLocalFallbackResponse(question);
+  }
+};
+
+/**
+ * Generate local fallback responses when backend is unavailable
+ */
+const generateLocalFallbackResponse = (question: string) => {
   const lowercaseQuestion = question.toLowerCase();
   let response = '';
   
