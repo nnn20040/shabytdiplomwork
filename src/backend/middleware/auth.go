@@ -23,6 +23,9 @@ func Protect(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Handle preflight OPTIONS requests
 		if r.Method == "OPTIONS" {
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, Origin, Accept")
 			w.WriteHeader(http.StatusOK)
 			return
 		}
@@ -97,6 +100,12 @@ func Protect(next http.Handler) http.Handler {
 // StudentOrTeacherOnly is a middleware that checks if the user is a student or teacher
 func StudentOrTeacherOnly(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// Handle OPTIONS preflight requests
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		
 		user, ok := r.Context().Value(UserKey).(*models.User)
 		if !ok || (user.Role != "student" && user.Role != "teacher") {
 			http.Error(w, "Unauthorized: Access denied", http.StatusUnauthorized)
@@ -109,6 +118,12 @@ func StudentOrTeacherOnly(next http.HandlerFunc) http.HandlerFunc {
 // TeacherOnly is a middleware that checks if the user is a teacher
 func TeacherOnly(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// Handle OPTIONS preflight requests
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		
 		user, ok := r.Context().Value(UserKey).(*models.User)
 		if !ok || user.Role != "teacher" {
 			http.Error(w, "Unauthorized: Teachers only", http.StatusUnauthorized)
@@ -121,6 +136,12 @@ func TeacherOnly(next http.HandlerFunc) http.HandlerFunc {
 // AdminOnly is a middleware that checks if the user is an admin
 func AdminOnly(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// Handle OPTIONS preflight requests
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		
 		user, ok := r.Context().Value(UserKey).(*models.User)
 		if !ok || user.Role != "admin" {
 			http.Error(w, "Unauthorized: Admins only", http.StatusUnauthorized)

@@ -2,8 +2,8 @@
  * API client for handling requests to backend
  */
 
-// Base API URL
-const API_URL = '';
+// Base API URL - Update this to point to the backend server
+const API_URL = 'http://localhost:5000';
 
 /**
  * Make API request with proper error handling
@@ -11,16 +11,28 @@ const API_URL = '';
 export async function apiRequest(endpoint: string, options: RequestInit = {}) {
   try {
     const url = `${API_URL}${endpoint}`;
+    console.log(`Making request to: ${url}`, options);
+    
     const response = await fetch(url, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
         ...(options.headers || {}),
       },
+      // Include credentials to allow cookies to be sent
+      credentials: 'include',
     });
+
+    console.log(`Received response from ${url}:`, response.status);
+
+    // For non-JSON responses, just return status
+    if (response.headers.get('content-type')?.indexOf('application/json') === -1) {
+      return { status: response.status };
+    }
 
     // Parse JSON response if available
     const data = await response.json().catch(() => ({}));
+    console.log(`Response data:`, data);
 
     // If response is not ok, throw error with server message or default
     if (!response.ok) {
@@ -589,6 +601,57 @@ export const analyticsApi = {
           { date: '2023-03-06', count: 30 },
           { date: '2023-03-07', count: 25 }
         ]
+      }
+    };
+  }
+};
+
+// Replace the getFallbackResponse function with a direct connection to our backend
+export const getFallbackResponse = async (question: string) => {
+  try {
+    const response = await fetch(`${API_URL}/api/ai-assistant/ask`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ question }),
+    });
+    
+    if (!response.ok) {
+      return {
+        success: false,
+        data: {
+          id: `ai_${Date.now()}`,
+          question,
+          response: 'Извините, произошла ошибка при получении ответа.',
+          created_at: new Date().toISOString()
+        }
+      };
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error getting fallback response:', error);
+    
+    // If server connection fails, use the mock responses
+    const lowercaseQuestion = question.toLowerCase();
+    let response = '';
+    
+    if (lowercaseQuestion.includes('ент')) {
+      response = 'ЕНТ (Единое Национальное Тестирование) - это стандартизированный экзамен для выпускников школ в Казахстане. Он используется для поступления в высшие учебные заведения. Основные предметы включают математику, историю Казахстана, грамматику казахского/русского языка и предметы по выбору в зависимости от выбранной специальности.';
+    } else if (lowercaseQuestion.includes('математик')) {
+      response = 'В математической части ЕНТ тестируются знания по алгебре, геометрии и математическому анализу. Ключевые темы включают функции, уравнения, неравенства, векторы, производные и интегралы. Рекомендую начать с базовых концепций и постепенно переходить к более сложным задачам.';
+    } else {
+      response = 'Спасибо за ваш вопрос. Могу помочь с информацией по предметам ЕНТ, стратегиям подготовки и различным темам школьной программы.';
+    }
+    
+    return {
+      success: true,
+      data: {
+        id: `ai_${Date.now()}`,
+        question,
+        response,
+        created_at: new Date().toISOString()
       }
     };
   }

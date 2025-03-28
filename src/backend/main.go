@@ -44,15 +44,26 @@ func main() {
 
 	// Middleware
 	corsMiddleware := cors.New(cors.Options{
-		AllowedOrigins:   []string{"*"},                               // Allow requests from any origin (including localhost:8080)
+		AllowedOrigins:   []string{"*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Content-Type", "Authorization", "Origin", "Accept"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization", "Origin", "Accept", "X-Requested-With"},
+		ExposedHeaders:   []string{"Content-Length"},
 		AllowCredentials: true,
-		Debug:            true, // Enable debugging to log CORS issues
+		MaxAge:           86400, // Maximum value not ignored by any major browser
+		Debug:            true,  // Enable debugging to log CORS issues
 	})
 
-	// Register routes
+	// Register middleware
 	router.Use(middleware.RequestLogger)
+
+	// Create a basic health check endpoint
+	router.HandleFunc("/api/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"status":"ok","message":"Server is running"}`))
+	}).Methods("GET", "OPTIONS")
+
+	// Register routes
 	routes.RegisterAuthRoutes(router)
 	routes.RegisterCourseRoutes(router)
 	routes.RegisterAIAssistantRoutes(router)
@@ -90,7 +101,10 @@ func main() {
 	
 	log.Println("CORS enabled, accepting requests from all origins")
 	
-	if err := http.ListenAndServe(":"+port, corsMiddleware.Handler(router)); err != nil {
+	// Wrap router with CORS middleware and start server
+	handler := corsMiddleware.Handler(router)
+	log.Printf("Starting HTTP server on :%s", port)
+	if err := http.ListenAndServe(":"+port, handler); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
 }
