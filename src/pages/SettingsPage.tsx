@@ -22,7 +22,6 @@ const SettingsPage = () => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [is2FAEnabled, setIs2FAEnabled] = useState(false);
   const [notifications, setNotifications] = useState(true);
   const [emailNotifications, setEmailNotifications] = useState(true);
   
@@ -45,17 +44,6 @@ const SettingsPage = () => {
     setCurrentPassword('');
     setNewPassword('');
     setConfirmPassword('');
-  };
-  
-  const handle2FAToggle = () => {
-    if (!is2FAEnabled) {
-      // Redirect to 2FA setup page
-      window.location.href = '/2fa-setup';
-    } else {
-      // Disable 2FA
-      setIs2FAEnabled(false);
-      toast.success(t('settings.2fa_disabled'));
-    }
   };
   
   return (
@@ -132,24 +120,6 @@ const SettingsPage = () => {
                   </div>
                   
                   <Button onClick={handleChangePassword}>{t('settings.update_password')}</Button>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle>{t('settings.2fa')}</CardTitle>
-                  <CardDescription>{t('settings.2fa_description')}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{is2FAEnabled ? t('settings.2fa_enabled') : t('settings.2fa_disabled')}</p>
-                      <p className="text-sm text-muted-foreground">{t('settings.2fa_explanation')}</p>
-                    </div>
-                    <Button onClick={handle2FAToggle}>
-                      {is2FAEnabled ? t('settings.2fa.disable') : t('settings.2fa.enable')}
-                    </Button>
-                  </div>
                 </CardContent>
               </Card>
             </div>

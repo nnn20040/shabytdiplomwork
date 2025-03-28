@@ -12,9 +12,7 @@ CREATE TABLE IF NOT EXISTS users (
     last_login TIMESTAMP,
     profile_image_url VARCHAR(255),
     is_active BOOLEAN DEFAULT TRUE,
-    language_preference VARCHAR(10) DEFAULT 'ru', -- ru, kk, en
-    two_factor_enabled BOOLEAN DEFAULT FALSE,
-    two_factor_secret VARCHAR(255)
+    language_preference VARCHAR(10) DEFAULT 'ru' -- ru, kk, en
 );
 
 -- User Settings table

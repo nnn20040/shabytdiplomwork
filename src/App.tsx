@@ -52,9 +52,6 @@ import TermsOfUse from "./pages/TermsOfUse";
 // Components
 import AIAssistantComponent from "./components/ui/AIAssistant";
 
-// Add 2FA Setup Page
-import TwoFactorSetup from "./pages/TwoFactorSetup";
-
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -105,7 +102,6 @@ const App = () => (
               <Route path="/notifications" element={<RequireAuth><NotificationsPage /></RequireAuth>} />
               <Route path="/profile" element={<RequireAuth><ProfilePage /></RequireAuth>} />
               <Route path="/settings" element={<RequireAuth><SettingsPage /></RequireAuth>} />
-              <Route path="/2fa-setup" element={<RequireAuth><TwoFactorSetup /></RequireAuth>} />
               <Route path="/ai-assistant" element={<RequireAuth><AIAssistant /></RequireAuth>} />
               
               {/* Forum pages */}
@@ -123,10 +119,9 @@ const App = () => (
               {/* Question details */}
               <Route path="/questions/:id" element={<RequireAuth><QuestionDetails /></RequireAuth>} />
               
-              {/* Catch-all route - must be last */}
+              {/* Not found page */}
               <Route path="*" element={<NotFound />} />
             </Routes>
-            <AIAssistantComponent />
           </BrowserRouter>
         </TooltipProvider>
       </ThemeProvider>
