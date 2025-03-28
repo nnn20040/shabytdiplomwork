@@ -1,3 +1,4 @@
+
 package models
 
 import (
@@ -27,42 +28,6 @@ type User struct {
 
 // CreateUser creates a new user in the database
 func CreateUser(ctx context.Context, name, email, password, role string) (*User, error) {
-	// Check if using mock database
-	if config.UseMockDB() {
-		// Hash password
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-		if err != nil {
-			return nil, fmt.Errorf("error hashing password: %w", err)
-		}
-		
-		mockDB := config.GetMockDB()
-		user, err := mockDB.CreateUser(name, email, string(hashedPassword), role)
-		if err != nil {
-			return nil, err
-		}
-		
-		return &User{
-			ID:        user.ID,
-			Name:      user.Name,
-			Email:     user.Email,
-			Password:  user.Password,
-			Role:      user.Role,
-			CreatedAt: user.CreatedAt,
-			UpdatedAt: user.UpdatedAt,
-		}, nil
-	}
-
-	// Check if user already exists
-	var count int
-	err := config.QueryRowContext(ctx, "SELECT COUNT(*) FROM users WHERE email = $1", email).Scan(&count)
-	if err != nil {
-		return nil, fmt.Errorf("error checking if user exists: %w", err)
-	}
-
-	if count > 0 {
-		return nil, errors.New("user with this email already exists")
-	}
-
 	// Hash password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
@@ -74,100 +39,96 @@ func CreateUser(ctx context.Context, name, email, password, role string) (*User,
 		role = "student"
 	}
 
-	// Insert user into database
-	var user User
-	err = config.QueryRowContext(ctx,
-		"INSERT INTO users (name, email, password, role) VALUES ($1, $2, $3, $4) RETURNING id, name, email, role, created_at, updated_at",
-		name, email, string(hashedPassword), role).Scan(&user.ID, &user.Name, &user.Email, &user.Role, &user.CreatedAt, &user.UpdatedAt)
+	// Create user in the database
+	userData, err := config.CreateUser(ctx, name, email, string(hashedPassword), role)
 	if err != nil {
-		return nil, fmt.Errorf("error creating user: %w", err)
+		return nil, err
 	}
 
-	return &user, nil
+	user := &User{
+		ID:        userData["ID"].(string),
+		Name:      userData["Name"].(string),
+		Email:     userData["Email"].(string),
+		Role:      userData["Role"].(string),
+		CreatedAt: userData["CreatedAt"].(time.Time),
+		UpdatedAt: userData["UpdatedAt"].(time.Time),
+	}
+
+	return user, nil
 }
 
 // GetUserByID retrieves a user by ID
 func GetUserByID(ctx context.Context, id string) (*User, error) {
-	// Check if using mock database
-	if config.UseMockDB() {
-		mockDB := config.GetMockDB()
-		mockUser, err := mockDB.GetUserByID(id)
-		if err != nil {
-			return nil, sql.ErrNoRows
-		}
-		
-		return &User{
-			ID:        mockUser.ID,
-			Name:      mockUser.Name,
-			Email:     mockUser.Email,
-			Password:  mockUser.Password,
-			Role:      mockUser.Role,
-			CreatedAt: mockUser.CreatedAt,
-			UpdatedAt: mockUser.UpdatedAt,
-			ResetToken: mockUser.ResetToken,
-			ResetTokenExpiry: mockUser.ResetTokenExpiry,
-		}, nil
-	}
-
-	var user User
-	err := config.QueryRowContext(ctx,
-		"SELECT id, name, email, role, created_at, updated_at FROM users WHERE id = $1",
-		id).Scan(&user.ID, &user.Name, &user.Email, &user.Role, &user.CreatedAt, &user.UpdatedAt)
+	userData, err := config.GetUserByID(ctx, id)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, fmt.Errorf("error getting user by ID: %w", err)
+		return nil, err
 	}
-	return &user, nil
+
+	user := &User{
+		ID:        userData["ID"].(string),
+		Name:      userData["Name"].(string),
+		Email:     userData["Email"].(string),
+		Role:      userData["Role"].(string),
+		CreatedAt: userData["CreatedAt"].(time.Time),
+		UpdatedAt: userData["UpdatedAt"].(time.Time),
+	}
+
+	return user, nil
 }
 
 // GetUserByEmail retrieves a user by email
 func GetUserByEmail(ctx context.Context, email string) (*User, error) {
-	// Check if using mock database
-	if config.UseMockDB() {
-		mockDB := config.GetMockDB()
-		mockUser, err := mockDB.GetUserByEmail(email)
-		if err != nil {
-			return nil, sql.ErrNoRows
-		}
-		
-		return &User{
-			ID:        mockUser.ID,
-			Name:      mockUser.Name,
-			Email:     mockUser.Email,
-			Password:  mockUser.Password,
-			Role:      mockUser.Role,
-			CreatedAt: mockUser.CreatedAt,
-			UpdatedAt: mockUser.UpdatedAt,
-			ResetToken: mockUser.ResetToken,
-			ResetTokenExpiry: mockUser.ResetTokenExpiry,
-		}, nil
-	}
-
-	var user User
-	err := config.QueryRowContext(ctx,
-		"SELECT id, name, email, password, role, created_at, updated_at, reset_token, reset_token_expiry FROM users WHERE email = $1",
-		email).Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.Role, &user.CreatedAt, &user.UpdatedAt, &user.ResetToken, &user.ResetTokenExpiry)
+	userData, err := config.GetUserByEmail(ctx, email)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, fmt.Errorf("error getting user by email: %w", err)
+		return nil, err
 	}
-	return &user, nil
+
+	user := &User{
+		ID:        userData["ID"].(string),
+		Name:      userData["Name"].(string),
+		Email:     userData["Email"].(string),
+		Password:  userData["Password"].(string),
+		Role:      userData["Role"].(string),
+		CreatedAt: userData["CreatedAt"].(time.Time),
+		UpdatedAt: userData["UpdatedAt"].(time.Time),
+	}
+
+	if resetToken, ok := userData["ResetToken"]; ok {
+		token := resetToken.(string)
+		user.ResetToken = &token
+	}
+
+	if resetTokenExpiry, ok := userData["ResetTokenExpiry"]; ok {
+		expiry := resetTokenExpiry.(int64)
+		user.ResetTokenExpiry = &expiry
+	}
+
+	return user, nil
 }
 
 // UpdateUser updates user information
 func UpdateUser(ctx context.Context, id, name, email, role string) (*User, error) {
-	var user User
-	err := config.QueryRowContext(ctx,
-		"UPDATE users SET name = $1, email = $2, role = $3, updated_at = NOW() WHERE id = $4 RETURNING id, name, email, role, created_at, updated_at",
-		name, email, role, id).Scan(&user.ID, &user.Name, &user.Email, &user.Role, &user.CreatedAt, &user.UpdatedAt)
+	userData, err := config.UpdateUser(ctx, id, name, email, role)
 	if err != nil {
-		return nil, fmt.Errorf("error updating user: %w", err)
+		return nil, err
 	}
-	return &user, nil
+
+	user := &User{
+		ID:        userData["ID"].(string),
+		Name:      userData["Name"].(string),
+		Email:     userData["Email"].(string),
+		Role:      userData["Role"].(string),
+		CreatedAt: userData["CreatedAt"].(time.Time),
+		UpdatedAt: userData["UpdatedAt"].(time.Time),
+	}
+
+	return user, nil
 }
 
 // UpdatePassword updates a user's password
@@ -203,97 +164,15 @@ func ComparePassword(hashedPassword, providedPassword string) error {
 
 // SaveResetToken saves a password reset token for a user
 func SaveResetToken(ctx context.Context, id, resetToken string, resetTokenExpiry int64) error {
-	// Check if using mock database
-	if config.UseMockDB() {
-		mockDB := config.GetMockDB()
-		mockDB.mutex.Lock()
-		defer mockDB.mutex.Unlock()
-		
-		user, exists := mockDB.users[id]
-		if !exists {
-			return fmt.Errorf("user not found")
-		}
-		
-		user.ResetToken = &resetToken
-		user.ResetTokenExpiry = &resetTokenExpiry
-		return nil
-	}
-
-	_, err := config.ExecContext(ctx,
-		"UPDATE users SET reset_token = $1, reset_token_expiry = $2 WHERE id = $3",
-		resetToken, resetTokenExpiry, id)
-	if err != nil {
-		return fmt.Errorf("error saving reset token: %w", err)
-	}
-	return nil
+	return config.SaveResetToken(ctx, id, resetToken, resetTokenExpiry)
 }
 
 // VerifyResetToken verifies a password reset token
 func VerifyResetToken(ctx context.Context, id, token string) (bool, error) {
-	// Check if using mock database
-	if config.UseMockDB() {
-		mockDB := config.GetMockDB()
-		mockDB.mutex.RLock()
-		defer mockDB.mutex.RUnlock()
-		
-		user, exists := mockDB.users[id]
-		if !exists {
-			return false, nil
-		}
-		
-		if user.ResetToken == nil || user.ResetTokenExpiry == nil {
-			return false, nil
-		}
-		
-		// Check if token matches and has not expired
-		if *user.ResetToken == token && *user.ResetTokenExpiry > time.Now().Unix() {
-			return true, nil
-		}
-		return false, nil
-	}
-
-	var storedToken string
-	var expiry int64
-	err := config.QueryRowContext(ctx,
-		"SELECT reset_token, reset_token_expiry FROM users WHERE id = $1",
-		id).Scan(&storedToken, &expiry)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return false, nil
-		}
-		return false, fmt.Errorf("error verifying reset token: %w", err)
-	}
-
-	// Check if token matches and has not expired
-	if storedToken == token && expiry > time.Now().Unix() {
-		return true, nil
-	}
-	return false, nil
+	return config.VerifyResetToken(ctx, id, token)
 }
 
 // ClearResetToken clears a user's password reset token
 func ClearResetToken(ctx context.Context, id string) error {
-	// Check if using mock database
-	if config.UseMockDB() {
-		mockDB := config.GetMockDB()
-		mockDB.mutex.Lock()
-		defer mockDB.mutex.Unlock()
-		
-		user, exists := mockDB.users[id]
-		if !exists {
-			return fmt.Errorf("user not found")
-		}
-		
-		user.ResetToken = nil
-		user.ResetTokenExpiry = nil
-		return nil
-	}
-
-	_, err := config.ExecContext(ctx,
-		"UPDATE users SET reset_token = NULL, reset_token_expiry = NULL WHERE id = $1",
-		id)
-	if err != nil {
-		return fmt.Errorf("error clearing reset token: %w", err)
-	}
-	return nil
+	return config.ClearResetToken(ctx, id)
 }
