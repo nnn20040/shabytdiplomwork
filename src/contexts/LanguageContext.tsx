@@ -22,9 +22,6 @@ const translations = {
     'nav.login': 'Войти',
     'nav.register': 'Регистрация',
     'nav.logout': 'Выйти',
-    'common.save': 'Сохранить',
-    'common.cancel': 'Отмена',
-    'common.saving': 'Сохранение...',
     
     // Auth
     'auth.login': 'Войти',
@@ -42,59 +39,12 @@ const translations = {
     'course.start': 'Начать обучение',
     'course.continue': 'Продолжить обучение',
     
-    // Lessons
-    'lesson.create': 'Создание урока',
-    'lesson.info': 'Информация об уроке',
-    'lesson.title': 'Название урока',
-    'lesson.title_placeholder': 'Например: Введение в линейные уравнения',
-    'lesson.description': 'Краткое описание',
-    'lesson.description_placeholder': 'Краткое описание содержания урока',
-    'lesson.video_url': 'URL видео (YouTube, Vimeo и т.д.)',
-    'lesson.order': 'Порядковый номер',
-    'lesson.content': 'Содержание урока (теоретический материал)',
-    'lesson.content_placeholder': 'Полное содержание урока, включая теорию, формулы, примеры...',
-    
-    // Tests
-    'test.create': 'Создание теста',
-    'test.edit': 'Редактирование теста',
-    'test.title': 'Название теста',
-    'test.description': 'Описание теста',
-    'test.time_limit': 'Ограничение по времени (минуты)',
-    'test.passing_score': 'Проходной балл (%)',
-    'test.questions': 'Вопросы',
-    'test.add_question': 'Добавить вопрос',
-    
-    // Students page
-    'students.title': 'Студенты',
-    'students.list': 'Список всех студентов',
-    'students.list_description': 'Просмотр прогресса и взаимодействие со студентами',
-    'students.name': 'Имя',
-    'students.email': 'Email',
-    'students.progress': 'Прогресс',
-    'students.last_active': 'Последняя активность',
-    'students.status': 'Статус',
-    'students.actions': 'Действия',
-    'students.view_progress': 'Прогресс',
-    'students.send_message': 'Сообщение',
-    'students.active': 'Активен',
-    'students.inactive': 'Неактивен',
-    'students.daily_activity': 'Ежедневная активность',
-    'students.daily_activity_desc': 'Количество активных студентов по дням',
-    'students.weekly_progress': 'Прогресс по неделям',
-    'students.weekly_progress_desc': 'Средний прогресс студентов по неделям',
-    'students.subject_distribution': 'Распределение по предметам',
-    'students.subject_distribution_desc': 'Количество студентов по предметам',
-    'students.test_results': 'Результаты тестов',
-    'students.test_results_desc': 'Средние результаты тестов по предметам',
-    
     // Settings
     'settings.title': 'Настройки',
     'settings.language': 'Язык интерфейса',
     'settings.language.ru': 'Русский',
     'settings.language.kz': 'Қазақша',
     'settings.contrast': 'Высокий контраст',
-    'settings.darkMode': 'Тёмная тема',
-    'settings.darkMode.description': 'Включить тёмную тему интерфейса',
     'settings.save': 'Сохранить изменения',
     'settings.profile': 'Профиль',
     'settings.account': 'Аккаунт',
@@ -122,18 +72,6 @@ const translations = {
     'settings.password_mismatch': 'Пароли не совпадают',
     'settings.password_short': 'Пароль должен быть не менее 8 символов',
     'settings.password_changed': 'Пароль успешно изменен',
-    
-    // Teacher dashboard
-    'teacher.dashboard': 'Панель учителя',
-    'teacher.manage_courses': 'Управляйте своими курсами и студентами',
-    'teacher.ai_assistant': 'ИИ-ассистент',
-    'teacher.ai_help': 'Используйте ИИ для помощи в обучении',
-    'teacher.auto_test_check': 'Автоматическая проверка тестов',
-    'teacher.auto_test_description': 'Используйте ИИ для автоматической проверки тестов и заданий студентов, экономя ваше время.',
-    'teacher.generate_materials': 'Генерация учебных материалов',
-    'teacher.generate_materials_description': 'Создавайте учебные материалы, задания и тесты с помощью ИИ на основе вашей программы.',
-    'teacher.analyze_progress': 'Анализ успеваемости',
-    'teacher.analyze_progress_description': 'Получите глубокий анализ успеваемости ваших студентов и рекомендации по улучшению обучения.',
   },
   kz: {
     // Common
@@ -144,9 +82,6 @@ const translations = {
     'nav.login': 'Кіру',
     'nav.register': 'Тіркелу',
     'nav.logout': 'Шығу',
-    'common.save': 'Сақтау',
-    'common.cancel': 'Бас тарту',
-    'common.saving': 'Сақталуда...',
     
     // Auth
     'auth.login': 'Кіру',
@@ -164,59 +99,12 @@ const translations = {
     'course.start': 'Оқуды бастау',
     'course.continue': 'Оқуды жалғастыру',
     
-    // Lessons
-    'lesson.create': 'Сабақ құру',
-    'lesson.info': 'Сабақ туралы ақпарат',
-    'lesson.title': 'Сабақ атауы',
-    'lesson.title_placeholder': 'Мысалы: Сызықтық теңдеулерге кіріспе',
-    'lesson.description': 'Қысқаша сипаттама',
-    'lesson.description_placeholder': 'Сабақ мазмұнының қысқаша сипаттамасы',
-    'lesson.video_url': 'Бейне URL (YouTube, Vimeo және т.б.)',
-    'lesson.order': 'Реттік нөмірі',
-    'lesson.content': 'Сабақ мазмұны (теориялық материал)',
-    'lesson.content_placeholder': 'Теорияны, формулаларды, мысалдарды қоса алғанда, сабақтың толық мазмұны...',
-    
-    // Tests
-    'test.create': 'Тест құру',
-    'test.edit': 'Тестті өңдеу',
-    'test.title': 'Тест атауы',
-    'test.description': 'Тест сипаттамасы',
-    'test.time_limit': 'Уақыт шектеуі (минуттар)',
-    'test.passing_score': 'Өту балы (%)',
-    'test.questions': 'Сұрақтар',
-    'test.add_question': 'Сұрақ қосу',
-    
-    // Students page
-    'students.title': 'Студенттер',
-    'students.list': 'Барлық студенттер тізімі',
-    'students.list_description': 'Студенттердің үлгерімін қарау және оларға хабарласу',
-    'students.name': 'Аты',
-    'students.email': 'Email',
-    'students.progress': 'Үлгерім',
-    'students.last_active': 'Соңғы белсенділік',
-    'students.status': 'Күйі',
-    'students.actions': 'Әрекеттер',
-    'students.view_progress': 'Үлгерім',
-    'students.send_message': 'Хабарлама',
-    'students.active': 'Белсенді',
-    'students.inactive': 'Белсенді емес',
-    'students.daily_activity': 'Күнделікті белсенділік',
-    'students.daily_activity_desc': 'Күндер бойынша белсенді студенттер саны',
-    'students.weekly_progress': 'Апта бойынша үлгерім',
-    'students.weekly_progress_desc': 'Студенттердің апта бойынша орташа үлгерімі',
-    'students.subject_distribution': 'Пәндер бойынша бөлу',
-    'students.subject_distribution_desc': 'Пәндер бойынша студенттер саны',
-    'students.test_results': 'Тест нәтижелері',
-    'students.test_results_desc': 'Пәндер бойынша тесттердің орташа нәтижелері',
-    
     // Settings
     'settings.title': 'Параметрлер',
     'settings.language': 'Интерфейс тілі',
     'settings.language.ru': 'Орысша',
     'settings.language.kz': 'Қазақша',
     'settings.contrast': 'Жоғары контраст',
-    'settings.darkMode': 'Қараңғы тақырып',
-    'settings.darkMode.description': 'Қараңғы тақырыпты қосу',
     'settings.save': 'Өзгерістерді сақтау',
     'settings.profile': 'Профиль',
     'settings.account': 'Аккаунт',
@@ -244,18 +132,6 @@ const translations = {
     'settings.password_mismatch': 'Құпия сөздер сәйкес келмейді',
     'settings.password_short': 'Құпия сөз кемінде 8 таңбадан тұруы керек',
     'settings.password_changed': 'Құпия сөз сәтті өзгертілді',
-    
-    // Teacher dashboard
-    'teacher.dashboard': 'Мұғалім панелі',
-    'teacher.manage_courses': 'Курстарыңыз бен студенттеріңізді басқарыңыз',
-    'teacher.ai_assistant': 'ИИ көмекшісі',
-    'teacher.ai_help': 'Оқытуға көмектесу үшін ИИ пайдаланыңыз',
-    'teacher.auto_test_check': 'Тесттерді автоматты тексеру',
-    'teacher.auto_test_description': 'Уақытыңызды үнемдеу үшін студенттердің тесттері мен тапсырмаларын автоматты түрде тексеру үшін ИИ пайдаланыңыз.',
-    'teacher.generate_materials': 'Оқу материалдарын жасау',
-    'teacher.generate_materials_description': 'Бағдарламаңыз негізінде ИИ көмегімен оқу материалдарын, тапсырмаларды және тесттерді жасаңыз.',
-    'teacher.analyze_progress': 'Үлгерімді талдау',
-    'teacher.analyze_progress_description': 'Студенттеріңіздің үлгерімі туралы терең талдау және оқытуды жақсарту бойынша ұсыныстар алыңыз.',
   }
 };
 
@@ -273,8 +149,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Translation function
   const t = (key: string): string => {
     const langDict = translations[language];
-    if (!langDict) return key;
-    return (langDict as any)[key] || key;
+    return langDict[key as keyof typeof langDict] || key;
   };
 
   useEffect(() => {

@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,43 +12,20 @@ import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { ApiKeySettings } from '@/components/settings/ApiKeySettings';
 
 const SettingsPage = () => {
   const { language, setLanguage, t } = useLanguage();
-  const { highContrast, toggleHighContrast, darkMode, toggleDarkMode } = useTheme();
+  const { highContrast, toggleHighContrast } = useTheme();
   
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [name, setName] = useState('Алибек Серикбаев');
+  const [email, setEmail] = useState('alibek@shabyt.kz');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [notifications, setNotifications] = useState(true);
   const [emailNotifications, setEmailNotifications] = useState(true);
   
-  useEffect(() => {
-    // Загрузка данных пользователя из localStorage
-    const userData = localStorage.getItem('user');
-    if (userData) {
-      const user = JSON.parse(userData);
-      setName(user.name || '');
-      setEmail(user.email || '');
-    }
-  }, []);
-  
   const handleSaveProfile = () => {
-    // Сохранение обновленных данных пользователя в localStorage
-    const userData = localStorage.getItem('user');
-    if (userData) {
-      const user = JSON.parse(userData);
-      const updatedUser = {
-        ...user,
-        name,
-        email
-      };
-      localStorage.setItem('user', JSON.stringify(updatedUser));
-    }
-    
     toast.success(t('settings.saved_profile'));
   };
   
@@ -80,7 +57,6 @@ const SettingsPage = () => {
             <TabsTrigger value="account">{t('settings.account')}</TabsTrigger>
             <TabsTrigger value="appearance">{t('settings.appearance')}</TabsTrigger>
             <TabsTrigger value="notifications">{t('settings.notifications')}</TabsTrigger>
-            <TabsTrigger value="ai">AI ассистент</TabsTrigger>
           </TabsList>
           
           <TabsContent value="profile">
@@ -171,14 +147,6 @@ const SettingsPage = () => {
                 
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium">{t('settings.darkMode')}</p>
-                    <p className="text-sm text-muted-foreground">{t('settings.darkMode.description')}</p>
-                  </div>
-                  <Switch checked={darkMode} onCheckedChange={toggleDarkMode} />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
                     <p className="font-medium">{t('settings.contrast')}</p>
                     <p className="text-sm text-muted-foreground">{t('settings.contrast_description')}</p>
                   </div>
@@ -212,10 +180,6 @@ const SettingsPage = () => {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
-          
-          <TabsContent value="ai">
-            <ApiKeySettings />
           </TabsContent>
         </Tabs>
       </div>
