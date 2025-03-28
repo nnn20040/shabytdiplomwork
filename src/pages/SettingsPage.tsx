@@ -15,7 +15,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 
 const SettingsPage = () => {
   const { language, setLanguage, t } = useLanguage();
-  const { highContrast, toggleHighContrast } = useTheme();
+  const { highContrast, toggleHighContrast, darkMode, toggleDarkMode } = useTheme();
   
   const [name, setName] = useState('Алибек Серикбаев');
   const [email, setEmail] = useState('alibek@shabyt.kz');
@@ -143,6 +143,14 @@ const SettingsPage = () => {
                       <SelectItem value="kz">{t('settings.language.kz')}</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">{t('settings.darkMode')}</p>
+                    <p className="text-sm text-muted-foreground">{t('settings.darkMode.description')}</p>
+                  </div>
+                  <Switch checked={darkMode} onCheckedChange={toggleDarkMode} />
                 </div>
                 
                 <div className="flex items-center justify-between">
