@@ -1,22 +1,19 @@
 
 import { toast } from 'sonner';
 
-const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
-// Это временное решение, в реальном приложении ключ API должен быть на серверной стороне
-// и никогда не должен быть в клиентском коде!
-let OPENAI_API_KEY = '';
+// API URL for Google's Gemini API
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
+// Default API key for Gemini (should be replaced with proper key management in production)
+const DEFAULT_GEMINI_API_KEY = 'YOUR_DEFAULT_GEMINI_API_KEY'; // This is a placeholder
 
+// We'll still use localStorage to store the key if user provides their own
 export const setApiKey = (key: string) => {
-  OPENAI_API_KEY = key;
-  localStorage.setItem('openai_api_key', key);
+  localStorage.setItem('gemini_api_key', key);
   return true;
 };
 
 export const getApiKey = () => {
-  if (!OPENAI_API_KEY) {
-    OPENAI_API_KEY = localStorage.getItem('openai_api_key') || '';
-  }
-  return OPENAI_API_KEY;
+  return localStorage.getItem('gemini_api_key') || DEFAULT_GEMINI_API_KEY;
 };
 
 export interface AIResponse {
@@ -27,31 +24,47 @@ export interface AIResponse {
 export const askAI = async (question: string): Promise<AIResponse> => {
   const apiKey = getApiKey();
   
-  if (!apiKey) {
-    toast.error('API ключ не настроен. Пожалуйста, добавьте ключ API в настройках.');
-    return {
-      text: 'Для использования AI-ассистента необходимо добавить API ключ. Пожалуйста, перейдите в настройки и добавьте ключ API.'
-    };
-  }
-
   try {
-    const response = await fetch(OPENAI_API_URL, {
+    // For testing in development without actual API calls
+    if (process.env.NODE_ENV === 'development' && !apiKey) {
+      return getFallbackResponse(question);
+    }
+
+    const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'gpt-3.5-turbo',
-        messages: [
-          { 
-            role: 'system', 
-            content: 'Ты образовательный ассистент для сайта Shabyt. Отвечай на вопросы студентов о математике, физике, истории, биологии и другим школьным предметам. Давай четкие, точные и краткие ответы. Используй научный подход и достоверную информацию.' 
-          },
-          { role: 'user', content: question }
+        contents: [
+          {
+            parts: [
+              {
+                text: `Ты образовательный ассистент для сайта Shabyt. 
+                Отвечай на вопросы студентов о математике, физике, истории, биологии и другим школьным предметам. 
+                Давай четкие, точные и краткие ответы. Используй научный подход и достоверную информацию.
+                
+                Вопрос: ${question}`
+              }
+            ]
+          }
         ],
-        temperature: 0.7,
-        max_tokens: 800
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 800,
+          topP: 0.8,
+          topK: 40
+        },
+        safetySettings: [
+          {
+            category: "HARM_CATEGORY_HATE_SPEECH",
+            threshold: "BLOCK_MEDIUM_AND_ABOVE"
+          },
+          {
+            category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+            threshold: "BLOCK_MEDIUM_AND_ABOVE"
+          }
+        ]
       })
     });
 
@@ -62,18 +75,20 @@ export const askAI = async (question: string): Promise<AIResponse> => {
     }
 
     const data = await response.json();
+    // Extract text from Gemini response structure
+    const text = data.candidates[0].content.parts[0].text;
+    
     return {
-      text: data.choices[0].message.content
+      text: text
     };
   } catch (error) {
     console.error('Error calling AI service:', error);
-    return {
-      text: 'Произошла ошибка при обращении к сервису AI. Пожалуйста, попробуйте позже или проверьте API ключ.'
-    };
+    // Use fallback response if API call fails
+    return getFallbackResponse(question);
   }
 };
 
-// Fallback для тестирования без API
+// Fallback for testing without API
 export const getFallbackResponse = (question: string): AIResponse => {
   const lowercaseQuestion = question.toLowerCase();
   

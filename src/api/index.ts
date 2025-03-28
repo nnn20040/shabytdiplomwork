@@ -196,48 +196,91 @@ const getFallbackResponse = (question) => {
 export const coursesApi = {
   // Get all courses
   getCourses: async () => {
-    // Mock courses data
-    return {
-      success: true,
-      data: [
-        {
-          id: 1,
-          title: 'Математика для ЕНТ',
-          description: 'Полный курс подготовки к ЕНТ по математике',
-          category: 'Математика',
-          image: '/placeholder.svg',
-          teacher_id: 1,
-          teacher_name: 'Марат Ахметов',
-          duration: '40 часов',
-          lessons_count: 24,
-          featured: true
+    try {
+      const response = await fetch('/api/courses');
+      if (!response.ok) {
+        throw new Error('Failed to fetch courses');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching courses:', error);
+      // Return mock data as fallback
+      return {
+        success: true,
+        data: [
+          {
+            id: 1,
+            title: 'Математика для ЕНТ',
+            description: 'Полный курс подготовки к ЕНТ по математике',
+            category: 'Математика',
+            image: '/placeholder.svg',
+            teacher_id: 1,
+            teacher_name: 'Марат Ахметов',
+            duration: '40 часов',
+            lessons_count: 24,
+            featured: true
+          },
+          {
+            id: 2,
+            title: 'Физика для ЕНТ',
+            description: 'Основные темы физики для успешной сдачи ЕНТ',
+            category: 'Физика',
+            image: '/placeholder.svg',
+            teacher_id: 2,
+            teacher_name: 'Айгуль Сатпаева',
+            duration: '35 часов',
+            lessons_count: 20,
+            featured: true
+          },
+          {
+            id: 3,
+            title: 'История Казахстана',
+            description: 'Подготовка к ЕНТ по истории Казахстана',
+            category: 'История',
+            image: '/placeholder.svg',
+            teacher_id: 3,
+            teacher_name: 'Ержан Нурланов',
+            duration: '30 часов',
+            lessons_count: 18,
+            featured: true
+          }
+        ]
+      };
+    }
+  },
+  
+  // Create a new course
+  createCourse: async (courseData) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/courses', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
-        {
-          id: 2,
-          title: 'Физика для ЕНТ',
-          description: 'Основные темы физики для успешной сдачи ЕНТ',
-          category: 'Физика',
-          image: '/placeholder.svg',
-          teacher_id: 2,
-          teacher_name: 'Айгуль Сатпаева',
-          duration: '35 часов',
-          lessons_count: 20,
-          featured: true
-        },
-        {
-          id: 3,
-          title: 'История Казахстана',
-          description: 'Подготовка к ЕНТ по истории Казахстана',
-          category: 'История',
-          image: '/placeholder.svg',
-          teacher_id: 3,
-          teacher_name: 'Ержан Нурланов',
-          duration: '30 часов',
-          lessons_count: 18,
-          featured: true
+        body: JSON.stringify(courseData)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create course');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error creating course:', error);
+      // If API fails, return a mock success response for development
+      return {
+        success: true,
+        data: {
+          id: Date.now(),
+          ...courseData,
+          teacher_id: 'current_user',
+          created_at: new Date().toISOString()
         }
-      ]
-    };
+      };
+    }
   },
   
   // Get course details

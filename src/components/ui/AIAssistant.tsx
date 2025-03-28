@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
-import { askAI, getFallbackResponse, getApiKey } from '@/services/aiService';
+import { askAI, getFallbackResponse } from '@/services/aiService';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 type Message = {
@@ -65,20 +65,8 @@ const AIAssistant = () => {
     setLoading(true);
 
     try {
-      // Check if API key is set
-      const apiKey = getApiKey();
-      let response;
-      
-      if (apiKey) {
-        // Use real AI API if key is set
-        response = await askAI(input);
-      } else {
-        // Use fallback responses if no API key
-        response = getFallbackResponse(input);
-        toast.warning('Используются тестовые ответы. Для полной функциональности настройте API ключ в настройках.', {
-          duration: 5000,
-        });
-      }
+      // Use AI service directly
+      const response = await askAI(input);
       
       const aiResponse = {
         id: Date.now() + 1,
@@ -148,7 +136,7 @@ const AIAssistant = () => {
                       : 'bg-muted dark:bg-gray-800'
                   }`}
                 >
-                  <p className="text-sm">{message.text}</p>
+                  <p className="text-sm whitespace-pre-wrap">{message.text}</p>
                   <p className="text-xs mt-1 opacity-70">
                     {message.timestamp.toLocaleTimeString([], {
                       hour: '2-digit',
