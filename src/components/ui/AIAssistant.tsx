@@ -9,6 +9,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import { askAI, getFallbackResponse } from '@/services/aiService';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { Link } from 'react-router-dom';
 
 type Message = {
   id: number;
@@ -75,6 +76,40 @@ const AIAssistant = () => {
       };
 
       setMessages((prev) => [...prev, aiResponse]);
+      
+      // Save to local storage for history in the main AI page
+      const chatHistory = localStorage.getItem('shabytChatHistories');
+      let histories = [];
+      
+      if (chatHistory) {
+        try {
+          histories = JSON.parse(chatHistory);
+        } catch (error) {
+          console.error('Error parsing chat history:', error);
+          histories = [];
+        }
+      }
+      
+      // Create a new chat or update the latest one
+      const newChat = {
+        id: Date.now(),
+        title: input.slice(0, 30) + (input.length > 30 ? '...' : ''),
+        messages: [
+          {
+            id: 1,
+            text: 'Привет! Я AI-ассистент Shabyt. Чем я могу помочь вам сегодня? Задайте мне вопрос по образовательным темам.',
+            isUser: false,
+            timestamp: new Date(),
+          },
+          userMessage,
+          aiResponse
+        ],
+        timestamp: new Date(),
+      };
+      
+      histories.push(newChat);
+      localStorage.setItem('shabytChatHistories', JSON.stringify(histories));
+      
     } catch (error) {
       console.error('Error getting AI response:', error);
       const errorMessage = {
@@ -111,13 +146,20 @@ const AIAssistant = () => {
       {isOpen && (
         <Card className="fixed right-6 bottom-20 w-[350px] md:w-[400px] lg:w-[450px] shadow-xl border border-gray-200 dark:border-gray-800 z-50">
           <CardHeader className="p-4 border-b">
-            <CardTitle className="flex items-center">
-              <Avatar className="h-8 w-8 mr-2">
-                <AvatarImage src="/placeholder.svg" alt="AI" />
-                <AvatarFallback>AI</AvatarFallback>
-              </Avatar>
-              <span>Shabyt ИИ-ассистент</span>
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center">
+                <Avatar className="h-8 w-8 mr-2">
+                  <AvatarImage src="/placeholder.svg" alt="AI" />
+                  <AvatarFallback>AI</AvatarFallback>
+                </Avatar>
+                <span>Shabyt AI</span>
+              </CardTitle>
+              <Link to="/ai-assistant">
+                <Button variant="ghost" size="sm" className="text-xs">
+                  Открыть полную версию
+                </Button>
+              </Link>
+            </div>
           </CardHeader>
           
           <div className="h-[350px] overflow-hidden">
