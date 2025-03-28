@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { AlertCircle, Smartphone, Mail, Lock, Check } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { authApi } from '@/api'; // Fixing the import path
 
 const TwoFactorSetup = () => {
   const { t } = useLanguage();
