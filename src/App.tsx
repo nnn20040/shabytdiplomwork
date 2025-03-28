@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { ThemeProvider as NextThemesProvider } from "@/components/theme-provider";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
@@ -112,6 +112,10 @@ function App() {
                 
                 {/* Subject routes */}
                 <Route path="/subject/:subjectId" element={<SubjectPage />} />
+                
+                {/* Redirect from old paths to new paths */}
+                <Route path="/student-dashboard" element={<Navigate to="/dashboard" replace />} />
+                <Route path="/teacher-dashboard" element={<Navigate to="/teacher/dashboard" replace />} />
                 
                 {/* 404 route */}
                 <Route path="*" element={<NotFound />} />
