@@ -122,6 +122,9 @@ const App = () => (
               {/* Not found page */}
               <Route path="*" element={<NotFound />} />
             </Routes>
+            
+            {/* Global AI Assistant component */}
+            <AIAssistantComponent />
           </BrowserRouter>
         </TooltipProvider>
       </ThemeProvider>

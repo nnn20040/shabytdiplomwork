@@ -149,7 +149,8 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Translation function
   const t = (key: string): string => {
     const langDict = translations[language];
-    return langDict[key as keyof typeof langDict] || key;
+    if (!langDict) return key;
+    return (langDict as any)[key] || key;
   };
 
   useEffect(() => {
