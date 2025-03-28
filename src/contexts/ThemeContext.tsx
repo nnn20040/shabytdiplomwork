@@ -1,60 +1,57 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useTheme as useNextTheme } from 'next-themes';
 
-type ThemeContextType = {
-  darkMode: boolean;
+interface ThemeContextType {
   highContrast: boolean;
-  toggleDarkMode: () => void;
   toggleHighContrast: () => void;
-};
+  darkMode: boolean;
+  toggleDarkMode: () => void;
+}
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
-  const { theme, setTheme } = useNextTheme();
-  const [darkMode, setDarkMode] = useState(false);
-  const [highContrast, setHighContrast] = useState(false);
+export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [highContrast, setHighContrast] = useState<boolean>(() => {
+    return localStorage.getItem('highContrast') === 'true';
+  });
 
-  // Initialize from localStorage or system preferences
-  useEffect(() => {
-    const storedDarkMode = localStorage.getItem('darkMode');
-    const storedHighContrast = localStorage.getItem('highContrast');
-    
-    if (storedDarkMode) {
-      setDarkMode(storedDarkMode === 'true');
-    }
-    
-    if (storedHighContrast) {
-      setHighContrast(storedHighContrast === 'true');
-    }
-  }, []);
-
-  // Sync theme with darkMode state
-  useEffect(() => {
-    setTheme(darkMode ? 'dark' : 'light');
-  }, [darkMode, setTheme]);
-
-  const toggleDarkMode = () => {
-    const newValue = !darkMode;
-    setDarkMode(newValue);
-    localStorage.setItem('darkMode', String(newValue));
-  };
+  const [darkMode, setDarkMode] = useState<boolean>(() => {
+    return localStorage.getItem('darkMode') === 'true';
+  });
 
   const toggleHighContrast = () => {
-    const newValue = !highContrast;
-    setHighContrast(newValue);
-    localStorage.setItem('highContrast', String(newValue));
+    setHighContrast(prev => !prev);
   };
 
-  const value = {
-    darkMode,
-    highContrast,
-    toggleDarkMode,
-    toggleHighContrast,
+  const toggleDarkMode = () => {
+    setDarkMode(prev => !prev);
   };
 
-  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+  useEffect(() => {
+    localStorage.setItem('highContrast', String(highContrast));
+    
+    if (highContrast) {
+      document.documentElement.classList.add('high-contrast');
+    } else {
+      document.documentElement.classList.remove('high-contrast');
+    }
+  }, [highContrast]);
+
+  useEffect(() => {
+    localStorage.setItem('darkMode', String(darkMode));
+    
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [darkMode]);
+
+  return (
+    <ThemeContext.Provider value={{ highContrast, toggleHighContrast, darkMode, toggleDarkMode }}>
+      {children}
+    </ThemeContext.Provider>
+  );
 };
 
 export const useTheme = (): ThemeContextType => {

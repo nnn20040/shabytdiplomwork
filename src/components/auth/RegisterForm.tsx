@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -57,11 +56,11 @@ const RegisterForm = () => {
       
       toast.success("Регистрация успешна! Добро пожаловать в StudyHub!");
       
-      // Redirect based on user role - исправлено на корректные пути
+      // Redirect based on user role
       if (role === 'teacher') {
-        navigate('/teacher/dashboard');
+        navigate('/teacher-dashboard');
       } else {
-        navigate('/dashboard');
+        navigate('/student-dashboard');
       }
     } catch (error) {
       console.error('Registration error:', error);
