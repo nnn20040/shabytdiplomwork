@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sync"
 	"time"
 
 	_ "github.com/lib/pq"
@@ -14,6 +15,13 @@ import (
 
 var DB *sql.DB
 var mockDB bool
+
+// For mock database
+var mockUsers = make(map[string]map[string]interface{})
+var mockCourses = make(map[string]map[string]interface{})
+var mockLessons = make(map[string]map[string]interface{})
+var mockMutex = &sync.Mutex{}
+var mockUserID int = 3 // Start from 4, since we have 3 hardcoded users
 
 // InitDB initializes the database connection
 func InitDB() error {
@@ -86,8 +94,61 @@ func InitDB() error {
 
 // InitMockDB initializes a mock database for testing or when a real database is not available
 func InitMockDB() error {
-	log.Println("Initializing mock database")
+	log.Println("Initializing mock database with sample data")
 	mockDB = true
+	
+	// Initialize mock data
+	mockMutex.Lock()
+	defer mockMutex.Unlock()
+	
+	// Predefined users
+	mockUsers = map[string]map[string]interface{}{
+		"1": {
+			"ID":        "1",
+			"Name":      "Әлібек Нұрғали",
+			"Email":     "alibek@shabyt.kz",
+			"Password":  "$2a$10$xVLXxKFZpX4FwKGFn1OhQ.n5AEiW1ETyuNBkpy7n99s4VJ3sO/b8i", // "password"
+			"Role":      "admin",
+			"CreatedAt": time.Now(),
+			"UpdatedAt": time.Now(),
+		},
+		"2": {
+			"ID":        "2",
+			"Name":      "Айгүл Қанатова",
+			"Email":     "aigul@shabyt.kz",
+			"Password":  "$2a$10$xVLXxKFZpX4FwKGFn1OhQ.n5AEiW1ETyuNBkpy7n99s4VJ3sO/b8i", // "password"
+			"Role":      "teacher",
+			"CreatedAt": time.Now(),
+			"UpdatedAt": time.Now(),
+		},
+		"3": {
+			"ID":        "3",
+			"Name":      "Нұрлан Серікұлы",
+			"Email":     "nurlan@shabyt.kz",
+			"Password":  "$2a$10$xVLXxKFZpX4FwKGFn1OhQ.n5AEiW1ETyuNBkpy7n99s4VJ3sO/b8i", // "password"
+			"Role":      "student",
+			"CreatedAt": time.Now(),
+			"UpdatedAt": time.Now(),
+		},
+	}
+	
+	// Sample courses
+	mockCourses = map[string]map[string]interface{}{
+		"1": {
+			"ID":          "1",
+			"Title":       "Қазақ тілін үйрену",
+			"Description": "Learn Kazakh language from basics",
+			"TeacherID":   "2", // Aigul
+			"Category":    "Languages",
+			"Image":       "https://example.com/kazakh.jpg",
+			"Duration":    "12 weeks",
+			"Featured":    true,
+			"CreatedAt":   time.Now(),
+			"UpdatedAt":   time.Now(),
+		},
+	}
+	
+	log.Println("Mock database initialized with sample data")
 	return nil
 }
 
@@ -98,26 +159,53 @@ func UseMockDB() bool {
 
 // QueryContext executes a query that returns rows
 func QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
+	if UseMockDB() {
+		log.Printf("Mock DB QueryContext: %s", query)
+		return nil, fmt.Errorf("mock database doesn't support this operation")
+	}
 	return DB.QueryContext(ctx, query, args...)
 }
 
 // QueryRowContext executes a query that returns a single row
 func QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row {
+	if UseMockDB() {
+		log.Printf("Mock DB QueryRowContext: %s", query)
+		return nil
+	}
 	return DB.QueryRowContext(ctx, query, args...)
 }
 
 // ExecContext executes a query that doesn't return rows
 func ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+	if UseMockDB() {
+		log.Printf("Mock DB ExecContext: %s", query)
+		return nil, fmt.Errorf("mock database doesn't support this operation")
+	}
 	return DB.ExecContext(ctx, query, args...)
 }
 
 // BeginTx starts a transaction
 func BeginTx(ctx context.Context) (*sql.Tx, error) {
+	if UseMockDB() {
+		log.Printf("Mock DB BeginTx")
+		return nil, fmt.Errorf("mock database doesn't support transactions")
+	}
 	return DB.BeginTx(ctx, nil)
 }
 
 // GetUserByID retrieves a user by ID
 func GetUserByID(ctx context.Context, id string) (map[string]interface{}, error) {
+	if UseMockDB() {
+		mockMutex.Lock()
+		defer mockMutex.Unlock()
+		
+		user, exists := mockUsers[id]
+		if !exists {
+			return nil, sql.ErrNoRows
+		}
+		return user, nil
+	}
+
 	var user = make(map[string]interface{})
 	var id_val, name, email, role string
 	var created_at, updated_at time.Time
@@ -142,6 +230,18 @@ func GetUserByID(ctx context.Context, id string) (map[string]interface{}, error)
 
 // GetUserByEmail retrieves a user by email
 func GetUserByEmail(ctx context.Context, email string) (map[string]interface{}, error) {
+	if UseMockDB() {
+		mockMutex.Lock()
+		defer mockMutex.Unlock()
+		
+		for _, user := range mockUsers {
+			if user["Email"].(string) == email {
+				return user, nil
+			}
+		}
+		return nil, sql.ErrNoRows
+	}
+
 	var user = make(map[string]interface{})
 	var id, name, email_val, password, role string
 	var created_at, updated_at time.Time
@@ -177,6 +277,36 @@ func GetUserByEmail(ctx context.Context, email string) (map[string]interface{}, 
 
 // CreateUser creates a new user in the database
 func CreateUser(ctx context.Context, name, email, password, role string) (map[string]interface{}, error) {
+	if UseMockDB() {
+		mockMutex.Lock()
+		defer mockMutex.Unlock()
+		
+		// Check if user already exists
+		for _, user := range mockUsers {
+			if user["Email"].(string) == email {
+				return nil, fmt.Errorf("user with this email already exists")
+			}
+		}
+		
+		mockUserID++
+		id := fmt.Sprintf("%d", mockUserID)
+		
+		now := time.Now()
+		user := map[string]interface{}{
+			"ID":        id,
+			"Name":      name,
+			"Email":     email,
+			"Password":  password,
+			"Role":      role,
+			"CreatedAt": now,
+			"UpdatedAt": now,
+		}
+		
+		mockUsers[id] = user
+		log.Printf("Created mock user: %s (%s)", name, email)
+		return user, nil
+	}
+
 	var user = make(map[string]interface{})
 	var id, name_val, email_val, role_val string
 	var created_at, updated_at time.Time

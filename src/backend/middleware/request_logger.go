@@ -12,12 +12,15 @@ func RequestLogger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		
+		// Log the request initially
+		log.Printf("Received %s request to %s", r.Method, r.URL.Path)
+		
 		// Call the next handler
 		next.ServeHTTP(w, r)
 		
-		// Log the request details
+		// Log the request completion
 		log.Printf(
-			"%s %s %s",
+			"Completed %s %s in %s",
 			r.Method,
 			r.RequestURI,
 			time.Since(start),

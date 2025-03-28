@@ -44,10 +44,11 @@ func main() {
 
 	// Middleware
 	corsMiddleware := cors.New(cors.Options{
-		AllowedOrigins:   []string{"*"},
+		AllowedOrigins:   []string{"*"},                               // Allow requests from any origin (including localhost:8080)
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Content-Type", "Authorization"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization", "Origin", "Accept"},
 		AllowCredentials: true,
+		Debug:            true, // Enable debugging to log CORS issues
 	})
 
 	// Register routes
@@ -86,6 +87,8 @@ func main() {
 		log.Println("  - Email: aigul@shabyt.kz, Password: password (Teacher)")
 		log.Println("  - Email: nurlan@shabyt.kz, Password: password (Student)")
 	}
+	
+	log.Println("CORS enabled, accepting requests from all origins")
 	
 	if err := http.ListenAndServe(":"+port, corsMiddleware.Handler(router)); err != nil {
 		log.Fatalf("Failed to start server: %v", err)

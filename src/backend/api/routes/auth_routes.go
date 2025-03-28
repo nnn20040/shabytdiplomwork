@@ -16,13 +16,13 @@ func RegisterAuthRoutes(router *mux.Router) {
 	authRouter := router.PathPrefix("/api/auth").Subrouter()
 
 	// Public routes
-	authRouter.HandleFunc("/register", controllers.Register).Methods("POST")
-	authRouter.HandleFunc("/login", controllers.Login).Methods("POST")
-	authRouter.HandleFunc("/forgot-password", controllers.ForgotPassword).Methods("POST")
-	authRouter.HandleFunc("/reset-password", controllers.ResetPassword).Methods("POST")
+	authRouter.HandleFunc("/register", controllers.Register).Methods("POST", "OPTIONS")
+	authRouter.HandleFunc("/login", controllers.Login).Methods("POST", "OPTIONS")
+	authRouter.HandleFunc("/forgot-password", controllers.ForgotPassword).Methods("POST", "OPTIONS")
+	authRouter.HandleFunc("/reset-password", controllers.ResetPassword).Methods("POST", "OPTIONS")
 
 	// Protected routes
-	authRouter.Handle("/me", middleware.Protect(http.HandlerFunc(controllers.GetCurrentUser))).Methods("GET")
-	authRouter.Handle("/profile", middleware.Protect(http.HandlerFunc(controllers.UpdateProfile))).Methods("PUT")
-	authRouter.Handle("/change-password", middleware.Protect(http.HandlerFunc(controllers.ChangePassword))).Methods("PUT")
+	authRouter.Handle("/me", middleware.Protect(http.HandlerFunc(controllers.GetCurrentUser))).Methods("GET", "OPTIONS")
+	authRouter.Handle("/profile", middleware.Protect(http.HandlerFunc(controllers.UpdateProfile))).Methods("PUT", "OPTIONS")
+	authRouter.Handle("/change-password", middleware.Protect(http.HandlerFunc(controllers.ChangePassword))).Methods("PUT", "OPTIONS")
 }

@@ -3,8 +3,7 @@ package middleware
 
 import (
 	"context"
-	"database/sql"
-	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -15,112 +14,125 @@ import (
 	"github.com/dgrijalva/jwt-go"
 )
 
-// UserCtxKey is the key used to store the user in the request context
-type UserCtxKey string
+// UserKey is the context key for the user object
+type userContextKey string
+const UserKey userContextKey = "user"
 
-const UserKey UserCtxKey = "user"
+// Protect is a middleware that checks if the user is authenticated
+func Protect(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Handle preflight OPTIONS requests
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
 
-// JWTSecret is the secret key used to sign JWT tokens
-var JWTSecret = []byte(os.Getenv("JWT_SECRET"))
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
+			log.Println("Auth error: No Authorization header")
+			http.Error(w, "Unauthorized: No token provided", http.StatusUnauthorized)
+			return
+		}
+		
+		// Check if the authorization header has the Bearer scheme
+		if !strings.HasPrefix(authHeader, "Bearer ") {
+			log.Println("Auth error: No Bearer prefix in token")
+			http.Error(w, "Unauthorized: Invalid token format", http.StatusUnauthorized)
+			return
+		}
+		
+		// Extract the token
+		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+		log.Printf("Processing token: %s", tokenString[:10]+"...")
+		
+		// Validate token
+		claims := jwt.MapClaims{}
+		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+			// Validate the signing algorithm
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			}
+			
+			// Get JWT secret from environment or use default
+			jwtSecret := []byte(os.Getenv("JWT_SECRET"))
+			if len(jwtSecret) == 0 {
+				jwtSecret = []byte("shabyt_secure_jwt_key_2025")
+			}
+			
+			return jwtSecret, nil
+		})
+		
+		if err != nil || !token.Valid {
+			log.Printf("Auth error: Invalid token - %v", err)
+			http.Error(w, "Unauthorized: Invalid token", http.StatusUnauthorized)
+			return
+		}
+		
+		// Get user ID from claims
+		userID, ok := claims["id"].(string)
+		if !ok {
+			log.Println("Auth error: No user ID in token claims")
+			http.Error(w, "Unauthorized: Invalid token claims", http.StatusUnauthorized)
+			return
+		}
+		
+		// Get user from database
+		user, err := models.GetUserByID(r.Context(), userID)
+		if err != nil {
+			log.Printf("Auth error: User not found for ID %s - %v", userID, err)
+			http.Error(w, "Unauthorized: User not found", http.StatusUnauthorized)
+			return
+		}
+		
+		log.Printf("Authenticated user: %s (%s)", user.Name, user.Email)
+		
+		// Add user to context
+		ctx := context.WithValue(r.Context(), UserKey, user)
+		
+		// Call the next handler with the updated context
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
 
-// EnsureJWTSecret ensures that a JWT secret is set
-func init() {
-	if len(JWTSecret) == 0 {
-		JWTSecret = []byte("shabyt_secure_jwt_key_2025")
+// StudentOrTeacherOnly is a middleware that checks if the user is a student or teacher
+func StudentOrTeacherOnly(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		user, ok := r.Context().Value(UserKey).(*models.User)
+		if !ok || (user.Role != "student" && user.Role != "teacher") {
+			http.Error(w, "Unauthorized: Access denied", http.StatusUnauthorized)
+			return
+		}
+		next.ServeHTTP(w, r)
 	}
 }
 
-// Protect is middleware that verifies JWT tokens and adds the user to the request context
-func Protect(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Get token from Authorization header
-		authHeader := r.Header.Get("Authorization")
-		if authHeader == "" {
-			http.Error(w, "Not authorized, no token", http.StatusUnauthorized)
+// TeacherOnly is a middleware that checks if the user is a teacher
+func TeacherOnly(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		user, ok := r.Context().Value(UserKey).(*models.User)
+		if !ok || user.Role != "teacher" {
+			http.Error(w, "Unauthorized: Teachers only", http.StatusUnauthorized)
 			return
 		}
-
-		// Check if the Authorization header has the Bearer prefix
-		if !strings.HasPrefix(authHeader, "Bearer ") {
-			http.Error(w, "Invalid token format", http.StatusUnauthorized)
-			return
-		}
-
-		// Extract the token
-		tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
-
-		// Parse and validate the token
-		token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
-			// Validate the signing method
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, errors.New("unexpected signing method")
-			}
-			return JWTSecret, nil
-		})
-
-		if err != nil {
-			log.Printf("Error parsing token: %v", err)
-			http.Error(w, "Not authorized, token failed", http.StatusUnauthorized)
-			return
-		}
-
-		// Check if the token is valid
-		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-			userID, ok := claims["id"].(string)
-			if !ok {
-				http.Error(w, "Invalid token claims", http.StatusUnauthorized)
-				return
-			}
-
-			// Get user from database
-			user, err := models.GetUserByID(r.Context(), userID)
-			if err != nil {
-				if err == sql.ErrNoRows {
-					http.Error(w, "User not found", http.StatusUnauthorized)
-				} else {
-					log.Printf("Error getting user: %v", err)
-					http.Error(w, "Server error", http.StatusInternalServerError)
-				}
-				return
-			}
-
-			// Add user to request context
-			ctx := context.WithValue(r.Context(), UserKey, user)
-			next.ServeHTTP(w, r.WithContext(ctx))
-		} else {
-			http.Error(w, "Not authorized, invalid token", http.StatusUnauthorized)
-		}
-	})
+		next.ServeHTTP(w, r)
+	}
 }
 
-// AdminOnly restricts access to admin users
-func AdminOnly(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// AdminOnly is a middleware that checks if the user is an admin
+func AdminOnly(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 		user, ok := r.Context().Value(UserKey).(*models.User)
 		if !ok || user.Role != "admin" {
-			http.Error(w, "Not authorized as an admin", http.StatusForbidden)
+			http.Error(w, "Unauthorized: Admins only", http.StatusUnauthorized)
 			return
 		}
 		next.ServeHTTP(w, r)
-	})
+	}
 }
 
-// TeacherOnly restricts access to teacher and admin users
-func TeacherOnly(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, ok := r.Context().Value(UserKey).(*models.User)
-		if !ok || (user.Role != "teacher" && user.Role != "admin") {
-			http.Error(w, "Not authorized as a teacher", http.StatusForbidden)
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
-}
-
-// RequestLogger logs incoming requests
-func RequestLogger(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("%s %s", r.Method, r.URL.Path)
-		next.ServeHTTP(w, r)
-	})
+// RequireAuth is an alias for Protect for backward compatibility
+func RequireAuth(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		Protect(next).ServeHTTP(w, r)
+	}
 }
