@@ -22,14 +22,13 @@ const AIAssistant = () => {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const { t } = useLanguage();
 
   // Scroll to bottom on new messages
   useEffect(() => {
-    if (scrollAreaRef.current) {
-      const scrollArea = scrollAreaRef.current;
-      scrollArea.scrollTop = scrollArea.scrollHeight;
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
 
@@ -121,40 +120,45 @@ const AIAssistant = () => {
             </CardTitle>
           </CardHeader>
           
-          <ScrollArea ref={scrollAreaRef} className="h-[350px] p-4 flex flex-col space-y-4 overflow-y-auto">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${
-                  message.isUser ? 'justify-end' : 'justify-start'
-                }`}
-              >
-                <div
-                  className={`max-w-[80%] p-3 rounded-lg ${
-                    message.isUser
-                      ? 'bg-primary text-primary-foreground ml-auto'
-                      : 'bg-muted dark:bg-gray-800'
-                  }`}
-                >
-                  <p className="text-sm whitespace-pre-wrap">{message.text}</p>
-                  <p className="text-xs mt-1 opacity-70">
-                    {message.timestamp.toLocaleTimeString([], {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </p>
-                </div>
+          <div className="h-[350px] overflow-hidden">
+            <ScrollArea className="h-full p-4">
+              <div className="flex flex-col space-y-4">
+                {messages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`flex ${
+                      message.isUser ? 'justify-end' : 'justify-start'
+                    }`}
+                  >
+                    <div
+                      className={`max-w-[80%] p-3 rounded-lg ${
+                        message.isUser
+                          ? 'bg-primary text-primary-foreground ml-auto'
+                          : 'bg-muted dark:bg-gray-800'
+                      }`}
+                    >
+                      <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+                      <p className="text-xs mt-1 opacity-70">
+                        {message.timestamp.toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+                {loading && (
+                  <div className="flex justify-start">
+                    <div className="max-w-[80%] p-3 rounded-lg bg-muted dark:bg-gray-800 flex items-center space-x-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <p className="text-sm">Думаю...</p>
+                    </div>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
               </div>
-            ))}
-            {loading && (
-              <div className="flex justify-start">
-                <div className="max-w-[80%] p-3 rounded-lg bg-muted dark:bg-gray-800 flex items-center space-x-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <p className="text-sm">Думаю...</p>
-                </div>
-              </div>
-            )}
-          </ScrollArea>
+            </ScrollArea>
+          </div>
           
           <CardFooter className="p-4 border-t">
             <div className="flex w-full items-center space-x-2">

@@ -94,42 +94,44 @@ const AIChatPage = () => {
           </CardHeader>
           
           <div className="flex flex-col h-[600px]">
-            <ScrollArea ref={scrollAreaRef} className="flex-1 p-4">
-              <div className="flex flex-col space-y-4">
-                {messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`flex ${
-                      message.isUser ? 'justify-end' : 'justify-start'
-                    }`}
-                  >
+            <div className="flex-1 overflow-hidden">
+              <ScrollArea className="h-full p-4">
+                <div className="flex flex-col space-y-4">
+                  {messages.map((message) => (
                     <div
-                      className={`max-w-[80%] p-3 rounded-lg ${
-                        message.isUser
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted dark:bg-gray-800'
+                      key={message.id}
+                      className={`flex ${
+                        message.isUser ? 'justify-end' : 'justify-start'
                       }`}
                     >
-                      <p className="text-sm whitespace-pre-wrap">{message.text}</p>
-                      <p className="text-xs mt-1 opacity-70">
-                        {message.timestamp.toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </p>
+                      <div
+                        className={`max-w-[80%] p-3 rounded-lg ${
+                          message.isUser
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted dark:bg-gray-800'
+                        }`}
+                      >
+                        <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+                        <p className="text-xs mt-1 opacity-70">
+                          {message.timestamp.toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))}
-                {loading && (
-                  <div className="flex justify-start">
-                    <div className="max-w-[80%] p-3 rounded-lg bg-muted dark:bg-gray-800 flex items-center space-x-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <p className="text-sm">{t('ai.thinking') || 'Думаю...'}</p>
+                  ))}
+                  {loading && (
+                    <div className="flex justify-start">
+                      <div className="max-w-[80%] p-3 rounded-lg bg-muted dark:bg-gray-800 flex items-center space-x-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <p className="text-sm">{t('ai.thinking') || 'Думаю...'}</p>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            </ScrollArea>
+                  )}
+                </div>
+              </ScrollArea>
+            </div>
             
             <CardContent className="p-4 border-t mt-auto">
               <div className="flex items-center space-x-2">
