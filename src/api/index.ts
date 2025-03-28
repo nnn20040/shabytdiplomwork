@@ -1,3 +1,4 @@
+
 /**
  * API client for handling requests to backend
  */
@@ -169,35 +170,6 @@ export const aiApi = {
 };
 
 /**
- * Helper function to get fallback response for AI assistant
- * Used when backend connection fails or for testing
- */
-export const getFallbackResponse = async (question: string) => {
-  try {
-    // First attempt to get response from backend
-    const response = await fetch(`${API_URL}/api/ai-assistant/ask`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ question }),
-      credentials: 'include',
-    });
-    
-    if (!response.ok) {
-      return generateLocalFallbackResponse(question);
-    }
-    
-    return await response.json();
-  } catch (error) {
-    console.error('Error getting fallback response:', error);
-    
-    // If server connection fails, use the local mock responses
-    return generateLocalFallbackResponse(question);
-  }
-};
-
-/**
  * Generate local fallback responses when backend is unavailable
  */
 const generateLocalFallbackResponse = (question: string) => {
@@ -231,6 +203,37 @@ const generateLocalFallbackResponse = (question: string) => {
       created_at: new Date().toISOString()
     }
   };
+};
+
+/**
+ * Helper function to get fallback response for AI assistant
+ * Used when backend connection fails or for testing
+ * Combines both implementations into a single function
+ */
+export const getFallbackResponse = async (question: string) => {
+  try {
+    // First attempt to get response from backend
+    const response = await fetch(`${API_URL}/api/ai-assistant/ask`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ question }),
+      credentials: 'include',
+    });
+    
+    if (!response.ok) {
+      // Fall back to local responses if backend fails
+      return generateLocalFallbackResponse(question);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error getting fallback response:', error);
+    
+    // If server connection fails, use the local mock responses
+    return generateLocalFallbackResponse(question);
+  }
 };
 
 /**
