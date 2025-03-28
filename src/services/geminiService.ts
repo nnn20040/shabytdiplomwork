@@ -1,5 +1,6 @@
 
 import axios from 'axios';
+import { ChatMessage } from '@/hooks/useGemini';
 
 // Type definitions for Gemini API responses
 interface GeminiResponse {
@@ -57,7 +58,7 @@ export class GeminiService {
   }
 
   // Method for chat-based interactions (conversation history)
-  async chat(messages: {role: 'user' | 'model', content: string}[]): Promise<string> {
+  async chat(messages: ChatMessage[]): Promise<string> {
     try {
       // Format messages for Gemini API
       const formattedMessages = messages.map(msg => ({

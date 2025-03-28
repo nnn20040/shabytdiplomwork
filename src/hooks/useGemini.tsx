@@ -33,7 +33,7 @@ export const useGemini = (apiKey: string | null) => {
       setError(null);
       
       // Add user message to conversation
-      const updatedMessages = [
+      const updatedMessages: ChatMessage[] = [
         ...messages,
         { role: 'user', content: userMessage }
       ];
@@ -44,7 +44,7 @@ export const useGemini = (apiKey: string | null) => {
       const response = await geminiService.chat(updatedMessages);
       
       // Add AI response to conversation
-      const newMessage = { role: 'model' as const, content: response };
+      const newMessage: ChatMessage = { role: 'model', content: response };
       setMessages([...updatedMessages, newMessage]);
       
       return response;
