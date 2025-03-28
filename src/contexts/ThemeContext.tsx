@@ -4,6 +4,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 interface ThemeContextType {
   highContrast: boolean;
   toggleHighContrast: () => void;
+  darkMode: boolean;
+  toggleDarkMode: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -13,8 +15,16 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return localStorage.getItem('highContrast') === 'true';
   });
 
+  const [darkMode, setDarkMode] = useState<boolean>(() => {
+    return localStorage.getItem('darkMode') === 'true';
+  });
+
   const toggleHighContrast = () => {
     setHighContrast(prev => !prev);
+  };
+
+  const toggleDarkMode = () => {
+    setDarkMode(prev => !prev);
   };
 
   useEffect(() => {
@@ -27,8 +37,18 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [highContrast]);
 
+  useEffect(() => {
+    localStorage.setItem('darkMode', String(darkMode));
+    
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [darkMode]);
+
   return (
-    <ThemeContext.Provider value={{ highContrast, toggleHighContrast }}>
+    <ThemeContext.Provider value={{ highContrast, toggleHighContrast, darkMode, toggleDarkMode }}>
       {children}
     </ThemeContext.Provider>
   );

@@ -48,6 +48,7 @@ import LessonView from "./pages/LessonView";
 import StudentMessage from "./pages/StudentMessage";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfUse from "./pages/TermsOfUse";
+import Students from "./pages/Students";
 
 // Components
 import AIAssistantComponent from "./components/ui/AIAssistant";
@@ -77,6 +78,7 @@ const App = () => (
               <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
               <Route path="/student-dashboard" element={<RequireAuth><StudentDashboard /></RequireAuth>} />
               <Route path="/teacher-dashboard" element={<RequireAuth><TeacherDashboard /></RequireAuth>} />
+              <Route path="/students" element={<RequireAuth><Students /></RequireAuth>} />
               
               {/* Course routes - all protected */}
               <Route path="/course/:id" element={<RequireAuth><CourseDetails /></RequireAuth>} />
@@ -122,6 +124,9 @@ const App = () => (
               {/* Not found page */}
               <Route path="*" element={<NotFound />} />
             </Routes>
+            
+            {/* Global AI Assistant component */}
+            <AIAssistantComponent />
           </BrowserRouter>
         </TooltipProvider>
       </ThemeProvider>
