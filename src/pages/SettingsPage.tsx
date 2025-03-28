@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { ApiKeySettings } from '@/components/settings/ApiKeySettings';
 
 const SettingsPage = () => {
   const { language, setLanguage, t } = useLanguage();
@@ -79,6 +80,7 @@ const SettingsPage = () => {
             <TabsTrigger value="account">{t('settings.account')}</TabsTrigger>
             <TabsTrigger value="appearance">{t('settings.appearance')}</TabsTrigger>
             <TabsTrigger value="notifications">{t('settings.notifications')}</TabsTrigger>
+            <TabsTrigger value="ai">AI ассистент</TabsTrigger>
           </TabsList>
           
           <TabsContent value="profile">
@@ -210,6 +212,10 @@ const SettingsPage = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+          
+          <TabsContent value="ai">
+            <ApiKeySettings />
           </TabsContent>
         </Tabs>
       </div>
