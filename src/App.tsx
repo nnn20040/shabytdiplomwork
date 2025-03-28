@@ -48,6 +48,7 @@ import { LanguageProvider } from '@/contexts/LanguageContext';
 import AIAssistant from '@/components/ui/AIAssistant';
 import Students from './pages/Students';
 import AIChatPage from './pages/AIChatPage';
+import Tests from './pages/Tests';
 
 function App() {
   const [queryClient] = useState(() => new QueryClient());
@@ -78,6 +79,7 @@ function App() {
                 <Route path="/register" element={<Register />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/ai-assistant" element={<AIChatPage />} />
+                <Route path="/tests" element={<Tests />} />
                 
                 {/* Course routes */}
                 <Route path="/course/:courseId" element={<CourseDetails />} />
