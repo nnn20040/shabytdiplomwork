@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, useLocation, BrowserRouter } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import { ThemeProvider as NextThemeProvider } from "@/components/theme-provider";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -58,7 +59,7 @@ function App() {
   }, [location]);
   
   return (
-    <NextThemeProvider>
+    <NextThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <ThemeProvider>
         <LanguageProvider>
           <QueryClientProvider client={queryClient}>
