@@ -10,7 +10,6 @@ import (
 	"os"
 	"strings"
 
-	"backend/config"
 	"backend/models"
 
 	"github.com/dgrijalva/jwt-go"
@@ -27,7 +26,7 @@ var JWTSecret = []byte(os.Getenv("JWT_SECRET"))
 // EnsureJWTSecret ensures that a JWT secret is set
 func init() {
 	if len(JWTSecret) == 0 {
-		JWTSecret = []byte("your_jwt_secret")
+		JWTSecret = []byte("shabyt_secure_jwt_key_2025")
 	}
 }
 

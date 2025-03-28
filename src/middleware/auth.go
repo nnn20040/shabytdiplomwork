@@ -47,7 +47,7 @@ func RequireAuth(next http.HandlerFunc) http.HandlerFunc {
 			// Get JWT secret from environment or use default
 			jwtSecret := []byte(os.Getenv("JWT_SECRET"))
 			if len(jwtSecret) == 0 {
-				jwtSecret = []byte("your_jwt_secret")
+				jwtSecret = []byte("shabyt_secure_jwt_key_2025")
 			}
 			
 			return jwtSecret, nil

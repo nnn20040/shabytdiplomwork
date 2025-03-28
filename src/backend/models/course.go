@@ -4,10 +4,16 @@ package models
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
 	"backend/config"
+)
+
+// Define error constants
+var (
+	ErrNotFound = errors.New("resource not found")
 )
 
 // Course represents a course in the system
@@ -67,7 +73,7 @@ func GetCourseByID(ctx context.Context, id string) (*Course, error) {
 		&course.InstructorName)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, sql.ErrNoRows
+			return nil, ErrNotFound
 		}
 		return nil, fmt.Errorf("error getting course by ID: %w", err)
 	}
