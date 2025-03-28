@@ -22,7 +22,10 @@ const RequireAuth: React.FC<RequireAuthProps> = ({ children }) => {
         if (!token) {
           setIsAuthenticated(false);
           navigate('/login', { state: { from: location.pathname } });
-          toast.error('Для доступа к этой странице необходимо войти в систему');
+          // Don't show the toast if coming from the registration or login page
+          if (!location.pathname.includes('register') && !location.pathname.includes('login')) {
+            toast.error('Для доступа к этой странице необходимо войти в систему');
+          }
           return;
         }
         

@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -42,6 +43,9 @@ const RegisterForm = () => {
         password,
         role
       });
+      
+      // Store the authentication token
+      localStorage.setItem('auth_token', response.token);
       
       toast.success("Регистрация успешна! Добро пожаловать в StudyHub!");
       
