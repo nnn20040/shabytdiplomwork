@@ -1,10 +1,8 @@
-
 package models
 
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"time"
 
