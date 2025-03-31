@@ -233,7 +233,7 @@ export const aiApi = {
 
 /**
  * Helper function to get fallback response for AI assistant
- * Used when user is not logged in or for testing
+ * Used when backend connection fails or for testing
  */
 export const getFallbackResponse = async (question: string) => {
   try {

@@ -10,6 +10,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { toast } from 'sonner';
 import { Lesson } from '@/models/Course';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { coursesApi } from '@/api';
 
 const CreateLesson = () => {
   const navigate = useNavigate();
@@ -41,21 +42,14 @@ const CreateLesson = () => {
 
     setSaving(true);
     try {
-      // В реальном приложении здесь будет API вызов к backend
-      const apiUrl = `/api/courses/${courseId}/lessons`;
-      
-      // Имитация API вызова
-      console.log('Отправка данных урока на сервер:', lessonData);
-      
-      // Имитация успешного ответа
-      setTimeout(() => {
-        toast.success('Урок успешно создан!');
-        setSaving(false);
-        navigate(`/course/${courseId}/manage`);
-      }, 1000);
+      // Вызов реального API
+      await coursesApi.createLesson(Number(courseId), lessonData);
+      toast.success('Урок успешно создан!');
+      navigate(`/course/${courseId}/manage`);
     } catch (error) {
       console.error('Failed to save lesson:', error);
-      toast.error('Не удалось сохранить урок');
+      toast.error(error instanceof Error ? error.message : 'Не удалось сохранить урок');
+    } finally {
       setSaving(false);
     }
   };

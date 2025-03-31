@@ -7,29 +7,15 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"sync"
 	"time"
 
 	_ "github.com/lib/pq"
 )
 
 var DB *sql.DB
-var mockDB bool
-
-// For mock database
-var mockUsers = make(map[string]map[string]interface{})
-var mockCourses = make(map[string]map[string]interface{})
-var mockLessons = make(map[string]map[string]interface{})
-var mockMutex = &sync.Mutex{}
-var mockUserID int = 3 // Start from 4, since we have 3 hardcoded users
 
 // InitDB initializes the database connection
 func InitDB() error {
-	// Check if we're using mock database
-	if os.Getenv("USE_MOCK_DB") == "true" {
-		return InitMockDB()
-	}
-
 	user := os.Getenv("DB_USER")
 	if user == "" {
 		user = "postgres"
@@ -87,139 +73,91 @@ func InitDB() error {
 		return fmt.Errorf("failed to query database: %w", err)
 	}
 
-	mockDB = false
 	log.Printf("Database connected successfully at: %v", now)
 	return nil
 }
 
-// InitMockDB initializes a mock database for testing or when a real database is not available
-func InitMockDB() error {
-	log.Println("Initializing mock database with sample data")
-	mockDB = true
-	
-	// Initialize mock data
-	mockMutex.Lock()
-	defer mockMutex.Unlock()
-	
-	// Predefined users
-	mockUsers = map[string]map[string]interface{}{
-		"1": {
-			"ID":        "1",
-			"Name":      "Әлібек Нұрғали",
-			"Email":     "alibek@shabyt.kz",
-			"Password":  "$2a$10$xVLXxKFZpX4FwKGFn1OhQ.n5AEiW1ETyuNBkpy7n99s4VJ3sO/b8i", // "password"
-			"Role":      "admin",
-			"CreatedAt": time.Now(),
-			"UpdatedAt": time.Now(),
-		},
-		"2": {
-			"ID":        "2",
-			"Name":      "Айгүл Қанатова",
-			"Email":     "aigul@shabyt.kz",
-			"Password":  "$2a$10$xVLXxKFZpX4FwKGFn1OhQ.n5AEiW1ETyuNBkpy7n99s4VJ3sO/b8i", // "password"
-			"Role":      "teacher",
-			"CreatedAt": time.Now(),
-			"UpdatedAt": time.Now(),
-		},
-		"3": {
-			"ID":        "3",
-			"Name":      "Нұрлан Серікұлы",
-			"Email":     "nurlan@shabyt.kz",
-			"Password":  "$2a$10$xVLXxKFZpX4FwKGFn1OhQ.n5AEiW1ETyuNBkpy7n99s4VJ3sO/b8i", // "password"
-			"Role":      "student",
-			"CreatedAt": time.Now(),
-			"UpdatedAt": time.Now(),
-		},
-	}
-	
-	// Sample courses
-	mockCourses = map[string]map[string]interface{}{
-		"1": {
-			"ID":          "1",
-			"Title":       "Қазақ тілін үйрену",
-			"Description": "Learn Kazakh language from basics",
-			"TeacherID":   "2", // Aigul
-			"Category":    "Languages",
-			"Image":       "https://example.com/kazakh.jpg",
-			"Duration":    "12 weeks",
-			"Featured":    true,
-			"CreatedAt":   time.Now(),
-			"UpdatedAt":   time.Now(),
-		},
-	}
-	
-	log.Println("Mock database initialized with sample data")
-	return nil
-}
-
-// UseMockDB returns true if the app is using a mock database
-func UseMockDB() bool {
-	return mockDB || os.Getenv("USE_MOCK_DB") == "true"
-}
-
 // QueryContext executes a query that returns rows
 func QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
-	if UseMockDB() {
-		log.Printf("Mock DB QueryContext: %s", query)
-		return nil, fmt.Errorf("mock database doesn't support this operation")
-	}
 	return DB.QueryContext(ctx, query, args...)
 }
 
 // QueryRowContext executes a query that returns a single row
 func QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row {
-	if UseMockDB() {
-		log.Printf("Mock DB QueryRowContext: %s", query)
-		return nil
-	}
 	return DB.QueryRowContext(ctx, query, args...)
 }
 
 // ExecContext executes a query that doesn't return rows
 func ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
-	if UseMockDB() {
-		log.Printf("Mock DB ExecContext: %s", query)
-		return nil, fmt.Errorf("mock database doesn't support this operation")
-	}
 	return DB.ExecContext(ctx, query, args...)
 }
 
 // BeginTx starts a transaction
 func BeginTx(ctx context.Context) (*sql.Tx, error) {
-	if UseMockDB() {
-		log.Printf("Mock DB BeginTx")
-		return nil, fmt.Errorf("mock database doesn't support transactions")
-	}
 	return DB.BeginTx(ctx, nil)
+}
+
+// LogRegistration logs a new user registration
+func LogRegistration(ctx context.Context, userID, email, ipAddress, userAgent, referrer string) error {
+	_, err := ExecContext(ctx,
+		"INSERT INTO registration_logs (user_id, email, ip_address, user_agent, referrer, registration_source) VALUES ($1, $2, $3, $4, $5, $6)",
+		userID, email, ipAddress, userAgent, referrer, "web")
+		
+	if err != nil {
+		log.Printf("Failed to log registration: %v", err)
+		// Continue even if logging fails
+		return nil
+	}
+	
+	return nil
+}
+
+// LogLogin logs a user login attempt
+func LogLogin(ctx context.Context, userID, ipAddress, userAgent, status, failureReason string) error {
+	_, err := ExecContext(ctx,
+		"INSERT INTO login_logs (user_id, ip_address, user_agent, status, failure_reason, login_source) VALUES ($1, $2, $3, $4, $5, $6)",
+		userID, ipAddress, userAgent, status, failureReason, "web")
+		
+	if err != nil {
+		log.Printf("Failed to log login: %v", err)
+		// Continue even if logging fails
+		return nil
+	}
+	
+	return nil
+}
+
+// CreateUserSession creates a new user session
+func CreateUserSession(ctx context.Context, userID, sessionToken, ipAddress, userAgent string, expiresAt time.Time) error {
+	_, err := ExecContext(ctx,
+		"INSERT INTO user_sessions (user_id, session_token, ip_address, user_agent, expires_at) VALUES ($1, $2, $3, $4, $5)",
+		userID, sessionToken, ipAddress, userAgent, expiresAt)
+		
+	if err != nil {
+		return fmt.Errorf("failed to create user session: %w", err)
+	}
+	
+	return nil
 }
 
 // GetUserByID retrieves a user by ID
 func GetUserByID(ctx context.Context, id string) (map[string]interface{}, error) {
-	if UseMockDB() {
-		mockMutex.Lock()
-		defer mockMutex.Unlock()
-		
-		user, exists := mockUsers[id]
-		if !exists {
-			return nil, sql.ErrNoRows
-		}
-		return user, nil
-	}
-
 	var user = make(map[string]interface{})
-	var id_val, name, email, role string
+	var id_val, first_name, last_name, email, role string
 	var created_at, updated_at time.Time
 	
 	err := QueryRowContext(ctx,
-		"SELECT id, name, email, role, created_at, updated_at FROM users WHERE id = $1",
-		id).Scan(&id_val, &name, &email, &role, &created_at, &updated_at)
+		"SELECT id, first_name, last_name, email, role, created_at, updated_at FROM users WHERE id = $1",
+		id).Scan(&id_val, &first_name, &last_name, &email, &role, &created_at, &updated_at)
 	
 	if err != nil {
 		return nil, fmt.Errorf("error getting user by ID: %w", err)
 	}
 	
 	user["ID"] = id_val
-	user["Name"] = name
+	user["FirstName"] = first_name
+	user["LastName"] = last_name
+	user["Name"] = first_name + " " + last_name
 	user["Email"] = email
 	user["Role"] = role
 	user["CreatedAt"] = created_at
@@ -230,34 +168,24 @@ func GetUserByID(ctx context.Context, id string) (map[string]interface{}, error)
 
 // GetUserByEmail retrieves a user by email
 func GetUserByEmail(ctx context.Context, email string) (map[string]interface{}, error) {
-	if UseMockDB() {
-		mockMutex.Lock()
-		defer mockMutex.Unlock()
-		
-		for _, user := range mockUsers {
-			if user["Email"].(string) == email {
-				return user, nil
-			}
-		}
-		return nil, sql.ErrNoRows
-	}
-
 	var user = make(map[string]interface{})
-	var id, name, email_val, password, role string
+	var id, first_name, last_name, email_val, password, role string
 	var created_at, updated_at time.Time
 	var reset_token sql.NullString
 	var reset_token_expiry sql.NullInt64
 	
 	err := QueryRowContext(ctx,
-		"SELECT id, name, email, password, role, created_at, updated_at, reset_token, reset_token_expiry FROM users WHERE email = $1",
-		email).Scan(&id, &name, &email_val, &password, &role, &created_at, &updated_at, &reset_token, &reset_token_expiry)
+		"SELECT id, first_name, last_name, email, password, role, created_at, updated_at, reset_token, reset_token_expiry FROM users WHERE email = $1",
+		email).Scan(&id, &first_name, &last_name, &email_val, &password, &role, &created_at, &updated_at, &reset_token, &reset_token_expiry)
 	
 	if err != nil {
 		return nil, fmt.Errorf("error getting user by email: %w", err)
 	}
 	
 	user["ID"] = id
-	user["Name"] = name
+	user["FirstName"] = first_name
+	user["LastName"] = last_name
+	user["Name"] = first_name + " " + last_name
 	user["Email"] = email_val
 	user["Password"] = password
 	user["Role"] = role
@@ -276,39 +204,9 @@ func GetUserByEmail(ctx context.Context, email string) (map[string]interface{}, 
 }
 
 // CreateUser creates a new user in the database
-func CreateUser(ctx context.Context, name, email, password, role string) (map[string]interface{}, error) {
-	if UseMockDB() {
-		mockMutex.Lock()
-		defer mockMutex.Unlock()
-		
-		// Check if user already exists
-		for _, user := range mockUsers {
-			if user["Email"].(string) == email {
-				return nil, fmt.Errorf("user with this email already exists")
-			}
-		}
-		
-		mockUserID++
-		id := fmt.Sprintf("%d", mockUserID)
-		
-		now := time.Now()
-		user := map[string]interface{}{
-			"ID":        id,
-			"Name":      name,
-			"Email":     email,
-			"Password":  password,
-			"Role":      role,
-			"CreatedAt": now,
-			"UpdatedAt": now,
-		}
-		
-		mockUsers[id] = user
-		log.Printf("Created mock user: %s (%s)", name, email)
-		return user, nil
-	}
-
+func CreateUser(ctx context.Context, firstName, lastName, email, password, role string) (map[string]interface{}, error) {
 	var user = make(map[string]interface{})
-	var id, name_val, email_val, role_val string
+	var id, first_name, last_name, email_val, role_val string
 	var created_at, updated_at time.Time
 	
 	// Check if user already exists
@@ -324,15 +222,17 @@ func CreateUser(ctx context.Context, name, email, password, role string) (map[st
 	
 	// Insert user into database
 	err = QueryRowContext(ctx,
-		"INSERT INTO users (name, email, password, role) VALUES ($1, $2, $3, $4) RETURNING id, name, email, role, created_at, updated_at",
-		name, email, password, role).Scan(&id, &name_val, &email_val, &role_val, &created_at, &updated_at)
+		"INSERT INTO users (first_name, last_name, email, password, role) VALUES ($1, $2, $3, $4, $5) RETURNING id, first_name, last_name, email, role, created_at, updated_at",
+		firstName, lastName, email, password, role).Scan(&id, &first_name, &last_name, &email_val, &role_val, &created_at, &updated_at)
 	
 	if err != nil {
 		return nil, fmt.Errorf("error creating user: %w", err)
 	}
 	
 	user["ID"] = id
-	user["Name"] = name_val
+	user["FirstName"] = first_name
+	user["LastName"] = last_name
+	user["Name"] = first_name + " " + last_name
 	user["Email"] = email_val
 	user["Role"] = role_val
 	user["CreatedAt"] = created_at
@@ -342,21 +242,23 @@ func CreateUser(ctx context.Context, name, email, password, role string) (map[st
 }
 
 // UpdateUser updates user information
-func UpdateUser(ctx context.Context, id, name, email, role string) (map[string]interface{}, error) {
+func UpdateUser(ctx context.Context, id, firstName, lastName, email, role string) (map[string]interface{}, error) {
 	var user = make(map[string]interface{})
-	var id_val, name_val, email_val, role_val string
+	var id_val, first_name, last_name, email_val, role_val string
 	var created_at, updated_at time.Time
 	
 	err := QueryRowContext(ctx,
-		"UPDATE users SET name = $1, email = $2, role = $3, updated_at = NOW() WHERE id = $4 RETURNING id, name, email, role, created_at, updated_at",
-		name, email, role, id).Scan(&id_val, &name_val, &email_val, &role_val, &created_at, &updated_at)
+		"UPDATE users SET first_name = $1, last_name = $2, email = $3, role = $4, updated_at = NOW() WHERE id = $5 RETURNING id, first_name, last_name, email, role, created_at, updated_at",
+		firstName, lastName, email, role, id).Scan(&id_val, &first_name, &last_name, &email_val, &role_val, &created_at, &updated_at)
 	
 	if err != nil {
 		return nil, fmt.Errorf("error updating user: %w", err)
 	}
 	
 	user["ID"] = id_val
-	user["Name"] = name_val
+	user["FirstName"] = first_name
+	user["LastName"] = last_name
+	user["Name"] = first_name + " " + last_name
 	user["Email"] = email_val
 	user["Role"] = role_val
 	user["CreatedAt"] = created_at

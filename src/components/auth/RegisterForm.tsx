@@ -37,11 +37,14 @@ const RegisterForm = () => {
     setIsLoading(true);
     
     try {
+      // Отправляем имя и фамилию отдельно для корректной работы с БД
       const response = await authApi.register({
-        name: `${firstName} ${lastName}`,
+        name: `${firstName} ${lastName}`, // Временно, API будет разбирать это поле
         email,
         password,
-        role
+        role,
+        first_name: firstName, // Добавляем явное указание имени
+        last_name: lastName    // Добавляем явное указание фамилии
       });
       
       toast.success("Регистрация успешна! Добро пожаловать в StudyHub!");
