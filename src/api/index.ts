@@ -295,7 +295,7 @@ export const coursesApi = {
   },
   
   // Get course details
-  getCourseDetails: async (courseId: string) => {
+  getCourseDetails: async (courseId: string | number) => {
     const response = await apiRequest(`/api/courses/${courseId}`);
     return response.data;
   },
@@ -311,7 +311,7 @@ export const coursesApi = {
   },
   
   // Update a course
-  updateCourse: async (courseId: string, courseData: any) => {
+  updateCourse: async (courseId: string | number, courseData: any) => {
     const response = await apiRequest(`/api/courses/${courseId}`, {
       method: 'PUT',
       body: JSON.stringify(courseData)
@@ -321,7 +321,7 @@ export const coursesApi = {
   },
   
   // Delete a course
-  deleteCourse: async (courseId: string) => {
+  deleteCourse: async (courseId: string | number) => {
     const response = await apiRequest(`/api/courses/${courseId}`, {
       method: 'DELETE'
     });
@@ -330,7 +330,7 @@ export const coursesApi = {
   },
   
   // Create a new lesson
-  createLesson: async (courseId: string, lessonData: any) => {
+  createLesson: async (courseId: string | number, lessonData: any) => {
     const response = await apiRequest(`/api/courses/${courseId}/lessons`, {
       method: 'POST',
       body: JSON.stringify(lessonData)
@@ -340,7 +340,7 @@ export const coursesApi = {
   },
   
   // Update a lesson
-  updateLesson: async (courseId: string, lessonId: string, lessonData: any) => {
+  updateLesson: async (courseId: string | number, lessonId: string | number, lessonData: any) => {
     const response = await apiRequest(`/api/courses/${courseId}/lessons/${lessonId}`, {
       method: 'PUT',
       body: JSON.stringify(lessonData)
@@ -350,7 +350,7 @@ export const coursesApi = {
   },
   
   // Delete a lesson
-  deleteLesson: async (courseId: string, lessonId: string) => {
+  deleteLesson: async (courseId: string | number, lessonId: string | number) => {
     const response = await apiRequest(`/api/courses/${courseId}/lessons/${lessonId}`, {
       method: 'DELETE'
     });
@@ -359,7 +359,7 @@ export const coursesApi = {
   },
   
   // Enroll in a course
-  enrollCourse: async (courseId: string) => {
+  enrollCourse: async (courseId: string | number) => {
     const response = await apiRequest(`/api/courses/${courseId}/enroll`, {
       method: 'POST'
     });
