@@ -15,6 +15,30 @@ CREATE TABLE IF NOT EXISTS users (
     language_preference VARCHAR(10) DEFAULT 'ru' -- ru, kk, en
 );
 
+-- Registration logs table
+CREATE TABLE IF NOT EXISTS registration_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    ip_address VARCHAR(50),
+    user_agent TEXT,
+    referrer VARCHAR(255),
+    registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    verification_status VARCHAR(20) DEFAULT 'pending', -- pending, verified, failed
+    verification_date TIMESTAMP,
+    verification_method VARCHAR(20) -- email, phone, etc.
+);
+
+-- User login logs
+CREATE TABLE IF NOT EXISTS login_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    ip_address VARCHAR(50),
+    user_agent TEXT, 
+    login_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(20) NOT NULL, -- success, failed
+    failure_reason VARCHAR(255)
+);
+
 -- User Settings table
 CREATE TABLE IF NOT EXISTS user_settings (
     user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
@@ -300,3 +324,5 @@ CREATE INDEX IF NOT EXISTS idx_test_attempts_test_id ON test_attempts(test_id);
 CREATE INDEX IF NOT EXISTS idx_discussions_course_id ON discussions(course_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_achievements_user_id ON user_achievements(user_id);
+CREATE INDEX IF NOT EXISTS idx_registration_logs_user_id ON registration_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_login_logs_user_id ON login_logs(user_id);
