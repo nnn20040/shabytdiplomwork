@@ -31,8 +31,17 @@ const LoginForm = () => {
     setIsLoading(true);
     
     try {
-      // Use the authApi.login function instead of a direct fetch
-      const data = await authApi.login({ email, password });
+      console.log("Attempting to login with:", { email, password });
+      
+      // Use the authApi.login function
+      const response = await authApi.login({ email, password });
+      
+      console.log("Login response:", response);
+      
+      // Check if login was successful
+      if (!response.success) {
+        throw new Error(response.message || "Ошибка входа");
+      }
       
       toast({
         title: "Успешный вход",
@@ -40,7 +49,7 @@ const LoginForm = () => {
       });
       
       // Redirect based on user role
-      if (data.user.role === 'teacher') {
+      if (response.user && response.user.role === 'teacher') {
         navigate('/teacher-dashboard');
       } else {
         navigate('/student-dashboard');

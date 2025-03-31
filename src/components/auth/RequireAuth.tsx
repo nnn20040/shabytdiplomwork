@@ -17,11 +17,14 @@ const RequireAuth: React.FC<RequireAuthProps> = ({ children }) => {
     const checkAuth = async () => {
       try {
         // Check if user is authenticated by looking for token in localStorage
-        const token = localStorage.getItem('auth_token');
+        const token = localStorage.getItem('token');
+        const user = localStorage.getItem('user');
         
-        if (!token) {
+        if (!token || !user) {
+          console.log("No token or user found in localStorage");
           setIsAuthenticated(false);
           navigate('/login', { state: { from: location.pathname } });
+          
           // Don't show the toast if coming from the registration or login page
           if (!location.pathname.includes('register') && !location.pathname.includes('login')) {
             toast.error('Для доступа к этой странице необходимо войти в систему');
@@ -30,7 +33,7 @@ const RequireAuth: React.FC<RequireAuthProps> = ({ children }) => {
         }
         
         // In a real application, you would verify the token with the server
-        // For now, we'll just check if it exists
+        console.log("User is authenticated with token:", token.substring(0, 10) + "...");
         setIsAuthenticated(true);
       } catch (error) {
         console.error('Auth check error:', error);

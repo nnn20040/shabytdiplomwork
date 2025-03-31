@@ -207,6 +207,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Login successful for user: %s", user.Email)
 
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
 }
 

@@ -44,7 +44,7 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
     }
 
     // Parse JSON response if available
-    const data = await response.json().catch(() => ({}));
+    const data = await response.json();
     console.log(`Response data:`, data);
 
     // If response is not ok, throw error with server message or default
@@ -52,7 +52,7 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
       throw new Error(data.message || `Request error: ${response.status}`);
     }
 
-    return { data, status: response.status };
+    return data;
   } catch (error) {
     console.error('API request error:', error);
     throw error;
@@ -76,13 +76,13 @@ export const authApi = {
     });
     
     // Store auth data in localStorage if successful
-    if (response.data.token) {
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+    if (response.token) {
+      localStorage.setItem('token', response.token);
+      localStorage.setItem('user', JSON.stringify(response.user));
       sessionStorage.setItem('isLoggedIn', 'true');
     }
     
-    return response.data;
+    return response;
   },
   
   // Login user
@@ -93,13 +93,13 @@ export const authApi = {
     });
     
     // Store auth data in localStorage if successful
-    if (response.data.token) {
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+    if (response.token) {
+      localStorage.setItem('token', response.token);
+      localStorage.setItem('user', JSON.stringify(response.user));
       sessionStorage.setItem('isLoggedIn', 'true');
     }
     
-    return response.data;
+    return response;
   },
   
   // Get current user
