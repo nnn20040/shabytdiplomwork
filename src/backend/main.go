@@ -30,9 +30,12 @@ func main() {
 	// Create router
 	router := mux.NewRouter()
 
+	// Define allowed origins
+	allowedOrigins := []string{"http://localhost:8080", "http://localhost:3000"}
+	
 	// Middleware
 	corsMiddleware := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:8080", "http://localhost:3000"},
+		AllowedOrigins:   allowedOrigins,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Content-Type", "Authorization", "Origin", "Accept", "X-Requested-With"},
 		ExposedHeaders:   []string{"Content-Length"},
@@ -79,7 +82,7 @@ func main() {
 	}
 	
 	log.Printf("Server running on port %s", port)
-	log.Printf("CORS allowed origins: http://localhost:8080, http://localhost:3000")
+	log.Printf("CORS allowed origins: %v", allowedOrigins)
 	
 	// Wrap router with CORS middleware and start server
 	handler := corsMiddleware.Handler(router)
