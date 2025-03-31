@@ -34,7 +34,13 @@ func main() {
 	router := mux.NewRouter()
 
 	// Define allowed origins
-	allowedOrigins := []string{"http://localhost:8080", "http://localhost:3000"}
+	allowedOrigins := []string{
+		"http://localhost:8080", 
+		"http://localhost:3000", 
+		"http://127.0.0.1:8080", 
+		"http://127.0.0.1:3000",
+		"http://localhost:5173",
+	}
 	
 	// Middleware
 	corsMiddleware := cors.New(cors.Options{

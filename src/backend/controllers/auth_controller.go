@@ -1,4 +1,3 @@
-
 package controllers
 
 import (
@@ -132,6 +131,20 @@ func Register(w http.ResponseWriter, r *http.Request) {
 
 // Login authenticates a user
 func Login(w http.ResponseWriter, r *http.Request) {
+	log.Printf("Login handler called with method: %s", r.Method)
+	
+	// Set CORS headers for preflight requests
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+	
+	// Handle OPTIONS request for CORS preflight
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	// Parse request body
 	var req LoginRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
@@ -159,6 +172,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Printf("User found: %s (%s)", user.Name, user.Email)
+	log.Printf("Stored password hash: %s", user.Password)
 
 	// Verify password
 	err = models.ComparePassword(user.Password, req.Password)

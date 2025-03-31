@@ -102,6 +102,7 @@ func GetUserByID(ctx context.Context, id string) (*User, error) {
 
 // GetUserByEmail retrieves a user by email
 func GetUserByEmail(ctx context.Context, email string) (*User, error) {
+	log.Printf("Retrieving user by email: %s", email)
 	userData, err := config.GetUserByEmail(ctx, email)
 	if err != nil {
 		log.Printf("Error getting user by email %s: %v", email, err)
@@ -111,6 +112,8 @@ func GetUserByEmail(ctx context.Context, email string) (*User, error) {
 		return nil, err
 	}
 
+	log.Printf("User found in database: %s (%s)", userData["Email"], userData["ID"])
+	
 	user := &User{
 		ID:        userData["ID"].(string),
 		Email:     userData["Email"].(string),
@@ -198,11 +201,16 @@ func ComparePassword(hashedPassword, providedPassword string) error {
 		return fmt.Errorf("invalid password hash")
 	}
 	
+	log.Printf("Comparing password: Hash length=%d, Provided password length=%d", len(hashedPassword), len(providedPassword))
+	
 	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(providedPassword))
 	if err != nil {
-		log.Printf("Password comparison error: %v", err)
+		log.Printf("Password comparison failed: %v", err)
+		return err
 	}
-	return err
+	
+	log.Printf("Password comparison successful")
+	return nil
 }
 
 // SaveResetToken saves a password reset token for a user
@@ -219,3 +227,4 @@ func VerifyResetToken(ctx context.Context, id, token string) (bool, error) {
 func ClearResetToken(ctx context.Context, id string) error {
 	return config.ClearResetToken(ctx, id)
 }
+

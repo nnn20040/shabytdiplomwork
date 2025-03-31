@@ -4,8 +4,11 @@
 
 // Base API URL - Update this to point to the backend server
 const API_URL = process.env.NODE_ENV === 'production' 
-  ? '' // В продакшене используем относительные URL
-  : 'http://localhost:5000'; // В разработке указываем полный URL с портом бэкенда
+  ? '' // In production we use relative URLs
+  : 'http://localhost:5000'; // In development we use the full URL with backend port
+
+// Debug API URL
+console.log(`API is configured to use: ${API_URL}`);
 
 /**
  * Make API request with proper error handling
@@ -29,7 +32,7 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
     const response = await fetch(url, {
       ...options,
       headers,
-      // Используем credentials: 'include' чтобы передавать куки
+      // Use credentials: 'include' to send cookies
       credentials: 'include',
     });
 
@@ -46,7 +49,7 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
 
     // If response is not ok, throw error with server message or default
     if (!response.ok) {
-      throw new Error(data.message || `Ошибка запроса: ${response.status}`);
+      throw new Error(data.message || `Request error: ${response.status}`);
     }
 
     return { data, status: response.status };
@@ -302,6 +305,7 @@ export const coursesApi = {
   
   // Create a new course
   createCourse: async (courseData: any) => {
+    console.log("Creating course with data:", courseData);
     const response = await apiRequest('/api/courses', {
       method: 'POST',
       body: JSON.stringify(courseData)
@@ -331,6 +335,7 @@ export const coursesApi = {
   
   // Create a new lesson
   createLesson: async (courseId: string | number, lessonData: any) => {
+    console.log("Creating lesson with data:", lessonData);
     const response = await apiRequest(`/api/courses/${courseId}/lessons`, {
       method: 'POST',
       body: JSON.stringify(lessonData)
