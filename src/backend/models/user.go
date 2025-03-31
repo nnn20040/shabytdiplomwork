@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"fmt"
 	"time"
+	"strings"
 
 	"backend/config"
 
@@ -16,6 +17,8 @@ import (
 type User struct {
 	ID               string    `json:"id"`
 	Name             string    `json:"name"`
+	FirstName        string    `json:"first_name"`
+	LastName         string    `json:"last_name"`
 	Email            string    `json:"email"`
 	Password         string    `json:"-"` // "-" means this field will be omitted from JSON output
 	Role             string    `json:"role"`
@@ -38,8 +41,16 @@ func CreateUser(ctx context.Context, name, email, password, role string) (*User,
 		role = "student"
 	}
 
+	// Split name into first name and last name
+	nameParts := strings.Split(name, " ")
+	firstName := nameParts[0]
+	lastName := ""
+	if len(nameParts) > 1 {
+		lastName = strings.Join(nameParts[1:], " ")
+	}
+
 	// Create user in the database
-	userData, err := config.CreateUser(ctx, name, email, string(hashedPassword), role)
+	userData, err := config.CreateUser(ctx, firstName, lastName, email, string(hashedPassword), role)
 	if err != nil {
 		return nil, err
 	}
@@ -47,6 +58,8 @@ func CreateUser(ctx context.Context, name, email, password, role string) (*User,
 	user := &User{
 		ID:        userData["ID"].(string),
 		Name:      userData["Name"].(string),
+		FirstName: userData["FirstName"].(string),
+		LastName:  userData["LastName"].(string),
 		Email:     userData["Email"].(string),
 		Role:      userData["Role"].(string),
 		CreatedAt: userData["CreatedAt"].(time.Time),
@@ -69,6 +82,8 @@ func GetUserByID(ctx context.Context, id string) (*User, error) {
 	user := &User{
 		ID:        userData["ID"].(string),
 		Name:      userData["Name"].(string),
+		FirstName: userData["FirstName"].(string),
+		LastName:  userData["LastName"].(string),
 		Email:     userData["Email"].(string),
 		Role:      userData["Role"].(string),
 		CreatedAt: userData["CreatedAt"].(time.Time),
@@ -91,6 +106,8 @@ func GetUserByEmail(ctx context.Context, email string) (*User, error) {
 	user := &User{
 		ID:        userData["ID"].(string),
 		Name:      userData["Name"].(string),
+		FirstName: userData["FirstName"].(string),
+		LastName:  userData["LastName"].(string),
 		Email:     userData["Email"].(string),
 		Password:  userData["Password"].(string),
 		Role:      userData["Role"].(string),
@@ -113,7 +130,15 @@ func GetUserByEmail(ctx context.Context, email string) (*User, error) {
 
 // UpdateUser updates user information
 func UpdateUser(ctx context.Context, id, name, email, role string) (*User, error) {
-	userData, err := config.UpdateUser(ctx, id, name, email, role)
+	// Split name into first name and last name
+	nameParts := strings.Split(name, " ")
+	firstName := nameParts[0]
+	lastName := ""
+	if len(nameParts) > 1 {
+		lastName = strings.Join(nameParts[1:], " ")
+	}
+
+	userData, err := config.UpdateUser(ctx, id, firstName, lastName, email, role)
 	if err != nil {
 		return nil, err
 	}
@@ -121,6 +146,8 @@ func UpdateUser(ctx context.Context, id, name, email, role string) (*User, error
 	user := &User{
 		ID:        userData["ID"].(string),
 		Name:      userData["Name"].(string),
+		FirstName: userData["FirstName"].(string),
+		LastName:  userData["LastName"].(string),
 		Email:     userData["Email"].(string),
 		Role:      userData["Role"].(string),
 		CreatedAt: userData["CreatedAt"].(time.Time),
