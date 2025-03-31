@@ -32,7 +32,7 @@ func main() {
 
 	// Middleware
 	corsMiddleware := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:8080", "http://localhost:3000", "*"},
+		AllowedOrigins:   []string{"http://localhost:8080", "http://localhost:3000"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Content-Type", "Authorization", "Origin", "Accept", "X-Requested-With"},
 		ExposedHeaders:   []string{"Content-Length"},
@@ -79,7 +79,7 @@ func main() {
 	}
 	
 	log.Printf("Server running on port %s", port)
-	log.Println("CORS enabled, accepting requests from all origins")
+	log.Printf("CORS allowed origins: http://localhost:8080, http://localhost:3000")
 	
 	// Wrap router with CORS middleware and start server
 	handler := corsMiddleware.Handler(router)

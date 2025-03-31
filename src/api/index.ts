@@ -22,7 +22,7 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
         'Content-Type': 'application/json',
         ...(options.headers || {}),
       },
-      // Изменено с 'include' на 'same-origin' для локальной разработки
+      // Используем credentials: 'include' чтобы передавать куки
       credentials: 'include',
     });
 
