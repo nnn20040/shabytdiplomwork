@@ -42,8 +42,11 @@ const CreateLesson = () => {
 
     setSaving(true);
     try {
+      // Convert courseId to number since the API expects a number
+      const courseIdNumber = courseId ? parseInt(courseId, 10) : 0;
+      
       // Вызов реального API
-      await coursesApi.createLesson(Number(courseId), lessonData);
+      await coursesApi.createLesson(courseIdNumber, lessonData);
       toast.success('Урок успешно создан!');
       navigate(`/course/${courseId}/manage`);
     } catch (error) {

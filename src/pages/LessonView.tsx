@@ -28,14 +28,16 @@ interface LessonData {
 const fetchLesson = async ({ courseId, lessonId }: { courseId: string; lessonId: string }) => {
   try {
     // Get course details which includes lessons
-    const response = await coursesApi.getCourseDetails(Number(courseId));
+    const courseIdNumber = parseInt(courseId, 10);
+    const response = await coursesApi.getCourseDetails(courseIdNumber);
     
     if (!response.success || !response.data) {
       throw new Error('Failed to fetch course data');
     }
     
     // Find the specific lesson by its order_index
-    const lesson = response.data.lessons.find(l => l.order_index === Number(lessonId));
+    const lessonIdNumber = parseInt(lessonId, 10);
+    const lesson = response.data.lessons.find(l => l.order_index === lessonIdNumber);
     
     if (!lesson) {
       throw new Error('Lesson not found');
