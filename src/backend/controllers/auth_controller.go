@@ -1,3 +1,4 @@
+
 package controllers
 
 import (
@@ -115,10 +116,12 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		Success: true,
 		Token:   token,
 		User: map[string]interface{}{
-			"id":    user.ID,
-			"name":  user.Name,
-			"email": user.Email,
-			"role":  user.Role,
+			"id":        user.ID,
+			"name":      user.Name,
+			"email":     user.Email,
+			"role":      user.Role,
+			"firstName": user.FirstName,
+			"lastName":  user.LastName,
 		},
 	}
 
@@ -169,10 +172,12 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		Success: true,
 		Token:   token,
 		User: map[string]interface{}{
-			"id":    user.ID,
-			"name":  user.Name,
-			"email": user.Email,
-			"role":  user.Role,
+			"id":        user.ID,
+			"name":      user.Name,
+			"email":     user.Email,
+			"role":      user.Role,
+			"firstName": user.FirstName,
+			"lastName":  user.LastName,
 		},
 	}
 
@@ -193,10 +198,12 @@ func GetCurrentUser(w http.ResponseWriter, r *http.Request) {
 	response := Response{
 		Success: true,
 		User: map[string]interface{}{
-			"id":    user.ID,
-			"name":  user.Name,
-			"email": user.Email,
-			"role":  user.Role,
+			"id":        user.ID,
+			"name":      user.Name,
+			"email":     user.Email,
+			"role":      user.Role,
+			"firstName": user.FirstName,
+			"lastName":  user.LastName,
 		},
 	}
 
@@ -438,6 +445,8 @@ func generateJWTToken(user *models.User) (string, error) {
 	claims["name"] = user.Name
 	claims["email"] = user.Email
 	claims["role"] = user.Role
+	claims["firstName"] = user.FirstName
+	claims["lastName"] = user.LastName
 	claims["exp"] = time.Now().Add(30 * 24 * time.Hour).Unix() // 30 days expiry
 
 	return token.SignedString(JWTSecret)

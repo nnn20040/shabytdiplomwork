@@ -38,7 +38,7 @@ func InitDB() error {
 	
 	dbname := os.Getenv("DB_NAME")
 	if dbname == "" {
-		dbname = "shabyt_db"
+		dbname = "shabyt4_db"
 	}
 	
 	sslMode := "disable"
@@ -74,6 +74,47 @@ func InitDB() error {
 	}
 
 	log.Printf("Database connected successfully at: %v", now)
+	
+	// Check if database has the correct tables and create if needed
+	err = ensureTablesExist(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to ensure tables exist: %w", err)
+	}
+	
+	return nil
+}
+
+// ensureTablesExist checks if the required tables exist and creates them if needed
+func ensureTablesExist(ctx context.Context) error {
+	// Check if users table exists
+	var exists bool
+	err := DB.QueryRowContext(ctx, "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'users')").Scan(&exists)
+	if err != nil {
+		return fmt.Errorf("error checking if users table exists: %w", err)
+	}
+	
+	if !exists {
+		log.Println("Creating database tables...")
+		
+		// Read schema.sql
+		schema, err := os.ReadFile("config/schema.sql")
+		if err != nil {
+			// Try alternative path
+			schema, err = os.ReadFile("./config/schema.sql")
+			if err != nil {
+				return fmt.Errorf("error reading schema.sql: %w", err)
+			}
+		}
+		
+		// Execute schema.sql
+		_, err = DB.ExecContext(ctx, string(schema))
+		if err != nil {
+			return fmt.Errorf("error executing schema.sql: %w", err)
+		}
+		
+		log.Println("Database tables created successfully")
+	}
+	
 	return nil
 }
 
@@ -222,8 +263,8 @@ func CreateUser(ctx context.Context, firstName, lastName, email, password, role 
 	
 	// Insert user into database
 	err = QueryRowContext(ctx,
-		"INSERT INTO users (first_name, last_name, email, password, role) VALUES ($1, $2, $3, $4, $5) RETURNING id, first_name, last_name, email, role, created_at, updated_at",
-		firstName, lastName, email, password, role).Scan(&id, &first_name, &last_name, &email_val, &role_val, &created_at, &updated_at)
+		"INSERT INTO users (first_name, last_name, email, password, role, is_active, language_preference) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, first_name, last_name, email, role, created_at, updated_at",
+		firstName, lastName, email, password, role, true, "ru").Scan(&id, &first_name, &last_name, &email_val, &role_val, &created_at, &updated_at)
 	
 	if err != nil {
 		return nil, fmt.Errorf("error creating user: %w", err)

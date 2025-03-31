@@ -1,4 +1,3 @@
-
 /**
  * API client for handling requests to backend
  */
@@ -16,12 +15,20 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
     const url = `${API_URL}${endpoint}`;
     console.log(`Making request to: ${url}`, options);
     
+    // Include auth token if available
+    const token = localStorage.getItem('token');
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+      ...(options.headers || {}),
+    };
+    
+    if (token && !headers['Authorization']) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
     const response = await fetch(url, {
       ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(options.headers || {}),
-      },
+      headers,
       // Используем credentials: 'include' чтобы передавать куки
       credentials: 'include',
     });
@@ -59,8 +66,6 @@ export const authApi = {
     email: string;
     password: string;
     role: string;
-    first_name?: string;
-    last_name?: string;
   }) => {
     const response = await apiRequest('/api/auth/register', {
       method: 'POST',
@@ -96,37 +101,32 @@ export const authApi = {
   
   // Get current user
   getCurrentUser: async () => {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-      throw new Error('Токен не найден');
+    try {
+      const response = await apiRequest('/api/auth/me');
+      return response.data;
+    } catch (error) {
+      // Clear invalid auth data
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      sessionStorage.removeItem('isLoggedIn');
+      throw error;
     }
-    
-    const response = await apiRequest('/api/auth/me', {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-    
-    return response.data;
   },
 
   // Logout user
   logout: async () => {
-    const token = localStorage.getItem('token');
-    
-    if (token) {
+    try {
       await apiRequest('/api/auth/logout', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        method: 'POST'
       });
+    } catch (error) {
+      console.error("Error during logout:", error);
+    } finally {
+      // Always clean up local storage, even if the API call fails
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      sessionStorage.removeItem('isLoggedIn');
     }
-    
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    sessionStorage.removeItem('isLoggedIn');
     
     return { success: true };
   },
@@ -153,17 +153,8 @@ export const authApi = {
   
   // Change password
   changePassword: async (data: { currentPassword: string, newPassword: string }) => {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-      throw new Error('Токен не найден');
-    }
-    
     const response = await apiRequest('/api/auth/change-password', {
       method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      },
       body: JSON.stringify(data)
     });
     
@@ -172,17 +163,8 @@ export const authApi = {
   
   // Update profile
   updateProfile: async (data: { name: string, email: string }) => {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-      throw new Error('Токен не найден');
-    }
-    
     const response = await apiRequest('/api/auth/profile', {
       method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      },
       body: JSON.stringify(data)
     });
     
@@ -289,7 +271,7 @@ export const getFallbackResponse = async (question: string) => {
       data: {
         id: `error_${Date.now()}`,
         question,
-        response: 'Извините, в данный момент сервер недоступен. Пожалуйста, попробуйте позже.',
+        response: 'Извините, в данный момент сервер недоступен. Пожа��уйста, попробуйте позже.',
         created_at: new Date().toISOString()
       }
     };
@@ -313,24 +295,15 @@ export const coursesApi = {
   },
   
   // Get course details
-  getCourseDetails: async (courseId: number | string) => {
+  getCourseDetails: async (courseId: string) => {
     const response = await apiRequest(`/api/courses/${courseId}`);
     return response.data;
   },
   
   // Create a new course
   createCourse: async (courseData: any) => {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-      throw new Error('Токен не найден');
-    }
-    
     const response = await apiRequest('/api/courses', {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      },
       body: JSON.stringify(courseData)
     });
     
@@ -338,18 +311,9 @@ export const coursesApi = {
   },
   
   // Update a course
-  updateCourse: async (courseId: number | string, courseData: any) => {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-      throw new Error('Токен не найден');
-    }
-    
+  updateCourse: async (courseId: string, courseData: any) => {
     const response = await apiRequest(`/api/courses/${courseId}`, {
       method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      },
       body: JSON.stringify(courseData)
     });
     
@@ -357,36 +321,18 @@ export const coursesApi = {
   },
   
   // Delete a course
-  deleteCourse: async (courseId: number | string) => {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-      throw new Error('Токен не найден');
-    }
-    
+  deleteCourse: async (courseId: string) => {
     const response = await apiRequest(`/api/courses/${courseId}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
+      method: 'DELETE'
     });
     
     return response.data;
   },
   
   // Create a new lesson
-  createLesson: async (courseId: number | string, lessonData: any) => {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-      throw new Error('Токен не найден');
-    }
-    
+  createLesson: async (courseId: string, lessonData: any) => {
     const response = await apiRequest(`/api/courses/${courseId}/lessons`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      },
       body: JSON.stringify(lessonData)
     });
     
@@ -394,18 +340,9 @@ export const coursesApi = {
   },
   
   // Update a lesson
-  updateLesson: async (courseId: number | string, lessonId: number | string, lessonData: any) => {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-      throw new Error('Токен не найден');
-    }
-    
+  updateLesson: async (courseId: string, lessonId: string, lessonData: any) => {
     const response = await apiRequest(`/api/courses/${courseId}/lessons/${lessonId}`, {
       method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      },
       body: JSON.stringify(lessonData)
     });
     
@@ -413,36 +350,18 @@ export const coursesApi = {
   },
   
   // Delete a lesson
-  deleteLesson: async (courseId: number | string, lessonId: number | string) => {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-      throw new Error('Токен не найден');
-    }
-    
+  deleteLesson: async (courseId: string, lessonId: string) => {
     const response = await apiRequest(`/api/courses/${courseId}/lessons/${lessonId}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
+      method: 'DELETE'
     });
     
     return response.data;
   },
   
   // Enroll in a course
-  enrollCourse: async (courseId: number | string) => {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-      throw new Error('Токен не найден');
-    }
-    
+  enrollCourse: async (courseId: string) => {
     const response = await apiRequest(`/api/courses/${courseId}/enroll`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
+      method: 'POST'
     });
     
     return response.data;
@@ -450,17 +369,7 @@ export const coursesApi = {
   
   // Get enrolled courses
   getEnrolledCourses: async () => {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-      throw new Error('Токен не найден');
-    }
-    
-    const response = await apiRequest('/api/enrollments', {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
+    const response = await apiRequest('/api/enrollments');
     
     return response.data;
   }

@@ -16,14 +16,18 @@ import (
 // User represents a user in the system
 type User struct {
 	ID               string    `json:"id"`
-	Name             string    `json:"name"`
-	FirstName        string    `json:"first_name"`
-	LastName         string    `json:"last_name"`
 	Email            string    `json:"email"`
 	Password         string    `json:"-"` // "-" means this field will be omitted from JSON output
+	FirstName        string    `json:"first_name"`
+	LastName         string    `json:"last_name"`
+	Name             string    `json:"name"` // Derived from FirstName and LastName
 	Role             string    `json:"role"`
 	CreatedAt        time.Time `json:"created_at"`
 	UpdatedAt        time.Time `json:"updated_at"`
+	LastLogin        *time.Time `json:"last_login,omitempty"`
+	ProfileImageURL  *string   `json:"profile_image_url,omitempty"`
+	IsActive         bool      `json:"is_active"`
+	LanguagePreference string  `json:"language_preference"`
 	ResetToken       *string   `json:"-"`
 	ResetTokenExpiry *int64    `json:"-"`
 }
@@ -57,13 +61,15 @@ func CreateUser(ctx context.Context, name, email, password, role string) (*User,
 
 	user := &User{
 		ID:        userData["ID"].(string),
-		Name:      userData["Name"].(string),
+		Email:     userData["Email"].(string),
 		FirstName: userData["FirstName"].(string),
 		LastName:  userData["LastName"].(string),
-		Email:     userData["Email"].(string),
+		Name:      userData["Name"].(string),
 		Role:      userData["Role"].(string),
 		CreatedAt: userData["CreatedAt"].(time.Time),
 		UpdatedAt: userData["UpdatedAt"].(time.Time),
+		IsActive:  true,
+		LanguagePreference: "ru",
 	}
 
 	return user, nil
@@ -81,10 +87,10 @@ func GetUserByID(ctx context.Context, id string) (*User, error) {
 
 	user := &User{
 		ID:        userData["ID"].(string),
-		Name:      userData["Name"].(string),
+		Email:     userData["Email"].(string),
 		FirstName: userData["FirstName"].(string),
 		LastName:  userData["LastName"].(string),
-		Email:     userData["Email"].(string),
+		Name:      userData["Name"].(string),
 		Role:      userData["Role"].(string),
 		CreatedAt: userData["CreatedAt"].(time.Time),
 		UpdatedAt: userData["UpdatedAt"].(time.Time),
@@ -105,10 +111,10 @@ func GetUserByEmail(ctx context.Context, email string) (*User, error) {
 
 	user := &User{
 		ID:        userData["ID"].(string),
-		Name:      userData["Name"].(string),
+		Email:     userData["Email"].(string),
 		FirstName: userData["FirstName"].(string),
 		LastName:  userData["LastName"].(string),
-		Email:     userData["Email"].(string),
+		Name:      userData["Name"].(string),
 		Password:  userData["Password"].(string),
 		Role:      userData["Role"].(string),
 		CreatedAt: userData["CreatedAt"].(time.Time),
@@ -145,10 +151,10 @@ func UpdateUser(ctx context.Context, id, name, email, role string) (*User, error
 
 	user := &User{
 		ID:        userData["ID"].(string),
-		Name:      userData["Name"].(string),
+		Email:     userData["Email"].(string),
 		FirstName: userData["FirstName"].(string),
 		LastName:  userData["LastName"].(string),
-		Email:     userData["Email"].(string),
+		Name:      userData["Name"].(string),
 		Role:      userData["Role"].(string),
 		CreatedAt: userData["CreatedAt"].(time.Time),
 		UpdatedAt: userData["UpdatedAt"].(time.Time),
