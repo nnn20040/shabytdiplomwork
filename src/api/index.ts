@@ -1,9 +1,12 @@
+
 /**
  * API client for handling requests to backend
  */
 
 // Base API URL - Update this to point to the backend server
-const API_URL = 'http://localhost:5000';
+const API_URL = process.env.NODE_ENV === 'production' 
+  ? '' // В продакшене используем относительные URL
+  : 'http://localhost:5000'; // В разработке указываем полный URL с портом бэкенда
 
 /**
  * Make API request with proper error handling
@@ -19,7 +22,7 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
         'Content-Type': 'application/json',
         ...(options.headers || {}),
       },
-      // Include credentials to allow cookies to be sent
+      // Изменено с 'include' на 'same-origin' для локальной разработки
       credentials: 'include',
     });
 

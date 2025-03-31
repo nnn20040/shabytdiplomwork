@@ -32,7 +32,7 @@ func main() {
 
 	// Middleware
 	corsMiddleware := cors.New(cors.Options{
-		AllowedOrigins:   []string{"*"},
+		AllowedOrigins:   []string{"http://localhost:8080", "http://localhost:3000", "*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Content-Type", "Authorization", "Origin", "Accept", "X-Requested-With"},
 		ExposedHeaders:   []string{"Content-Length"},
