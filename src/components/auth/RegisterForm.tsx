@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -37,19 +36,17 @@ const RegisterForm = () => {
     setIsLoading(true);
     
     try {
-      // Отправляем имя и фамилию отдельно для корректной работы с БД
       const response = await authApi.register({
-        name: `${firstName} ${lastName}`, // Временно, API будет разбирать это поле
+        name: `${firstName} ${lastName}`,
         email,
         password,
         role,
-        first_name: firstName, // Добавляем явное указание имени
-        last_name: lastName    // Добавляем явное указание фамилии
+        first_name: firstName,
+        last_name: lastName
       });
       
       toast.success("Регистрация успешна! Добро пожаловать в StudyHub!");
       
-      // Redirect based on user role
       if (role === 'teacher') {
         navigate('/teacher-dashboard');
       } else {

@@ -1,4 +1,3 @@
-
 /**
  * API client for handling requests to backend
  */
@@ -57,6 +56,8 @@ export const authApi = {
     email: string;
     password: string;
     role: string;
+    first_name?: string;
+    last_name?: string;
   }) => {
     const response = await apiRequest('/api/auth/register', {
       method: 'POST',
