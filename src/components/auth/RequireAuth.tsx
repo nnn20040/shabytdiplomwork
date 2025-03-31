@@ -23,6 +23,8 @@ const RequireAuth: React.FC<RequireAuthProps> = ({ children }) => {
         if (!token || !user) {
           console.log("No token or user found in localStorage");
           setIsAuthenticated(false);
+          
+          // Save the current location to redirect back after login
           navigate('/login', { state: { from: location.pathname } });
           
           // Don't show the toast if coming from the registration or login page
@@ -32,7 +34,28 @@ const RequireAuth: React.FC<RequireAuthProps> = ({ children }) => {
           return;
         }
         
-        // In a real application, you would verify the token with the server
+        // In a real application, you could verify the token with the server
+        // For now, we just check if it exists and is not expired
+        try {
+          // Parse the token to check if it's expired
+          const base64Url = token.split('.')[1];
+          const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+          const payload = JSON.parse(window.atob(base64));
+          
+          if (payload.exp && payload.exp < Date.now() / 1000) {
+            console.log("Token expired, logging out");
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            sessionStorage.removeItem('isLoggedIn');
+            setIsAuthenticated(false);
+            navigate('/login', { state: { from: location.pathname } });
+            return;
+          }
+        } catch (tokenError) {
+          console.error("Error parsing token:", tokenError);
+          // Continue anyway, we'll let the server validate the token
+        }
+        
         console.log("User is authenticated with token:", token.substring(0, 10) + "...");
         setIsAuthenticated(true);
       } catch (error) {

@@ -32,7 +32,7 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
     const response = await fetch(url, {
       ...options,
       headers,
-      // Use credentials: 'include' to send cookies
+      // Include credentials for cookies
       credentials: 'include',
     });
 
@@ -40,22 +40,44 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
 
     // For non-JSON responses, just return status
     if (response.headers.get('content-type')?.indexOf('application/json') === -1) {
-      return { status: response.status };
+      return { 
+        success: response.ok,
+        status: response.status,
+        message: response.statusText
+      };
     }
 
     // Parse JSON response if available
-    const data = await response.json();
-    console.log(`Response data:`, data);
-
-    // If response is not ok, throw error with server message or default
-    if (!response.ok) {
-      throw new Error(data.message || `Request error: ${response.status}`);
+    let data;
+    try {
+      data = await response.json();
+      console.log(`Response data:`, data);
+    } catch (error) {
+      console.error('Error parsing JSON response:', error);
+      return { 
+        success: false, 
+        status: response.status,
+        message: 'Invalid JSON response'
+      };
     }
 
-    return data;
+    // If the response already has a success field, return it directly
+    if (data && typeof data.success !== 'undefined') {
+      return data;
+    }
+
+    // Otherwise, format the response consistently
+    return {
+      success: response.ok,
+      status: response.status,
+      ...data
+    };
   } catch (error) {
     console.error('API request error:', error);
-    throw error;
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Unknown error'
+    };
   }
 }
 
@@ -76,7 +98,7 @@ export const authApi = {
     });
     
     // Store auth data in localStorage if successful
-    if (response.token) {
+    if (response.success && response.token) {
       localStorage.setItem('token', response.token);
       localStorage.setItem('user', JSON.stringify(response.user));
       sessionStorage.setItem('isLoggedIn', 'true');
@@ -87,19 +109,34 @@ export const authApi = {
   
   // Login user
   login: async (credentials: { email: string; password: string }) => {
-    const response = await apiRequest('/api/auth/login', {
-      method: 'POST',
-      body: JSON.stringify(credentials)
-    });
-    
-    // Store auth data in localStorage if successful
-    if (response.token) {
-      localStorage.setItem('token', response.token);
-      localStorage.setItem('user', JSON.stringify(response.user));
-      sessionStorage.setItem('isLoggedIn', 'true');
+    try {
+      console.log("Login called with credentials:", credentials);
+      
+      const response = await apiRequest('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify(credentials)
+      });
+      
+      console.log("Login response received:", response);
+      
+      // Store auth data in localStorage if successful
+      if (response.success && response.token) {
+        console.log("Storing auth data in localStorage");
+        localStorage.setItem('token', response.token);
+        localStorage.setItem('user', JSON.stringify(response.user));
+        sessionStorage.setItem('isLoggedIn', 'true');
+      } else {
+        console.log("Login failed, not storing auth data");
+      }
+      
+      return response;
+    } catch (error) {
+      console.error("Login error:", error);
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Unknown error during login'
+      };
     }
-    
-    return response;
   },
   
   // Get current user

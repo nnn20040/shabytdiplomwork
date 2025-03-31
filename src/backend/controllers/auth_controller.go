@@ -1,3 +1,4 @@
+
 package controllers
 
 import (
@@ -133,7 +134,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 func Login(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Login handler called with method: %s", r.Method)
 	
-	// Set CORS headers for preflight requests
+	// Set CORS headers for all responses
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
@@ -167,18 +168,37 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	user, err := models.GetUserByEmail(r.Context(), req.Email)
 	if err != nil {
 		log.Printf("Login error: User not found for email %s - %v", req.Email, err)
-		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+		
+		// Use Response struct for consistent JSON format even in error cases
+		response := Response{
+			Success: false,
+			Message: "Invalid credentials",
+		}
+		
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(response)
 		return
 	}
 
 	log.Printf("User found: %s (%s)", user.Name, user.Email)
 	log.Printf("Stored password hash: %s", user.Password)
+	log.Printf("Comparing with provided password: %s", req.Password)
 
 	// Verify password
 	err = models.ComparePassword(user.Password, req.Password)
 	if err != nil {
 		log.Printf("Login error: Invalid password for user %s - %v", user.Email, err)
-		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+		
+		// Use Response struct for consistent JSON format
+		response := Response{
+			Success: false,
+			Message: "Invalid credentials",
+		}
+		
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(response)
 		return
 	}
 
@@ -186,13 +206,22 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	token, err := generateJWTToken(user)
 	if err != nil {
 		log.Printf("Error generating token: %v", err)
-		http.Error(w, "Error generating authentication token", http.StatusInternalServerError)
+		
+		response := Response{
+			Success: false,
+			Message: "Error generating authentication token",
+		}
+		
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(response)
 		return
 	}
 
 	// Return success response
 	response := Response{
 		Success: true,
+		Message: "Login successful",
 		Token:   token,
 		User: map[string]interface{}{
 			"id":        user.ID,
@@ -205,6 +234,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Printf("Login successful for user: %s", user.Email)
+	log.Printf("Token generated: %s...", token[:20])
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
