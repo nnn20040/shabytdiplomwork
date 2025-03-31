@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -37,25 +36,23 @@ const RegisterForm = () => {
     setIsLoading(true);
     
     try {
-      console.log("Отправка данных регистрации:", {
-        name: `${firstName} ${lastName}`,
-        email,
-        password: '***скрыто***',
-        role,
-        first_name: firstName,
-        last_name: lastName
-      });
-
-      const response = await authApi.register({
+      const userData = {
         name: `${firstName} ${lastName}`,
         email,
         password,
         role,
         first_name: firstName,
         last_name: lastName
-      });
+      };
       
-      console.log("Ответ от сервера:", response);
+      console.log("Отправка данных регистрации:", {
+        ...userData,
+        password: '***скрыто***'
+      });
+
+      const response = await authApi.register(userData);
+      
+      console.log("Успешная регистрация, ответ от сервера:", response);
       toast.success("Регистрация успешна! Добро пожаловать в StudyHub!");
       
       if (role === 'teacher') {
