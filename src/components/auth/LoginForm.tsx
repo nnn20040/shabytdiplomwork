@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { EyeIcon, EyeOffIcon } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { authApi } from '@/api'; // Import the authApi from your API client
 
 const LoginForm = () => {
   const [email, setEmail] = useState('');
@@ -30,43 +31,31 @@ const LoginForm = () => {
     setIsLoading(true);
     
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
+      // Use the authApi.login function instead of a direct fetch
+      const data = await authApi.login({ email, password });
+      
+      toast({
+        title: "Успешный вход",
+        description: "Добро пожаловать в StudyHub!",
       });
       
-      const data = await response.json();
-      
-      if (response.ok) {
-        // Save token and user info to localStorage
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        
-        toast({
-          title: "Успешный вход",
-          description: "Добро пожаловать в StudyHub!",
-        });
-        
-        // Redirect based on user role
-        if (data.user.role === 'teacher') {
-          navigate('/teacher-dashboard');
-        } else {
-          navigate('/student-dashboard');
-        }
+      // Redirect based on user role
+      if (data.user.role === 'teacher') {
+        navigate('/teacher-dashboard');
       } else {
-        toast({
-          title: "Ошибка",
-          description: data.message || "Неверные email или пароль",
-          variant: "destructive",
-        });
+        navigate('/student-dashboard');
       }
     } catch (error) {
+      console.error("Login error:", error);
+      let errorMessage = "Неверные email или пароль";
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Ошибка",
-        description: "Проблема с подключением к серверу",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
