@@ -1,4 +1,3 @@
-
 package controllers
 
 import (
@@ -446,29 +445,22 @@ func generateJWTToken(user *models.User) (string, error) {
 
 // sendResetEmail sends a password reset email to a user
 func sendResetEmail(email, resetToken string) error {
-	host := os.Getenv("EMAIL_HOST")
+	host := os.Getenv("SMTP_HOST")
 	if host == "" {
 		host = "smtp.gmail.com"
 	}
 
 	port := 587
-	if portStr := os.Getenv("EMAIL_PORT"); portStr != "" {
+	if portStr := os.Getenv("SMTP_PORT"); portStr != "" {
 		if p, err := strconv.Atoi(portStr); err == nil {
 			port = p
 		}
 	}
 
-	username := os.Getenv("EMAIL_USER")
-	if username == "" {
-		username = "shabyt.education@gmail.com"
-	}
+	username := os.Getenv("SMTP_USER")
+	password := os.Getenv("SMTP_PASSWORD")
 
-	password := os.Getenv("EMAIL_PASS")
-	if password == "" {
-		password = "your-email-password" // In production, this should come from environment variables
-	}
-
-	from := os.Getenv("EMAIL_FROM")
+	from := os.Getenv("FROM_EMAIL")
 	if from == "" {
 		from = "noreply@shabyt.kz"
 	}

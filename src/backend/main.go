@@ -22,6 +22,9 @@ func main() {
 		log.Println("No .env file found, using environment variables")
 	}
 
+	// Set default values if not provided
+	setDefaultEnvVars()
+
 	// Initialize database
 	if err := config.InitDB(); err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
@@ -77,9 +80,6 @@ func main() {
 
 	// Start server
 	port := os.Getenv("PORT")
-	if port == "" {
-		port = "5000"
-	}
 	
 	log.Printf("Server running on port %s", port)
 	log.Printf("CORS allowed origins: %v", allowedOrigins)
@@ -89,5 +89,27 @@ func main() {
 	log.Printf("Starting HTTP server on :%s", port)
 	if err := http.ListenAndServe(":"+port, handler); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
+	}
+}
+
+// setDefaultEnvVars sets default environment variables if not provided
+func setDefaultEnvVars() {
+	envVars := map[string]string{
+		"DB_HOST":     "localhost",
+		"DB_PORT":     "5432",
+		"DB_USER":     "postgres",
+		"DB_PASSWORD": "2004",
+		"DB_NAME":     "shabyt4_db",
+		"DB_SSL":      "disable",
+		"PORT":        "5000",
+		"JWT_SECRET":  "shabyt_secure_jwt_key_2025",
+		"GO_ENV":      "development",
+		"FROM_EMAIL":  "nurlibek1204@gmail.com",
+	}
+
+	for key, defaultValue := range envVars {
+		if os.Getenv(key) == "" {
+			os.Setenv(key, defaultValue)
+		}
 	}
 }
