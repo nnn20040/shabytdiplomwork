@@ -27,8 +27,12 @@ const RequireAuth: React.FC<RequireAuthProps> = ({ children }) => {
           // Сохраняем текущий путь для возврата после входа
           const returnUrl = location.pathname;
           
-          // Не перенаправляем пользователя, если он уже на странице входа или регистрации
-          if (location.pathname.includes('/login') || location.pathname.includes('/register')) {
+          // Не перенаправляем пользователя, если он уже на странице входа, регистрации или главной
+          if (location.pathname === '/login' || 
+              location.pathname === '/register' || 
+              location.pathname === '/' ||
+              location.pathname === '/forgot-password' ||
+              location.pathname === '/reset-password') {
             setIsAuthenticated(false);
             return;
           }
@@ -37,7 +41,9 @@ const RequireAuth: React.FC<RequireAuthProps> = ({ children }) => {
           navigate('/login', { state: { from: returnUrl } });
           
           // Показываем уведомление только для защищенных страниц
-          if (!location.pathname.includes('/register') && !location.pathname.includes('/login') && !location.pathname.includes('/')) {
+          if (!location.pathname.includes('/register') && 
+              !location.pathname.includes('/login') && 
+              !location.pathname.includes('/')) {
             toast.error('Для доступа к этой странице необходимо войти в систему');
           }
           return;

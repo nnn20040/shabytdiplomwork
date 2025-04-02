@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"backend/middleware"
@@ -29,10 +30,12 @@ type Response struct {
 
 // RegisterRequest represents a user registration request
 type RegisterRequest struct {
-	Name     string `json:"name"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	Role     string `json:"role"`
+	Name      string `json:"name"`
+	Email     string `json:"email"`
+	Password  string `json:"password"`
+	Role      string `json:"role"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
 }
 
 // LoginRequest represents a user login request
@@ -81,6 +84,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+	w.Header().Set("Content-Type", "application/json")
 	
 	// Handle OPTIONS request for CORS preflight
 	if r.Method == "OPTIONS" {
@@ -92,7 +96,6 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		log.Printf("Error decoding request body: %v", err)
-		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(Response{
 			Success: false,
@@ -101,10 +104,14 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Log the registration request (without the password)
+	logReq := req
+	logReq.Password = "***REDACTED***"
+	log.Printf("Registration request: %+v", logReq)
+
 	// Validate input
 	if req.Name == "" || req.Email == "" || req.Password == "" {
 		log.Printf("Missing required fields: name=%s, email=%s, password_len=%d", req.Name, req.Email, len(req.Password))
-		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(Response{
 			Success: false,
@@ -114,12 +121,11 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create user
-	user, err := models.CreateUser(r.Context(), req.Name, req.Email, req.Password, req.Role)
+	user, err := models.CreateUser(r.Context(), req.FirstName, req.LastName, req.Email, req.Password, req.Role)
 	if err != nil {
 		log.Printf("Error creating user: %v", err)
-		w.Header().Set("Content-Type", "application/json")
 		
-		if err.Error() == "user with this email already exists" {
+		if strings.Contains(err.Error(), "user with this email already exists") {
 			w.WriteHeader(http.StatusConflict)
 			json.NewEncoder(w).Encode(Response{
 				Success: false,
@@ -129,7 +135,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(Response{
 				Success: false,
-				Message: "Ошибка сервера при регистрации",
+				Message: "Ошибка сервера при регистрации: " + err.Error(),
 			})
 		}
 		return
@@ -139,7 +145,6 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	token, err := generateJWTToken(user)
 	if err != nil {
 		log.Printf("Error generating token: %v", err)
-		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(Response{
 			Success: false,
@@ -163,7 +168,6 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(response)
 }

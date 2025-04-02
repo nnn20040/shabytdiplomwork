@@ -1,4 +1,3 @@
-
 package models
 
 import (
@@ -34,7 +33,7 @@ type User struct {
 }
 
 // CreateUser creates a new user in the database
-func CreateUser(ctx context.Context, name, email, password, role string) (*User, error) {
+func CreateUser(ctx context.Context, firstName, lastName, email, password, role string) (*User, error) {
 	// Hash password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
@@ -46,12 +45,10 @@ func CreateUser(ctx context.Context, name, email, password, role string) (*User,
 		role = "student"
 	}
 
-	// Split name into first name and last name
-	nameParts := strings.Split(name, " ")
-	firstName := nameParts[0]
-	lastName := ""
-	if len(nameParts) > 1 {
-		lastName = strings.Join(nameParts[1:], " ")
+	// Generate name from firstName and lastName
+	name := firstName
+	if lastName != "" {
+		name = name + " " + lastName
 	}
 
 	// Create user in the database
@@ -227,4 +224,3 @@ func VerifyResetToken(ctx context.Context, id, token string) (bool, error) {
 func ClearResetToken(ctx context.Context, id string) error {
 	return config.ClearResetToken(ctx, id)
 }
-

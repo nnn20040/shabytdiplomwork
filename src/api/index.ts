@@ -95,10 +95,17 @@ export const authApi = {
     last_name: string;
   }) => {
     try {
+      console.log("Отправка данных регистрации:", {
+        ...userData,
+        password: '***скрыто***'
+      });
+
       const response = await apiRequest('/api/auth/register', {
         method: 'POST',
         body: JSON.stringify(userData)
       });
+      
+      console.log("Ответ регистрации:", response);
       
       // Store auth data in localStorage if successful
       if (response.success && response.token) {
