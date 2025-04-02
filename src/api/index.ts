@@ -15,41 +15,47 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
     const url = `${API_URL}${endpoint}`;
     console.log(`Making request to: ${url}`, options);
     
-    // Include auth token if available
-    const token = localStorage.getItem('token');
+    // Включаем headers и CORS настройки без зависимости от токена
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
       ...(options.headers || {}),
     };
     
-    if (token && !headers['Authorization']) {
+    // Токен добавляем только если он доступен и только для определенных запросов
+    const token = localStorage.getItem('token');
+    if (token && endpoint !== '/api/auth/register' && endpoint !== '/api/auth/login') {
       headers['Authorization'] = `Bearer ${token}`;
     }
     
     const response = await fetch(url, {
       ...options,
       headers,
-      // Используем credentials: 'include' чтобы передавать куки
-      credentials: 'include',
+      // Используем 'same-origin' вместо 'include' для локальной разработки
+      credentials: 'same-origin',
     });
 
     console.log(`Received response from ${url}:`, response.status);
 
-    // For non-JSON responses, just return status
-    if (response.headers.get('content-type')?.indexOf('application/json') === -1) {
-      return { status: response.status };
+    // Для JSON-ответов
+    if (response.headers.get('content-type')?.indexOf('application/json') !== -1) {
+      const data = await response.json().catch(() => ({}));
+      console.log(`Response data:`, data);
+
+      // Если ответ не OK, выбрасываем ошибку с сообщением сервера
+      if (!response.ok) {
+        throw new Error(data.message || `Ошибка запроса: ${response.status}`);
+      }
+
+      return { data, status: response.status };
+    } 
+    // Для не-JSON ответов
+    else {
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || `Ошибка запроса: ${response.status}`);
+      }
+      return { status: response.status, data: {} };
     }
-
-    // Parse JSON response if available
-    const data = await response.json().catch(() => ({}));
-    console.log(`Response data:`, data);
-
-    // If response is not ok, throw error with server message or default
-    if (!response.ok) {
-      throw new Error(data.message || `Ошибка запроса: ${response.status}`);
-    }
-
-    return { data, status: response.status };
   } catch (error) {
     console.error('API request error:', error);
     throw error;
@@ -84,19 +90,25 @@ export const authApi = {
   
   // Login user
   login: async (credentials: { email: string; password: string }) => {
-    const response = await apiRequest('/api/auth/login', {
-      method: 'POST',
-      body: JSON.stringify(credentials)
-    });
-    
-    // Store auth data in localStorage if successful
-    if (response.data.token) {
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
-      sessionStorage.setItem('isLoggedIn', 'true');
+    try {
+      console.log("Отправка данных для входа:", credentials.email);
+      const response = await apiRequest('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify(credentials)
+      });
+      
+      // Store auth data in localStorage if successful
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        sessionStorage.setItem('isLoggedIn', 'true');
+      }
+      
+      return response.data;
+    } catch (error) {
+      console.error("Login error:", error);
+      throw error;
     }
-    
-    return response.data;
   },
   
   // Get current user
@@ -116,16 +128,12 @@ export const authApi = {
   // Logout user
   logout: async () => {
     try {
-      await apiRequest('/api/auth/logout', {
-        method: 'POST'
-      });
-    } catch (error) {
-      console.error("Error during logout:", error);
-    } finally {
-      // Always clean up local storage, even if the API call fails
+      // Не отправляем запрос на сервер для logout, просто очищаем localStorage
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       sessionStorage.removeItem('isLoggedIn');
+    } catch (error) {
+      console.error("Error during logout:", error);
     }
     
     return { success: true };

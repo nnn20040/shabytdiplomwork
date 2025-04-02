@@ -1,15 +1,14 @@
-
 package middleware
 
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"strings"
 
 	"backend/models"
+	"backend/config"
 
 	"github.com/dgrijalva/jwt-go"
 )
@@ -18,9 +17,9 @@ import (
 type userContextKey string
 const UserKey userContextKey = "user"
 
-// Protect is a middleware that checks if the user is authenticated
-func Protect(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// RequireAuth is a middleware that checks if the user is authenticated
+func RequireAuth(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 		// Handle preflight OPTIONS requests
 		if r.Method == "OPTIONS" {
 			w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -30,23 +29,23 @@ func Protect(next http.Handler) http.Handler {
 			return
 		}
 
+		// Установка CORS-заголовков
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
-			log.Println("Auth error: No Authorization header")
 			http.Error(w, "Unauthorized: No token provided", http.StatusUnauthorized)
 			return
 		}
 		
 		// Check if the authorization header has the Bearer scheme
 		if !strings.HasPrefix(authHeader, "Bearer ") {
-			log.Println("Auth error: No Bearer prefix in token")
 			http.Error(w, "Unauthorized: Invalid token format", http.StatusUnauthorized)
 			return
 		}
 		
 		// Extract the token
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-		log.Printf("Processing token: %s", tokenString[:10]+"...")
 		
 		// Validate token
 		claims := jwt.MapClaims{}
@@ -66,7 +65,6 @@ func Protect(next http.Handler) http.Handler {
 		})
 		
 		if err != nil || !token.Valid {
-			log.Printf("Auth error: Invalid token - %v", err)
 			http.Error(w, "Unauthorized: Invalid token", http.StatusUnauthorized)
 			return
 		}
@@ -74,7 +72,6 @@ func Protect(next http.Handler) http.Handler {
 		// Get user ID from claims
 		userID, ok := claims["id"].(string)
 		if !ok {
-			log.Println("Auth error: No user ID in token claims")
 			http.Error(w, "Unauthorized: Invalid token claims", http.StatusUnauthorized)
 			return
 		}
@@ -82,30 +79,21 @@ func Protect(next http.Handler) http.Handler {
 		// Get user from database
 		user, err := models.GetUserByID(r.Context(), userID)
 		if err != nil {
-			log.Printf("Auth error: User not found for ID %s - %v", userID, err)
 			http.Error(w, "Unauthorized: User not found", http.StatusUnauthorized)
 			return
 		}
-		
-		log.Printf("Authenticated user: %s (%s)", user.Name, user.Email)
 		
 		// Add user to context
 		ctx := context.WithValue(r.Context(), UserKey, user)
 		
 		// Call the next handler with the updated context
 		next.ServeHTTP(w, r.WithContext(ctx))
-	})
+	}
 }
 
 // StudentOrTeacherOnly is a middleware that checks if the user is a student or teacher
 func StudentOrTeacherOnly(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Handle OPTIONS preflight requests
-		if r.Method == "OPTIONS" {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-		
 		user, ok := r.Context().Value(UserKey).(*models.User)
 		if !ok || (user.Role != "student" && user.Role != "teacher") {
 			http.Error(w, "Unauthorized: Access denied", http.StatusUnauthorized)
@@ -118,12 +106,6 @@ func StudentOrTeacherOnly(next http.HandlerFunc) http.HandlerFunc {
 // TeacherOnly is a middleware that checks if the user is a teacher
 func TeacherOnly(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Handle OPTIONS preflight requests
-		if r.Method == "OPTIONS" {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-		
 		user, ok := r.Context().Value(UserKey).(*models.User)
 		if !ok || user.Role != "teacher" {
 			http.Error(w, "Unauthorized: Teachers only", http.StatusUnauthorized)
@@ -136,24 +118,11 @@ func TeacherOnly(next http.HandlerFunc) http.HandlerFunc {
 // AdminOnly is a middleware that checks if the user is an admin
 func AdminOnly(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Handle OPTIONS preflight requests
-		if r.Method == "OPTIONS" {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-		
 		user, ok := r.Context().Value(UserKey).(*models.User)
 		if !ok || user.Role != "admin" {
 			http.Error(w, "Unauthorized: Admins only", http.StatusUnauthorized)
 			return
 		}
 		next.ServeHTTP(w, r)
-	}
-}
-
-// RequireAuth is an alias for Protect for backward compatibility
-func RequireAuth(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		Protect(next).ServeHTTP(w, r)
 	}
 }

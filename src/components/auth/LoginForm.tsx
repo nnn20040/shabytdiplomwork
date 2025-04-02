@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { EyeIcon, EyeOffIcon } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { authApi } from '@/api'; // Import the authApi from your API client
 
 const LoginForm = () => {
@@ -13,31 +13,25 @@ const LoginForm = () => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const { toast } = useToast();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!email || !password) {
-      toast({
-        title: "Ошибка",
-        description: "Пожалуйста, заполните все поля",
-        variant: "destructive",
-      });
+      toast.error("Пожалуйста, заполните все поля");
       return;
     }
     
     setIsLoading(true);
     
     try {
+      console.log("Попытка входа с email:", email);
       // Use the authApi.login function instead of a direct fetch
       const data = await authApi.login({ email, password });
       
-      toast({
-        title: "Успешный вход",
-        description: "Добро пожаловать в StudyHub!",
-      });
+      toast.success("Успешный вход");
+      console.log("Успешный вход, данные пользователя:", data.user);
       
       // Redirect based on user role
       if (data.user.role === 'teacher') {
@@ -53,11 +47,7 @@ const LoginForm = () => {
         errorMessage = error.message;
       }
       
-      toast({
-        title: "Ошибка",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }

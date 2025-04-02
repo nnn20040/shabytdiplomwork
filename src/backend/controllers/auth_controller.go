@@ -1,4 +1,3 @@
-
 package controllers
 
 import (
@@ -78,15 +77,32 @@ func init() {
 
 // Register registers a new user
 func Register(w http.ResponseWriter, r *http.Request) {
+	// Для CORS preflight requests
+	if r.Method == "OPTIONS" {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	// Устанавливаем CORS-заголовки и для не-preflight запросов
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json")
+
 	var req RegisterRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
+		log.Printf("Register error: Invalid request data - %v", err)
 		http.Error(w, "Invalid request data", http.StatusBadRequest)
 		return
 	}
 
+	log.Printf("Register request: Email=%s, Name=%s, Role=%s", req.Email, req.Name, req.Role)
+
 	// Validate input
 	if req.Name == "" || req.Email == "" || req.Password == "" {
+		log.Printf("Register error: Missing required fields")
 		http.Error(w, "Please provide all required fields", http.StatusBadRequest)
 		return
 	}
@@ -95,6 +111,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	user, err := models.CreateUser(r.Context(), req.Name, req.Email, req.Password, req.Role)
 	if err != nil {
 		if err.Error() == "user with this email already exists" {
+			log.Printf("Register error: User with email %s already exists", req.Email)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		} else {
 			log.Printf("Register error: %v", err)
@@ -102,6 +119,8 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+
+	log.Printf("User registered successfully: %s (%s)", user.Name, user.Email)
 
 	// Generate JWT token
 	token, err := generateJWTToken(user)
@@ -125,13 +144,25 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(response)
 }
 
 // Login authenticates a user
 func Login(w http.ResponseWriter, r *http.Request) {
+	// Для CORS preflight requests
+	if r.Method == "OPTIONS" {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	// Устанавливаем CORS-заголовки и для не-preflight запросов
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json")
+
 	var req LoginRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
@@ -192,7 +223,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("Login successful for user: %s", user.Email)
 
-	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
 }
 

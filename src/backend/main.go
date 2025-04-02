@@ -33,12 +33,19 @@ func main() {
 	// Create router
 	router := mux.NewRouter()
 
-	// Define allowed origins
-	allowedOrigins := []string{"http://localhost:8080", "http://localhost:3000"}
+	// Define allowed origins - добавляем больше IP для локальной разработки
+	allowedOrigins := []string{
+		"http://localhost:8080", 
+		"http://localhost:3000",
+		"http://127.0.0.1:8080", 
+		"http://127.0.0.1:3000",
+		"http://localhost:5173",
+		"http://169.254.143.3:8080",  // Добавляем IP пользователя
+	}
 	
 	// Middleware
 	corsMiddleware := cors.New(cors.Options{
-		AllowedOrigins:   allowedOrigins,
+		AllowedOrigins:   []string{"*"},  // Временно разрешаем все источники для отладки
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Content-Type", "Authorization", "Origin", "Accept", "X-Requested-With"},
 		ExposedHeaders:   []string{"Content-Length"},
@@ -53,6 +60,7 @@ func main() {
 	// Create a basic health check endpoint
 	router.HandleFunc("/api/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"status":"ok","message":"Server is running"}`))
 	}).Methods("GET", "OPTIONS")
