@@ -1,22 +1,18 @@
 
 import { toast } from 'sonner';
+import { aiApi } from '@/api';
 
-const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
-// Это временное решение, в реальном приложении ключ API должен быть на серверной стороне
-// и никогда не должен быть в клиентском коде!
-let OPENAI_API_KEY = '';
-
+// Gemini API is now used on the backend, so we don't need to include the API key in the frontend
 export const setApiKey = (key: string) => {
-  OPENAI_API_KEY = key;
-  localStorage.setItem('openai_api_key', key);
+  // This is just a dummy function now since we're using the backend
+  // In a real app, we would still want to store API keys securely on the backend
+  localStorage.setItem('ai_api_key_set', 'true');
   return true;
 };
 
 export const getApiKey = () => {
-  if (!OPENAI_API_KEY) {
-    OPENAI_API_KEY = localStorage.getItem('openai_api_key') || '';
-  }
-  return OPENAI_API_KEY;
+  // Return a placeholder since the real API key is now on the backend
+  return localStorage.getItem('ai_api_key_set') === 'true' ? 'API_KEY_SET' : '';
 };
 
 export interface AIResponse {
@@ -25,55 +21,24 @@ export interface AIResponse {
 }
 
 export const askAI = async (question: string): Promise<AIResponse> => {
-  const apiKey = getApiKey();
-  
-  if (!apiKey) {
-    toast.error('API ключ не настроен. Пожалуйста, добавьте ключ API в настройках.');
-    return {
-      text: 'Для использования AI-ассистента необходимо добавить API ключ. Пожалуйста, перейдите в настройки и добавьте ключ API.'
-    };
-  }
-
   try {
-    const response = await fetch(OPENAI_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: 'gpt-3.5-turbo',
-        messages: [
-          { 
-            role: 'system', 
-            content: 'Ты образовательный ассистент для сайта Shabyt. Отвечай на вопросы студентов о математике, физике, истории, биологии и другим школьным предметам. Давай четкие, точные и краткие ответы. Используй научный подход и достоверную информацию.' 
-          },
-          { role: 'user', content: question }
-        ],
-        temperature: 0.7,
-        max_tokens: 800
-      })
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('API Error:', errorData);
-      throw new Error(errorData.error?.message || 'Ошибка при запросе к API');
+    // Use the API client to call the backend
+    const response = await aiApi.askQuestion(question);
+    
+    if (response && response.data && response.data.response) {
+      return {
+        text: response.data.response
+      };
+    } else {
+      return getFallbackResponse(question);
     }
-
-    const data = await response.json();
-    return {
-      text: data.choices[0].message.content
-    };
   } catch (error) {
     console.error('Error calling AI service:', error);
-    return {
-      text: 'Произошла ошибка при обращении к сервису AI. Пожалуйста, попробуйте позже или проверьте API ключ.'
-    };
+    return getFallbackResponse(question);
   }
 };
 
-// Fallback для тестирования без API
+// Fallback for testing without API
 export const getFallbackResponse = (question: string): AIResponse => {
   const lowercaseQuestion = question.toLowerCase();
   

@@ -17,7 +17,7 @@ import (
 )
 
 func main() {
-	// Load environment variables
+	// Load environment variables from .env file
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found, using environment variables")
 	}
@@ -33,8 +33,8 @@ func main() {
 	// Create router
 	router := mux.NewRouter()
 
-	// Define allowed origins
-	allowedOrigins := []string{"http://localhost:8080", "http://localhost:3000"}
+	// Define allowed origins - Allow all origins in development for easier testing
+	allowedOrigins := []string{"*"}
 	
 	// Middleware
 	corsMiddleware := cors.New(cors.Options{
@@ -42,7 +42,7 @@ func main() {
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Content-Type", "Authorization", "Origin", "Accept", "X-Requested-With"},
 		ExposedHeaders:   []string{"Content-Length"},
-		AllowCredentials: true,
+		AllowCredentials: true, // Important for cookies
 		MaxAge:           86400, // Maximum value not ignored by any major browser
 		Debug:            true,  // Enable debugging to log CORS issues
 	})
@@ -105,6 +105,7 @@ func setDefaultEnvVars() {
 		"JWT_SECRET":  "shabyt_secure_jwt_key_2025",
 		"GO_ENV":      "development",
 		"FROM_EMAIL":  "nurlibek1204@gmail.com",
+		"GEMINI_API_KEY": "AIzaSyDJC5a7eWgwlPqRPjoQeR0rrxnDPVDXZY0", // Default API key
 	}
 
 	for key, defaultValue := range envVars {

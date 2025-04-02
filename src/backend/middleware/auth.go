@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"backend/models"
 
@@ -17,6 +18,20 @@ import (
 // UserKey is the context key for the user object
 type userContextKey string
 const UserKey userContextKey = "user"
+
+// RequestLogger logs details about incoming requests
+func RequestLogger(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		startTime := time.Now()
+		log.Printf("Request: %s %s", r.Method, r.URL.Path)
+		
+		// Continue to the next middleware/handler
+		next.ServeHTTP(w, r)
+		
+		// Log after request is processed
+		log.Printf("Completed: %s %s in %v", r.Method, r.URL.Path, time.Since(startTime))
+	})
+}
 
 // Protect is a middleware that checks if the user is authenticated
 func Protect(next http.Handler) http.Handler {

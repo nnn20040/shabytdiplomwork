@@ -7,8 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
-import { askAI, getFallbackResponse, getApiKey } from '@/services/aiService';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { aiApi } from '@/api';
 
 type Message = {
   id: number;
@@ -23,7 +22,6 @@ const AIAssistant = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const { t } = useLanguage();
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -65,29 +63,28 @@ const AIAssistant = () => {
     setLoading(true);
 
     try {
-      // Check if API key is set
-      const apiKey = getApiKey();
-      let response;
+      // Call API to get AI response
+      const response = await aiApi.askQuestion(input);
       
-      if (apiKey) {
-        // Use real AI API if key is set
-        response = await askAI(input);
+      // If we got a successful response from the backend
+      if (response && response.data) {
+        const aiResponse = {
+          id: Date.now() + 1,
+          text: response.data.response || 'Извините, произошла ошибка при получении ответа.',
+          isUser: false,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, aiResponse]);
       } else {
-        // Use fallback responses if no API key
-        response = getFallbackResponse(input);
-        toast.warning('Используются тестовые ответы. Для полной функциональности настройте API ключ в настройках.', {
-          duration: 5000,
-        });
+        // Fallback response if we didn't get a proper response
+        const errorMessage = {
+          id: Date.now() + 1,
+          text: 'Извините, произошла ошибка при получении ответа. Пожалуйста, попробуйте еще раз позже.',
+          isUser: false,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, errorMessage]);
       }
-      
-      const aiResponse = {
-        id: Date.now() + 1,
-        text: response.text,
-        isUser: false,
-        timestamp: new Date(),
-      };
-
-      setMessages((prev) => [...prev, aiResponse]);
     } catch (error) {
       console.error('Error getting AI response:', error);
       const errorMessage = {
