@@ -40,6 +40,6 @@ func RegisterAIAssistantRoutes(router *mux.Router) {
 	aiRouter.Handle("/ask", middleware.Protect(http.HandlerFunc(controllers.AskQuestion))).Methods("POST", "OPTIONS")
 	aiRouter.Handle("/history", middleware.Protect(http.HandlerFunc(controllers.GetHistory))).Methods("GET", "OPTIONS")
 
-	// Public endpoint for AI assistance without authentication
+	// Add a public endpoint for AI assistance without authentication
 	aiRouter.HandleFunc("/public-ask", controllers.PublicAskQuestion).Methods("POST", "OPTIONS")
 }

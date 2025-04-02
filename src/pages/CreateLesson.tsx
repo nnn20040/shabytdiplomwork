@@ -45,8 +45,7 @@ const CreateLesson = () => {
       // Convert courseId to number since the API expects a number
       const courseIdNumber = courseId ? parseInt(courseId, 10) : 0;
       
-      // Call the API to create the lesson
-      console.log('Creating lesson for course ID:', courseIdNumber, 'with data:', lessonData);
+      // Вызов реального API
       await coursesApi.createLesson(courseIdNumber, lessonData);
       toast.success('Урок успешно создан!');
       navigate(`/course/${courseId}/manage`);

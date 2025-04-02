@@ -46,9 +46,4 @@ func RegisterCourseRoutes(router *mux.Router) {
 	courseRouter.Handle("/teacher/my-courses", middleware.Protect(middleware.TeacherOnly(http.HandlerFunc(controllers.GetTeacherCourses)))).Methods("GET", "OPTIONS")
 	courseRouter.Handle("/{id}", middleware.Protect(http.HandlerFunc(controllers.UpdateCourse))).Methods("PUT", "OPTIONS")
 	courseRouter.Handle("/{id}", middleware.Protect(http.HandlerFunc(controllers.DeleteCourse))).Methods("DELETE", "OPTIONS")
-	
-	// Lesson routes
-	courseRouter.Handle("/{id}/lessons", middleware.Protect(middleware.TeacherOnly(http.HandlerFunc(controllers.CreateLesson)))).Methods("POST", "OPTIONS")
-	courseRouter.Handle("/{id}/lessons/{lessonId}", middleware.Protect(middleware.TeacherOnly(http.HandlerFunc(controllers.UpdateLesson)))).Methods("PUT", "OPTIONS")
-	courseRouter.Handle("/{id}/lessons/{lessonId}", middleware.Protect(middleware.TeacherOnly(http.HandlerFunc(controllers.DeleteLesson)))).Methods("DELETE", "OPTIONS")
 }
