@@ -40,6 +40,7 @@ func main() {
 		"http://127.0.0.1:8080", 
 		"http://127.0.0.1:3000",
 		"http://localhost:5173",
+		"http://169.254.143.3:8080", // Added your local IP address
 	}
 	
 	// Middleware
