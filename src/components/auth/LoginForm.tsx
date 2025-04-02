@@ -5,49 +5,70 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { EyeIcon, EyeOffIcon } from 'lucide-react';
-import { toast } from 'sonner';
-import { authApi } from '@/api'; // Import the authApi from your API client
+import { useToast } from '@/components/ui/use-toast';
 
 const LoginForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const { toast } = useToast();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!email || !password) {
-      toast.error("Пожалуйста, заполните все поля");
+      toast({
+        title: "Ошибка",
+        description: "Пожалуйста, заполните все поля",
+        variant: "destructive",
+      });
       return;
     }
     
     setIsLoading(true);
     
     try {
-      console.log("Попытка входа с email:", email);
-      // Use the authApi.login function instead of a direct fetch
-      const data = await authApi.login({ email, password });
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
       
-      toast.success("Успешный вход");
-      console.log("Успешный вход, данные пользователя:", data.user);
+      const data = await response.json();
       
-      // Redirect based on user role
-      if (data.user.role === 'teacher') {
-        navigate('/teacher-dashboard');
+      if (response.ok) {
+        // Save token and user info to localStorage
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        
+        toast({
+          title: "Успешный вход",
+          description: "Добро пожаловать в StudyHub!",
+        });
+        
+        // Redirect based on user role
+        if (data.user.role === 'teacher') {
+          navigate('/teacher-dashboard');
+        } else {
+          navigate('/student-dashboard');
+        }
       } else {
-        navigate('/student-dashboard');
+        toast({
+          title: "Ошибка",
+          description: data.message || "Неверные email или пароль",
+          variant: "destructive",
+        });
       }
     } catch (error) {
-      console.error("Login error:", error);
-      let errorMessage = "Неверные email или пароль";
-      
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-      
-      toast.error(errorMessage);
+      toast({
+        title: "Ошибка",
+        description: "Проблема с подключением к серверу",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }

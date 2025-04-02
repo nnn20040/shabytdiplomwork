@@ -5,7 +5,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
 	"time"
 	"strings"
 
@@ -104,7 +103,6 @@ func GetUserByID(ctx context.Context, id string) (*User, error) {
 func GetUserByEmail(ctx context.Context, email string) (*User, error) {
 	userData, err := config.GetUserByEmail(ctx, email)
 	if err != nil {
-		log.Printf("Error getting user by email %s: %v", email, err)
 		if err == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
@@ -193,16 +191,7 @@ func DeleteUser(ctx context.Context, id string) error {
 
 // ComparePassword compares a provided password with the user's hashed password
 func ComparePassword(hashedPassword, providedPassword string) error {
-	if hashedPassword == "" {
-		log.Printf("Password comparison error: Stored password hash is empty")
-		return fmt.Errorf("invalid password hash")
-	}
-	
-	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(providedPassword))
-	if err != nil {
-		log.Printf("Password comparison error: %v", err)
-	}
-	return err
+	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(providedPassword))
 }
 
 // SaveResetToken saves a password reset token for a user
