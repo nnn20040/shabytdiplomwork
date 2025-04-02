@@ -53,16 +53,33 @@ const RegisterForm = () => {
 
       const response = await authApi.register(userData);
       
-      console.log("Успешная регистрация, ответ от сервера:", response);
+      console.log("Ответ регистрации:", response);
+      
+      if (!response.success) {
+        throw new Error(response.message || "Ошибка регистрации");
+      }
+      
       toast.success("Регистрация успешна! Добро пожаловать в StudyHub!");
       
-      if (role === 'teacher') {
-        navigate('/teacher-dashboard');
+      // Проверяем, есть ли токен в ответе
+      if (response.token && response.user) {
+        // Сохраняем данные пользователя при успешной регистрации
+        localStorage.setItem('token', response.token);
+        localStorage.setItem('user', JSON.stringify(response.user));
+        sessionStorage.setItem('isLoggedIn', 'true');
+        
+        // Перенаправляем пользователя на соответствующую страницу
+        if (role === 'teacher') {
+          navigate('/teacher-dashboard');
+        } else {
+          navigate('/student-dashboard');
+        }
       } else {
-        navigate('/student-dashboard');
+        // Если токен не получен, перенаправляем на страницу входа
+        navigate('/login');
       }
     } catch (error) {
-      console.error('Registration error:', error);
+      console.error('Ошибка регистрации:', error);
       toast.error(error instanceof Error ? error.message : "Проблема с подключением к серверу. Проверьте работу бэкенда.");
     } finally {
       setIsLoading(false);

@@ -91,20 +91,30 @@ export const authApi = {
     email: string;
     password: string;
     role: string;
+    first_name: string;
+    last_name: string;
   }) => {
-    const response = await apiRequest('/api/auth/register', {
-      method: 'POST',
-      body: JSON.stringify(userData)
-    });
-    
-    // Store auth data in localStorage if successful
-    if (response.success && response.token) {
-      localStorage.setItem('token', response.token);
-      localStorage.setItem('user', JSON.stringify(response.user));
-      sessionStorage.setItem('isLoggedIn', 'true');
+    try {
+      const response = await apiRequest('/api/auth/register', {
+        method: 'POST',
+        body: JSON.stringify(userData)
+      });
+      
+      // Store auth data in localStorage if successful
+      if (response.success && response.token) {
+        localStorage.setItem('token', response.token);
+        localStorage.setItem('user', JSON.stringify(response.user));
+        sessionStorage.setItem('isLoggedIn', 'true');
+      }
+      
+      return response;
+    } catch (error) {
+      console.error("Registration error:", error);
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : 'Unexpected error during registration'
+      };
     }
-    
-    return response;
   },
   
   // Login user

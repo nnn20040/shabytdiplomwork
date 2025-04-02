@@ -1,4 +1,3 @@
-
 package controllers
 
 import (
@@ -78,27 +77,60 @@ func init() {
 
 // Register registers a new user
 func Register(w http.ResponseWriter, r *http.Request) {
+	// Set CORS headers for all responses
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+	
+	// Handle OPTIONS request for CORS preflight
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
 	var req RegisterRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		http.Error(w, "Invalid request data", http.StatusBadRequest)
+		log.Printf("Error decoding request body: %v", err)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{
+			Success: false,
+			Message: "Invalid request data",
+		})
 		return
 	}
 
 	// Validate input
 	if req.Name == "" || req.Email == "" || req.Password == "" {
-		http.Error(w, "Please provide all required fields", http.StatusBadRequest)
+		log.Printf("Missing required fields: name=%s, email=%s, password_len=%d", req.Name, req.Email, len(req.Password))
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{
+			Success: false,
+			Message: "Пожалуйста, заполните все необходимые поля",
+		})
 		return
 	}
 
 	// Create user
 	user, err := models.CreateUser(r.Context(), req.Name, req.Email, req.Password, req.Role)
 	if err != nil {
+		log.Printf("Error creating user: %v", err)
+		w.Header().Set("Content-Type", "application/json")
+		
 		if err.Error() == "user with this email already exists" {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			w.WriteHeader(http.StatusConflict)
+			json.NewEncoder(w).Encode(Response{
+				Success: false,
+				Message: "Пользователь с таким email уже существует",
+			})
 		} else {
-			log.Printf("Register error: %v", err)
-			http.Error(w, "Server error during registration", http.StatusInternalServerError)
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(Response{
+				Success: false,
+				Message: "Ошибка сервера при регистрации",
+			})
 		}
 		return
 	}
@@ -107,13 +139,19 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	token, err := generateJWTToken(user)
 	if err != nil {
 		log.Printf("Error generating token: %v", err)
-		http.Error(w, "Error generating authentication token", http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(Response{
+			Success: false,
+			Message: "Ошибка генерации токена аутентификации",
+		})
 		return
 	}
 
 	// Return success response
 	response := Response{
 		Success: true,
+		Message: "Регистрация успешна",
 		Token:   token,
 		User: map[string]interface{}{
 			"id":        user.ID,

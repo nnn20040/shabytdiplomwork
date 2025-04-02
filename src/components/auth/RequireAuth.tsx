@@ -24,11 +24,20 @@ const RequireAuth: React.FC<RequireAuthProps> = ({ children }) => {
           console.log("No token or user found in localStorage");
           setIsAuthenticated(false);
           
-          // Save the current location to redirect back after login
-          navigate('/login', { state: { from: location.pathname } });
+          // Сохраняем текущий путь для возврата после входа
+          const returnUrl = location.pathname;
           
-          // Don't show the toast if coming from the registration or login page
-          if (!location.pathname.includes('register') && !location.pathname.includes('login')) {
+          // Не перенаправляем пользователя, если он уже на странице входа или регистрации
+          if (location.pathname.includes('/login') || location.pathname.includes('/register')) {
+            setIsAuthenticated(false);
+            return;
+          }
+          
+          // Перенаправляем на страницу входа с сохранением адреса возврата
+          navigate('/login', { state: { from: returnUrl } });
+          
+          // Показываем уведомление только для защищенных страниц
+          if (!location.pathname.includes('/register') && !location.pathname.includes('/login') && !location.pathname.includes('/')) {
             toast.error('Для доступа к этой странице необходимо войти в систему');
           }
           return;
