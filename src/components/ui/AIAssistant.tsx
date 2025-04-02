@@ -63,7 +63,9 @@ const AIAssistant = () => {
     setLoading(true);
 
     try {
-      // Call API to get AI response
+      // Call API to get AI response - will try authenticated endpoint first,
+      // then fall back to public endpoint
+      console.log("Sending AI request:", input);
       const response = await aiApi.askQuestion(input);
       
       // If we got a successful response from the backend

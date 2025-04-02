@@ -1,4 +1,3 @@
-
 package controllers
 
 import (
@@ -30,6 +29,15 @@ type UpdateCourseRequest struct {
 	Image       string `json:"image"`
 	Duration    string `json:"duration"`
 	Featured    bool   `json:"featured"`
+}
+
+// LessonRequest represents a request to create or update a lesson
+type LessonRequest struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Content     string `json:"content"`
+	VideoURL    string `json:"video_url"`
+	OrderIndex  int    `json:"order_index"`
 }
 
 // CreateCourse creates a new course
@@ -329,6 +337,184 @@ func GetTeacherCourses(w http.ResponseWriter, r *http.Request) {
 			"count":   len(courses),
 			"courses": courses,
 		},
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+// CreateLesson creates a new lesson for a course
+func CreateLesson(w http.ResponseWriter, r *http.Request) {
+	// Get user from context (added by Protect middleware)
+	user, ok := r.Context().Value(middleware.UserKey).(*models.User)
+	if !ok {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	// Get course ID from URL
+	vars := mux.Vars(r)
+	courseId := vars["id"]
+
+	// Get course to check ownership
+	course, err := models.GetCourseByID(r.Context(), courseId)
+	if err != nil {
+		if err == models.ErrNotFound {
+			http.Error(w, "Course not found", http.StatusNotFound)
+		} else {
+			log.Printf("Get course by ID error: %v", err)
+			http.Error(w, "Server error while retrieving course", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	// Check if user is the teacher of this course or an admin
+	if course.TeacherID != user.ID && user.Role != "admin" {
+		http.Error(w, "Not authorized to add lessons to this course", http.StatusForbidden)
+		return
+	}
+
+	// Parse request body
+	var req LessonRequest
+	err = json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		http.Error(w, "Invalid request data", http.StatusBadRequest)
+		return
+	}
+
+	// Validate input
+	if req.Title == "" {
+		http.Error(w, "Lesson title is required", http.StatusBadRequest)
+		return
+	}
+
+	// Create lesson
+	lesson, err := models.CreateLesson(r.Context(), courseId, req.Title, req.Description, req.Content, req.VideoURL, req.OrderIndex)
+	if err != nil {
+		log.Printf("Create lesson error: %v", err)
+		http.Error(w, "Server error during lesson creation", http.StatusInternalServerError)
+		return
+	}
+
+	// Return success response
+	response := Response{
+		Success: true,
+		Data:    lesson,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(response)
+}
+
+// UpdateLesson updates an existing lesson
+func UpdateLesson(w http.ResponseWriter, r *http.Request) {
+	// Get user from context (added by Protect middleware)
+	user, ok := r.Context().Value(middleware.UserKey).(*models.User)
+	if !ok {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	// Get course ID and lesson ID from URL
+	vars := mux.Vars(r)
+	courseId := vars["id"]
+	lessonId := vars["lessonId"]
+
+	// Get course to check ownership
+	course, err := models.GetCourseByID(r.Context(), courseId)
+	if err != nil {
+		if err == models.ErrNotFound {
+			http.Error(w, "Course not found", http.StatusNotFound)
+		} else {
+			log.Printf("Get course by ID error: %v", err)
+			http.Error(w, "Server error while retrieving course", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	// Check if user is the teacher of this course or an admin
+	if course.TeacherID != user.ID && user.Role != "admin" {
+		http.Error(w, "Not authorized to update lessons for this course", http.StatusForbidden)
+		return
+	}
+
+	// Parse request body
+	var req LessonRequest
+	err = json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		http.Error(w, "Invalid request data", http.StatusBadRequest)
+		return
+	}
+
+	// Validate input
+	if req.Title == "" {
+		http.Error(w, "Lesson title is required", http.StatusBadRequest)
+		return
+	}
+
+	// Update lesson
+	lesson, err := models.UpdateLesson(r.Context(), courseId, lessonId, req.Title, req.Description, req.Content, req.VideoURL, req.OrderIndex)
+	if err != nil {
+		log.Printf("Update lesson error: %v", err)
+		http.Error(w, "Server error during lesson update", http.StatusInternalServerError)
+		return
+	}
+
+	// Return success response
+	response := Response{
+		Success: true,
+		Data:    lesson,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+// DeleteLesson deletes a lesson
+func DeleteLesson(w http.ResponseWriter, r *http.Request) {
+	// Get user from context (added by Protect middleware)
+	user, ok := r.Context().Value(middleware.UserKey).(*models.User)
+	if !ok {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	// Get course ID and lesson ID from URL
+	vars := mux.Vars(r)
+	courseId := vars["id"]
+	lessonId := vars["lessonId"]
+
+	// Get course to check ownership
+	course, err := models.GetCourseByID(r.Context(), courseId)
+	if err != nil {
+		if err == models.ErrNotFound {
+			http.Error(w, "Course not found", http.StatusNotFound)
+		} else {
+			log.Printf("Get course by ID error: %v", err)
+			http.Error(w, "Server error while retrieving course", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	// Check if user is the teacher of this course or an admin
+	if course.TeacherID != user.ID && user.Role != "admin" {
+		http.Error(w, "Not authorized to delete lessons for this course", http.StatusForbidden)
+		return
+	}
+
+	// Delete lesson
+	err = models.DeleteLesson(r.Context(), courseId, lessonId)
+	if err != nil {
+		log.Printf("Delete lesson error: %v", err)
+		http.Error(w, "Server error during lesson deletion", http.StatusInternalServerError)
+		return
+	}
+
+	// Return success response
+	response := Response{
+		Success: true,
+		Message: "Lesson deleted successfully",
 	}
 
 	w.Header().Set("Content-Type", "application/json")

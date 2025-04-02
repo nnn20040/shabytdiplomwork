@@ -135,7 +135,51 @@ export const authApi = {
     return { success: true };
   },
   
-  // ... keep existing code (other auth methods)
+  // Forgot password
+  forgotPassword: async (email: string) => {
+    console.log("Requesting password reset for:", email);
+    const response = await apiRequest('/api/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email })
+    });
+    return response.data;
+  },
+
+  // Reset password
+  resetPassword: async (resetData: { token: string; password: string }) => {
+    console.log("Resetting password with token:", resetData.token);
+    const response = await apiRequest('/api/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify(resetData)
+    });
+    return response.data;
+  },
+
+  // Change password
+  changePassword: async (passwords: { oldPassword: string; newPassword: string }) => {
+    console.log("Changing password");
+    const response = await apiRequest('/api/auth/change-password', {
+      method: 'PUT',
+      body: JSON.stringify(passwords)
+    });
+    return response.data;
+  },
+
+  // Update profile
+  updateProfile: async (profileData: { name: string; email: string }) => {
+    console.log("Updating profile:", profileData);
+    const response = await apiRequest('/api/auth/profile', {
+      method: 'PUT',
+      body: JSON.stringify(profileData)
+    });
+
+    // Update user data in localStorage
+    if (response.data.user) {
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+    }
+
+    return response.data;
+  },
 };
 
 /**
@@ -145,12 +189,25 @@ export const aiApi = {
   askQuestion: async (question: string) => {
     console.log("Asking AI question:", question);
     try {
-      const response = await apiRequest('/api/ai-assistant/ask', {
-        method: 'POST',
-        body: JSON.stringify({ question })
-      });
+      // First try the authenticated endpoint
+      const token = localStorage.getItem('token');
       
-      return response.data;
+      if (token) {
+        const response = await apiRequest('/api/ai-assistant/ask', {
+          method: 'POST',
+          body: JSON.stringify({ question })
+        });
+        
+        return response.data;
+      } else {
+        // If no token, use the public endpoint
+        const response = await apiRequest('/api/ai-assistant/public-ask', {
+          method: 'POST',
+          body: JSON.stringify({ question })
+        });
+        
+        return response.data;
+      }
     } catch (error) {
       console.error("Error asking AI:", error);
       return getFallbackResponse(question);
@@ -230,94 +287,200 @@ export const getFallbackResponse = async (question: string) => {
 export const coursesApi = {
   // Get all courses
   getCourses: async () => {
-    const response = await apiRequest('/api/courses');
-    return response.data;
+    console.log("Getting all courses");
+    try {
+      const response = await apiRequest('/api/courses');
+      return response.data;
+    } catch (error) {
+      console.error("Error getting courses:", error);
+      throw error;
+    }
   },
   
   // Get featured courses
   getFeaturedCourses: async () => {
-    const response = await apiRequest('/api/courses/featured');
-    return response.data;
+    console.log("Getting featured courses");
+    try {
+      const response = await apiRequest('/api/courses?featured=true');
+      return response.data;
+    } catch (error) {
+      console.error("Error getting featured courses:", error);
+      throw error;
+    }
   },
   
   // Get course details
   getCourseDetails: async (courseId: string | number) => {
-    const response = await apiRequest(`/api/courses/${courseId}`);
-    return response.data;
+    console.log("Getting course details:", courseId);
+    try {
+      const response = await apiRequest(`/api/courses/${courseId}`);
+      return response.data;
+    } catch (error) {
+      console.error("Error getting course details:", error);
+      throw error;
+    }
   },
   
   // Create a new course
   createCourse: async (courseData: any) => {
-    const response = await apiRequest('/api/courses', {
-      method: 'POST',
-      body: JSON.stringify(courseData)
-    });
-    
-    return response.data;
+    console.log("Creating course:", courseData);
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Требуется авторизация');
+      }
+      
+      const response = await apiRequest('/api/courses', {
+        method: 'POST',
+        body: JSON.stringify(courseData)
+      });
+      
+      return response.data;
+    } catch (error) {
+      console.error("Error creating course:", error);
+      throw error;
+    }
   },
   
   // Update a course
   updateCourse: async (courseId: string | number, courseData: any) => {
-    const response = await apiRequest(`/api/courses/${courseId}`, {
-      method: 'PUT',
-      body: JSON.stringify(courseData)
-    });
-    
-    return response.data;
+    console.log("Updating course:", courseId, courseData);
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Требуется авторизация');
+      }
+      
+      const response = await apiRequest(`/api/courses/${courseId}`, {
+        method: 'PUT',
+        body: JSON.stringify(courseData)
+      });
+      
+      return response.data;
+    } catch (error) {
+      console.error("Error updating course:", error);
+      throw error;
+    }
   },
   
   // Delete a course
   deleteCourse: async (courseId: string | number) => {
-    const response = await apiRequest(`/api/courses/${courseId}`, {
-      method: 'DELETE'
-    });
-    
-    return response.data;
+    console.log("Deleting course:", courseId);
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Требуется авторизация');
+      }
+      
+      const response = await apiRequest(`/api/courses/${courseId}`, {
+        method: 'DELETE'
+      });
+      
+      return response.data;
+    } catch (error) {
+      console.error("Error deleting course:", error);
+      throw error;
+    }
   },
   
   // Create a new lesson
   createLesson: async (courseId: string | number, lessonData: any) => {
-    const response = await apiRequest(`/api/courses/${courseId}/lessons`, {
-      method: 'POST',
-      body: JSON.stringify(lessonData)
-    });
-    
-    return response.data;
+    console.log("Creating lesson for course:", courseId, lessonData);
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Требуется авторизация');
+      }
+      
+      const response = await apiRequest(`/api/courses/${courseId}/lessons`, {
+        method: 'POST',
+        body: JSON.stringify(lessonData)
+      });
+      
+      return response.data;
+    } catch (error) {
+      console.error("Error creating lesson:", error);
+      throw error;
+    }
   },
   
   // Update a lesson
   updateLesson: async (courseId: string | number, lessonId: string | number, lessonData: any) => {
-    const response = await apiRequest(`/api/courses/${courseId}/lessons/${lessonId}`, {
-      method: 'PUT',
-      body: JSON.stringify(lessonData)
-    });
-    
-    return response.data;
+    console.log("Updating lesson:", courseId, lessonId, lessonData);
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Требуется авторизация');
+      }
+      
+      const response = await apiRequest(`/api/courses/${courseId}/lessons/${lessonId}`, {
+        method: 'PUT',
+        body: JSON.stringify(lessonData)
+      });
+      
+      return response.data;
+    } catch (error) {
+      console.error("Error updating lesson:", error);
+      throw error;
+    }
   },
   
   // Delete a lesson
   deleteLesson: async (courseId: string | number, lessonId: string | number) => {
-    const response = await apiRequest(`/api/courses/${courseId}/lessons/${lessonId}`, {
-      method: 'DELETE'
-    });
-    
-    return response.data;
+    console.log("Deleting lesson:", courseId, lessonId);
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Требуется авторизация');
+      }
+      
+      const response = await apiRequest(`/api/courses/${courseId}/lessons/${lessonId}`, {
+        method: 'DELETE'
+      });
+      
+      return response.data;
+    } catch (error) {
+      console.error("Error deleting lesson:", error);
+      throw error;
+    }
   },
   
   // Enroll in a course
   enrollCourse: async (courseId: string | number) => {
-    const response = await apiRequest(`/api/courses/${courseId}/enroll`, {
-      method: 'POST'
-    });
-    
-    return response.data;
+    console.log("Enrolling in course:", courseId);
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Требуется авторизация');
+      }
+      
+      const response = await apiRequest(`/api/courses/${courseId}/enroll`, {
+        method: 'POST'
+      });
+      
+      return response.data;
+    } catch (error) {
+      console.error("Error enrolling in course:", error);
+      throw error;
+    }
   },
   
   // Get enrolled courses
   getEnrolledCourses: async () => {
-    const response = await apiRequest('/api/enrollments');
-    
-    return response.data;
+    console.log("Getting enrolled courses");
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Требуется авторизация');
+      }
+      
+      const response = await apiRequest('/api/enrollments');
+      
+      return response.data;
+    } catch (error) {
+      console.error("Error getting enrolled courses:", error);
+      throw error;
+    }
   }
 };
 
