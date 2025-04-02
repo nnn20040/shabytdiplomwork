@@ -29,21 +29,36 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
       headers['Authorization'] = `Bearer ${token}`;
     }
     
+    // Log out the full request details for debugging
+    console.log(`Full request details:`, {
+      url,
+      method: options.method || 'GET',
+      headers,
+      body: options.body ? JSON.parse(options.body as string) : null
+    });
+    
     const response = await fetch(url, {
       ...options,
       headers,
-      // Include credentials for cookies
-      credentials: 'include',
+      credentials: 'include', // Include credentials for cookies
     });
 
     console.log(`Received response from ${url}:`, response.status);
 
-    // For non-JSON responses, just return status
-    if (response.headers.get('content-type')?.indexOf('application/json') === -1) {
+    // Handle different response types appropriately
+    const contentType = response.headers.get('content-type');
+    console.log(`Response content type: ${contentType}`);
+    
+    // For non-JSON responses
+    if (!contentType || contentType.indexOf('application/json') === -1) {
+      const text = await response.text();
+      console.log(`Non-JSON response: ${text}`);
+      
       return { 
         success: response.ok,
         status: response.status,
-        message: response.statusText
+        message: response.ok ? "Operation successful" : text || response.statusText,
+        rawResponse: text
       };
     }
 
@@ -54,10 +69,14 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
       console.log(`Response data:`, data);
     } catch (error) {
       console.error('Error parsing JSON response:', error);
+      const text = await response.text();
+      console.log(`Failed to parse as JSON: ${text}`);
+      
       return { 
         success: false, 
         status: response.status,
-        message: 'Invalid JSON response'
+        message: 'Invalid JSON response',
+        rawResponse: text
       };
     }
 
@@ -76,7 +95,8 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
     console.error('API request error:', error);
     return {
       success: false,
-      message: error instanceof Error ? error.message : 'Unknown error'
+      message: error instanceof Error ? error.message : 'Unknown error',
+      error: error
     };
   }
 }

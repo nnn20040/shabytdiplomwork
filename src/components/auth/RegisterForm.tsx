@@ -19,10 +19,12 @@ const RegisterForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     
     if (!firstName || !lastName || !email || !password || !confirmPassword) {
       toast.error("Пожалуйста, заполните все поля");
@@ -46,13 +48,32 @@ const RegisterForm = () => {
         last_name: lastName
       };
       
+      console.log("Отправка данных регистрации:", {
+        ...userData,
+        password: '***скрыто***'
+      });
+      
       const response = await authApi.register(userData);
+      console.log("Ответ регистрации:", response);
       
       if (!response.success) {
-        throw new Error(response.message || "Ошибка регистрации");
+        const errorMessage = response.message || "Ошибка при регистрации";
+        setError(errorMessage);
+        toast.error(errorMessage);
+        throw new Error(errorMessage);
       }
       
       toast.success("Регистрация успешна! Добро пожаловать в StudyHub!");
+      
+      // Сохраняем данные сессии если они не были сохранены в authApi.register
+      if (response.token && !localStorage.getItem('token')) {
+        localStorage.setItem('token', response.token);
+      }
+      
+      if (response.user && !localStorage.getItem('user')) {
+        localStorage.setItem('user', JSON.stringify(response.user));
+        sessionStorage.setItem('isLoggedIn', 'true');
+      }
       
       // Автоматически перенаправляем пользователя на соответствующую страницу
       if (role === 'teacher') {
@@ -62,7 +83,7 @@ const RegisterForm = () => {
       }
     } catch (error) {
       console.error('Ошибка регистрации:', error);
-      toast.error(error instanceof Error ? error.message : "Проблема с подключением к серверу. Проверьте работу бэкенда.");
+      // Ошибка уже показана через toast выше
     } finally {
       setIsLoading(false);
     }
@@ -76,6 +97,12 @@ const RegisterForm = () => {
           Присоединяйтесь к тысячам студентов, успешно сдавших ЕНТ
         </p>
       </div>
+      
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
+          {error}
+        </div>
+      )}
       
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-2 gap-4">

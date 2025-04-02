@@ -99,7 +99,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(Response{
 			Success: false,
-			Message: "Invalid request data",
+			Message: "Invalid request data: " + err.Error(),
 		})
 		return
 	}
@@ -110,8 +110,9 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Registration request: %+v", logReq)
 
 	// Validate input
-	if req.Name == "" || req.Email == "" || req.Password == "" {
-		log.Printf("Missing required fields: name=%s, email=%s, password_len=%d", req.Name, req.Email, len(req.Password))
+	if req.FirstName == "" || req.LastName == "" || req.Email == "" || req.Password == "" {
+		log.Printf("Missing required fields: firstName=%s, lastName=%s, email=%s, password_len=%d", 
+			req.FirstName, req.LastName, req.Email, len(req.Password))
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(Response{
 			Success: false,
@@ -120,7 +121,28 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Create user with the correct function signature - 6 parameters
+	// Сначала проверим, существует ли пользователь с таким email
+	existingUser, err := models.GetUserByEmail(r.Context(), req.Email)
+	if err == nil && existingUser != nil {
+		log.Printf("User with email %s already exists", req.Email)
+		w.WriteHeader(http.StatusConflict)
+		json.NewEncoder(w).Encode(Response{
+			Success: false,
+			Message: "Пользователь с таким email уже существует",
+		})
+		return
+	}
+
+	// Generate name from firstName and lastName if not provided
+	if req.Name == "" {
+		req.Name = req.FirstName
+		if req.LastName != "" {
+			req.Name += " " + req.LastName
+		}
+	}
+
+	// Create user
+	log.Printf("Creating user: %s (%s)", req.Name, req.Email)
 	user, err := models.CreateUser(r.Context(), req.FirstName, req.LastName, req.Email, req.Password, req.Role)
 	if err != nil {
 		log.Printf("Error creating user: %v", err)
@@ -132,6 +154,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 				Message: "Пользователь с таким email уже существует",
 			})
 		} else {
+			log.Printf("Server error during registration: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(Response{
 				Success: false,
@@ -152,6 +175,8 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
+
+	log.Printf("User created successfully: %s (%s)", user.Name, user.Email)
 
 	// Return success response
 	response := Response{

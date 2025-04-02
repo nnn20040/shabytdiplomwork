@@ -1,4 +1,3 @@
-
 package main
 
 import (
@@ -33,14 +32,9 @@ func main() {
 	// Create router
 	router := mux.NewRouter()
 
-	// Define allowed origins
+	// Define allowed origins - включаем все домены для отладки
 	allowedOrigins := []string{
-		"http://localhost:8080", 
-		"http://localhost:3000", 
-		"http://127.0.0.1:8080", 
-		"http://127.0.0.1:3000",
-		"http://localhost:5173",
-		"http://169.254.143.3:8080", // Added your local IP address
+		"*", // Allow all origins for debugging
 	}
 	
 	// Middleware
