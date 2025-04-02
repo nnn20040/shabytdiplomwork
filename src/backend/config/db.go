@@ -1,4 +1,3 @@
-
 package config
 
 import (
@@ -259,6 +258,29 @@ func ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Re
 		return nil, fmt.Errorf("error executing query: %w", err)
 	}
 	return result, nil
+}
+
+// QueryContext executes a query that returns rows.
+func QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
+	rows, err := db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("error executing query: %w", err)
+	}
+	return rows, nil
+}
+
+// QueryRowContext executes a query that is expected to return at most one row.
+func QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row {
+	return db.QueryRowContext(ctx, query, args...)
+}
+
+// BeginTx starts a transaction.
+func BeginTx(ctx context.Context) (*sql.Tx, error) {
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error starting transaction: %w", err)
+	}
+	return tx, nil
 }
 
 // SaveResetToken saves a password reset token for a user
