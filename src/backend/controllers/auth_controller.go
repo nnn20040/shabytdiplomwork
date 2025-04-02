@@ -120,7 +120,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Create user
+	// Create user with the correct function signature - 6 parameters
 	user, err := models.CreateUser(r.Context(), req.FirstName, req.LastName, req.Email, req.Password, req.Role)
 	if err != nil {
 		log.Printf("Error creating user: %v", err)
