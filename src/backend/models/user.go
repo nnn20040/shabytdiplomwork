@@ -1,3 +1,4 @@
+
 package models
 
 import (
@@ -33,7 +34,7 @@ type User struct {
 }
 
 // CreateUser creates a new user in the database
-func CreateUser(ctx context.Context, firstName, lastName, email, password, role string) (*User, error) {
+func CreateUser(ctx context.Context, name, email, password, role string) (*User, error) {
 	// Hash password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
@@ -45,10 +46,12 @@ func CreateUser(ctx context.Context, firstName, lastName, email, password, role 
 		role = "student"
 	}
 
-	// Generate name from firstName and lastName
-	name := firstName
-	if lastName != "" {
-		name = name + " " + lastName
+	// Split name into first name and last name
+	nameParts := strings.Split(name, " ")
+	firstName := nameParts[0]
+	lastName := ""
+	if len(nameParts) > 1 {
+		lastName = strings.Join(nameParts[1:], " ")
 	}
 
 	// Create user in the database
@@ -99,7 +102,6 @@ func GetUserByID(ctx context.Context, id string) (*User, error) {
 
 // GetUserByEmail retrieves a user by email
 func GetUserByEmail(ctx context.Context, email string) (*User, error) {
-	log.Printf("Retrieving user by email: %s", email)
 	userData, err := config.GetUserByEmail(ctx, email)
 	if err != nil {
 		log.Printf("Error getting user by email %s: %v", email, err)
@@ -109,8 +111,6 @@ func GetUserByEmail(ctx context.Context, email string) (*User, error) {
 		return nil, err
 	}
 
-	log.Printf("User found in database: %s (%s)", userData["Email"], userData["ID"])
-	
 	user := &User{
 		ID:        userData["ID"].(string),
 		Email:     userData["Email"].(string),
@@ -198,16 +198,11 @@ func ComparePassword(hashedPassword, providedPassword string) error {
 		return fmt.Errorf("invalid password hash")
 	}
 	
-	log.Printf("Comparing password: Hash length=%d, Provided password length=%d", len(hashedPassword), len(providedPassword))
-	
 	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(providedPassword))
 	if err != nil {
-		log.Printf("Password comparison failed: %v", err)
-		return err
+		log.Printf("Password comparison error: %v", err)
 	}
-	
-	log.Printf("Password comparison successful")
-	return nil
+	return err
 }
 
 // SaveResetToken saves a password reset token for a user

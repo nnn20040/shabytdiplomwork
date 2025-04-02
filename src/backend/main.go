@@ -1,3 +1,4 @@
+
 package main
 
 import (
@@ -32,10 +33,8 @@ func main() {
 	// Create router
 	router := mux.NewRouter()
 
-	// Define allowed origins - включаем все домены для отладки
-	allowedOrigins := []string{
-		"*", // Allow all origins for debugging
-	}
+	// Define allowed origins
+	allowedOrigins := []string{"http://localhost:8080", "http://localhost:3000"}
 	
 	// Middleware
 	corsMiddleware := cors.New(cors.Options{

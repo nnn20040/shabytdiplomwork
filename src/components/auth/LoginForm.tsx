@@ -1,51 +1,46 @@
 
 import { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { EyeIcon, EyeOffIcon } from 'lucide-react';
-import { toast } from 'sonner';
-import { authApi } from '@/api';
+import { useToast } from '@/components/ui/use-toast';
+import { authApi } from '@/api'; // Import the authApi from your API client
 
 const LoginForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const { toast } = useToast();
   const navigate = useNavigate();
-  const location = useLocation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!email || !password) {
-      toast.error("Пожалуйста, заполните все поля");
+      toast({
+        title: "Ошибка",
+        description: "Пожалуйста, заполните все поля",
+        variant: "destructive",
+      });
       return;
     }
     
     setIsLoading(true);
     
     try {
-      console.log("Attempting to login with:", { email, password });
+      // Use the authApi.login function instead of a direct fetch
+      const data = await authApi.login({ email, password });
       
-      // Use the authApi.login function
-      const response = await authApi.login({ email, password });
-      
-      console.log("Login response:", response);
-      
-      // Check if login was successful
-      if (!response.success) {
-        throw new Error(response.message || "Ошибка входа");
-      }
-      
-      toast.success("Добро пожаловать в StudyHub!");
-      
-      // Get the redirect path from location state or default to dashboard
-      const from = location.state?.from || '/';
+      toast({
+        title: "Успешный вход",
+        description: "Добро пожаловать в StudyHub!",
+      });
       
       // Redirect based on user role
-      if (response.user && response.user.role === 'teacher') {
+      if (data.user.role === 'teacher') {
         navigate('/teacher-dashboard');
       } else {
         navigate('/student-dashboard');
@@ -58,7 +53,11 @@ const LoginForm = () => {
         errorMessage = error.message;
       }
       
-      toast.error(errorMessage);
+      toast({
+        title: "Ошибка",
+        description: errorMessage,
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }

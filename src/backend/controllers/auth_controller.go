@@ -1,3 +1,4 @@
+
 package controllers
 
 import (
@@ -9,7 +10,6 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	"backend/middleware"
@@ -30,12 +30,10 @@ type Response struct {
 
 // RegisterRequest represents a user registration request
 type RegisterRequest struct {
-	Name      string `json:"name"`
-	Email     string `json:"email"`
-	Password  string `json:"password"`
-	Role      string `json:"role"`
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+	Role     string `json:"role"`
 }
 
 // LoginRequest represents a user login request
@@ -80,86 +78,27 @@ func init() {
 
 // Register registers a new user
 func Register(w http.ResponseWriter, r *http.Request) {
-	// Set CORS headers for all responses
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-	w.Header().Set("Content-Type", "application/json")
-	
-	// Handle OPTIONS request for CORS preflight
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-
 	var req RegisterRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		log.Printf("Error decoding request body: %v", err)
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{
-			Success: false,
-			Message: "Invalid request data: " + err.Error(),
-		})
+		http.Error(w, "Invalid request data", http.StatusBadRequest)
 		return
 	}
-
-	// Log the registration request (without the password)
-	logReq := req
-	logReq.Password = "***REDACTED***"
-	log.Printf("Registration request: %+v", logReq)
 
 	// Validate input
-	if req.FirstName == "" || req.LastName == "" || req.Email == "" || req.Password == "" {
-		log.Printf("Missing required fields: firstName=%s, lastName=%s, email=%s, password_len=%d", 
-			req.FirstName, req.LastName, req.Email, len(req.Password))
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{
-			Success: false,
-			Message: "Пожалуйста, заполните все необходимые поля",
-		})
+	if req.Name == "" || req.Email == "" || req.Password == "" {
+		http.Error(w, "Please provide all required fields", http.StatusBadRequest)
 		return
-	}
-
-	// Сначала проверим, существует ли пользователь с таким email
-	existingUser, err := models.GetUserByEmail(r.Context(), req.Email)
-	if err == nil && existingUser != nil {
-		log.Printf("User with email %s already exists", req.Email)
-		w.WriteHeader(http.StatusConflict)
-		json.NewEncoder(w).Encode(Response{
-			Success: false,
-			Message: "Пользователь с таким email уже существует",
-		})
-		return
-	}
-
-	// Generate name from firstName and lastName if not provided
-	if req.Name == "" {
-		req.Name = req.FirstName
-		if req.LastName != "" {
-			req.Name += " " + req.LastName
-		}
 	}
 
 	// Create user
-	log.Printf("Creating user: %s (%s)", req.Name, req.Email)
-	user, err := models.CreateUser(r.Context(), req.FirstName, req.LastName, req.Email, req.Password, req.Role)
+	user, err := models.CreateUser(r.Context(), req.Name, req.Email, req.Password, req.Role)
 	if err != nil {
-		log.Printf("Error creating user: %v", err)
-		
-		if strings.Contains(err.Error(), "user with this email already exists") {
-			w.WriteHeader(http.StatusConflict)
-			json.NewEncoder(w).Encode(Response{
-				Success: false,
-				Message: "Пользователь с таким email уже существует",
-			})
+		if err.Error() == "user with this email already exists" {
+			http.Error(w, err.Error(), http.StatusBadRequest)
 		} else {
-			log.Printf("Server error during registration: %v", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(Response{
-				Success: false,
-				Message: "Ошибка сервера при регистрации: " + err.Error(),
-			})
+			log.Printf("Register error: %v", err)
+			http.Error(w, "Server error during registration", http.StatusInternalServerError)
 		}
 		return
 	}
@@ -168,20 +107,13 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	token, err := generateJWTToken(user)
 	if err != nil {
 		log.Printf("Error generating token: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(Response{
-			Success: false,
-			Message: "Ошибка генерации токена аутентификации",
-		})
+		http.Error(w, "Error generating authentication token", http.StatusInternalServerError)
 		return
 	}
-
-	log.Printf("User created successfully: %s (%s)", user.Name, user.Email)
 
 	// Return success response
 	response := Response{
 		Success: true,
-		Message: "Регистрация успешна",
 		Token:   token,
 		User: map[string]interface{}{
 			"id":        user.ID,
@@ -193,26 +125,13 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(response)
 }
 
 // Login authenticates a user
 func Login(w http.ResponseWriter, r *http.Request) {
-	log.Printf("Login handler called with method: %s", r.Method)
-	
-	// Set CORS headers for all responses
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-	
-	// Handle OPTIONS request for CORS preflight
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-
-	// Parse request body
 	var req LoginRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
@@ -235,37 +154,17 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	user, err := models.GetUserByEmail(r.Context(), req.Email)
 	if err != nil {
 		log.Printf("Login error: User not found for email %s - %v", req.Email, err)
-		
-		// Use Response struct for consistent JSON format even in error cases
-		response := Response{
-			Success: false,
-			Message: "Invalid credentials",
-		}
-		
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusUnauthorized)
-		json.NewEncoder(w).Encode(response)
+		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
 		return
 	}
 
 	log.Printf("User found: %s (%s)", user.Name, user.Email)
-	log.Printf("Stored password hash: %s", user.Password)
-	log.Printf("Comparing with provided password: %s", req.Password)
 
 	// Verify password
 	err = models.ComparePassword(user.Password, req.Password)
 	if err != nil {
 		log.Printf("Login error: Invalid password for user %s - %v", user.Email, err)
-		
-		// Use Response struct for consistent JSON format
-		response := Response{
-			Success: false,
-			Message: "Invalid credentials",
-		}
-		
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusUnauthorized)
-		json.NewEncoder(w).Encode(response)
+		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
 		return
 	}
 
@@ -273,22 +172,13 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	token, err := generateJWTToken(user)
 	if err != nil {
 		log.Printf("Error generating token: %v", err)
-		
-		response := Response{
-			Success: false,
-			Message: "Error generating authentication token",
-		}
-		
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(response)
+		http.Error(w, "Error generating authentication token", http.StatusInternalServerError)
 		return
 	}
 
 	// Return success response
 	response := Response{
 		Success: true,
-		Message: "Login successful",
 		Token:   token,
 		User: map[string]interface{}{
 			"id":        user.ID,
@@ -301,10 +191,8 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Printf("Login successful for user: %s", user.Email)
-	log.Printf("Token generated: %s...", token[:20])
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
 }
 

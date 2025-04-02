@@ -4,11 +4,8 @@
 
 // Base API URL - Update this to point to the backend server
 const API_URL = process.env.NODE_ENV === 'production' 
-  ? '' // In production we use relative URLs
-  : 'http://localhost:5000'; // In development we use the full URL with backend port
-
-// Debug API URL
-console.log(`API is configured to use: ${API_URL}`);
+  ? '' // В продакшене используем относительные URL
+  : 'http://localhost:5000'; // В разработке указываем полный URL с портом бэкенда
 
 /**
  * Make API request with proper error handling
@@ -29,75 +26,33 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
       headers['Authorization'] = `Bearer ${token}`;
     }
     
-    // Log out the full request details for debugging
-    console.log(`Full request details:`, {
-      url,
-      method: options.method || 'GET',
-      headers,
-      body: options.body ? JSON.parse(options.body as string) : null
-    });
-    
     const response = await fetch(url, {
       ...options,
       headers,
-      credentials: 'include', // Include credentials for cookies
+      // Используем credentials: 'include' чтобы передавать куки
+      credentials: 'include',
     });
 
     console.log(`Received response from ${url}:`, response.status);
 
-    // Handle different response types appropriately
-    const contentType = response.headers.get('content-type');
-    console.log(`Response content type: ${contentType}`);
-    
-    // For non-JSON responses
-    if (!contentType || contentType.indexOf('application/json') === -1) {
-      const text = await response.text();
-      console.log(`Non-JSON response: ${text}`);
-      
-      return { 
-        success: response.ok,
-        status: response.status,
-        message: response.ok ? "Operation successful" : text || response.statusText,
-        rawResponse: text
-      };
+    // For non-JSON responses, just return status
+    if (response.headers.get('content-type')?.indexOf('application/json') === -1) {
+      return { status: response.status };
     }
 
     // Parse JSON response if available
-    let data;
-    try {
-      data = await response.json();
-      console.log(`Response data:`, data);
-    } catch (error) {
-      console.error('Error parsing JSON response:', error);
-      const text = await response.text();
-      console.log(`Failed to parse as JSON: ${text}`);
-      
-      return { 
-        success: false, 
-        status: response.status,
-        message: 'Invalid JSON response',
-        rawResponse: text
-      };
+    const data = await response.json().catch(() => ({}));
+    console.log(`Response data:`, data);
+
+    // If response is not ok, throw error with server message or default
+    if (!response.ok) {
+      throw new Error(data.message || `Ошибка запроса: ${response.status}`);
     }
 
-    // If the response already has a success field, return it directly
-    if (data && typeof data.success !== 'undefined') {
-      return data;
-    }
-
-    // Otherwise, format the response consistently
-    return {
-      success: response.ok,
-      status: response.status,
-      ...data
-    };
+    return { data, status: response.status };
   } catch (error) {
     console.error('API request error:', error);
-    return {
-      success: false,
-      message: error instanceof Error ? error.message : 'Unknown error',
-      error: error
-    };
+    throw error;
   }
 }
 
@@ -111,69 +66,37 @@ export const authApi = {
     email: string;
     password: string;
     role: string;
-    first_name: string;
-    last_name: string;
   }) => {
-    try {
-      console.log("Отправка данных регистрации:", {
-        ...userData,
-        password: '***скрыто***'
-      });
-
-      const response = await apiRequest('/api/auth/register', {
-        method: 'POST',
-        body: JSON.stringify(userData)
-      });
-      
-      console.log("Ответ регистрации:", response);
-      
-      // Store auth data in localStorage if successful
-      if (response.success && response.token) {
-        localStorage.setItem('token', response.token);
-        localStorage.setItem('user', JSON.stringify(response.user));
-        sessionStorage.setItem('isLoggedIn', 'true');
-      }
-      
-      return response;
-    } catch (error) {
-      console.error("Registration error:", error);
-      return {
-        success: false,
-        message: error instanceof Error ? error.message : 'Unexpected error during registration'
-      };
+    const response = await apiRequest('/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(userData)
+    });
+    
+    // Store auth data in localStorage if successful
+    if (response.data.token) {
+      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+      sessionStorage.setItem('isLoggedIn', 'true');
     }
+    
+    return response.data;
   },
   
   // Login user
   login: async (credentials: { email: string; password: string }) => {
-    try {
-      console.log("Login called with credentials:", credentials);
-      
-      const response = await apiRequest('/api/auth/login', {
-        method: 'POST',
-        body: JSON.stringify(credentials)
-      });
-      
-      console.log("Login response received:", response);
-      
-      // Store auth data in localStorage if successful
-      if (response.success && response.token) {
-        console.log("Storing auth data in localStorage");
-        localStorage.setItem('token', response.token);
-        localStorage.setItem('user', JSON.stringify(response.user));
-        sessionStorage.setItem('isLoggedIn', 'true');
-      } else {
-        console.log("Login failed, not storing auth data");
-      }
-      
-      return response;
-    } catch (error) {
-      console.error("Login error:", error);
-      return {
-        success: false,
-        message: error instanceof Error ? error.message : 'Unknown error during login'
-      };
+    const response = await apiRequest('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(credentials)
+    });
+    
+    // Store auth data in localStorage if successful
+    if (response.data.token) {
+      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+      sessionStorage.setItem('isLoggedIn', 'true');
     }
+    
+    return response.data;
   },
   
   // Get current user
@@ -379,7 +302,6 @@ export const coursesApi = {
   
   // Create a new course
   createCourse: async (courseData: any) => {
-    console.log("Creating course with data:", courseData);
     const response = await apiRequest('/api/courses', {
       method: 'POST',
       body: JSON.stringify(courseData)
@@ -409,7 +331,6 @@ export const coursesApi = {
   
   // Create a new lesson
   createLesson: async (courseId: string | number, lessonData: any) => {
-    console.log("Creating lesson with data:", lessonData);
     const response = await apiRequest(`/api/courses/${courseId}/lessons`, {
       method: 'POST',
       body: JSON.stringify(lessonData)

@@ -15,14 +15,6 @@ func RegisterCourseRoutes(router *mux.Router) {
 	// Course routes
 	courseRouter := router.PathPrefix("/api/courses").Subrouter()
 
-	// Handle CORS Preflight globally for course routes
-	courseRouter.Methods("OPTIONS").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-		w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Authorization")
-		w.WriteHeader(http.StatusOK)
-	})
-
 	// Public routes
 	courseRouter.HandleFunc("/", controllers.GetAllCourses).Methods("GET")
 	courseRouter.HandleFunc("/search", controllers.SearchCourses).Methods("GET")
