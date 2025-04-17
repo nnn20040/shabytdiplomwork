@@ -4,7 +4,6 @@ package middleware
 import (
 	"log"
 	"net/http"
-	"strings"
 )
 
 var allowedOrigins = []string{
