@@ -1,4 +1,3 @@
-
 package main
 
 import (
@@ -9,8 +8,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
-	"github.com/rs/cors"
-
 	"backend/api/routes"
 	"backend/config"
 	"backend/middleware"
@@ -36,17 +33,6 @@ func main() {
 	// Define allowed origins
 	allowedOrigins := []string{"http://localhost:8080", "http://localhost:5173", "http://127.0.0.1:8080", "http://127.0.0.1:5173"}
 	
-	// Middleware - we'll be using our custom middleware instead
-	corsMiddleware := cors.New(cors.Options{
-		AllowedOrigins:   allowedOrigins,
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Content-Type", "Authorization", "Origin", "Accept", "X-Requested-With"},
-		ExposedHeaders:   []string{"Content-Length"},
-		AllowCredentials: true, // Important for cookies
-		MaxAge:           86400, // Maximum value not ignored by any major browser
-		Debug:            true,  // Enable debugging to log CORS issues
-	})
-
 	// Register middleware
 	router.Use(middleware.RequestLogger)
 
@@ -85,7 +71,7 @@ func main() {
 	log.Printf("Server running on port %s", port)
 	log.Printf("CORS allowed origins: %v", allowedOrigins)
 	
-	// Use our custom CORS middleware instead of the rs/cors middleware
+	// Use our custom CORS middleware
 	log.Printf("Starting HTTP server on :%s", port)
 	if err := http.ListenAndServe(":"+port, middleware.CORSMiddleware(router)); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
