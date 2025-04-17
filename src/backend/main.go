@@ -36,7 +36,7 @@ func main() {
 	// Define allowed origins
 	allowedOrigins := []string{"http://localhost:8080", "http://localhost:5173", "http://127.0.0.1:8080", "http://127.0.0.1:5173"}
 	
-	// Middleware
+	// Middleware - we'll be using our custom middleware instead
 	corsMiddleware := cors.New(cors.Options{
 		AllowedOrigins:   allowedOrigins,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},

@@ -2,6 +2,7 @@
 package middleware
 
 import (
+	"log"
 	"net/http"
 	"strings"
 )
@@ -17,6 +18,7 @@ var allowedOrigins = []string{
 func CORSMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")
+		log.Printf("Received request from origin: %s", origin)
 		
 		// Check if the origin is allowed
 		allowedOrigin := ""
@@ -29,10 +31,13 @@ func CORSMiddleware(next http.Handler) http.Handler {
 		
 		// If origin is allowed, set specific origin instead of wildcard
 		if allowedOrigin != "" {
+			log.Printf("Setting CORS headers for origin: %s", allowedOrigin)
 			w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, Origin, Accept")
 			w.Header().Set("Access-Control-Allow-Credentials", "true")
+		} else {
+			log.Printf("Origin not allowed: %s", origin)
 		}
 		
 		// Handle OPTIONS requests
