@@ -2,11 +2,8 @@
 package middleware
 
 import (
-	"context"
 	"log"
 	"net/http"
-
-	"backend/models"
 )
 
 // UserKey is the context key for the user object
