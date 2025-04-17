@@ -19,7 +19,7 @@ func CORSMiddleware(next http.Handler) http.Handler {
 		origin := r.Header.Get("Origin")
 		
 		// Check if the origin is allowed
-		allowedOrigin := "*"
+		allowedOrigin := ""
 		for _, allowed := range allowedOrigins {
 			if allowed == origin {
 				allowedOrigin = origin
@@ -27,11 +27,13 @@ func CORSMiddleware(next http.Handler) http.Handler {
 			}
 		}
 		
-		// Set CORS headers for all requests
-		w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, Origin, Accept")
-		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		// If origin is allowed, set specific origin instead of wildcard
+		if allowedOrigin != "" {
+			w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, Origin, Accept")
+			w.Header().Set("Access-Control-Allow-Credentials", "true")
+		}
 		
 		// Handle OPTIONS requests
 		if r.Method == http.MethodOptions {

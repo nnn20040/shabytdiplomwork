@@ -25,7 +25,7 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
     const response = await fetch(url, {
       ...options,
       headers,
-      credentials: 'include',
+      credentials: 'include', // This ensures cookies are sent with requests
     });
 
     console.log(`Received response from ${url}:`, response.status);

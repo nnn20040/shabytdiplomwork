@@ -1,3 +1,4 @@
+
 package main
 
 import (
@@ -84,10 +85,9 @@ func main() {
 	log.Printf("Server running on port %s", port)
 	log.Printf("CORS allowed origins: %v", allowedOrigins)
 	
-	// Wrap router with CORS middleware and start server
-	handler := corsMiddleware.Handler(router)
+	// Use our custom CORS middleware instead of the rs/cors middleware
 	log.Printf("Starting HTTP server on :%s", port)
-	if err := http.ListenAndServe(":"+port, handler); err != nil {
+	if err := http.ListenAndServe(":"+port, middleware.CORSMiddleware(router)); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
 }
