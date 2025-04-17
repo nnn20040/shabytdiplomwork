@@ -1,3 +1,4 @@
+
 /**
  * API client for handling requests to backend
  */
@@ -15,7 +16,7 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
     const url = `${API_URL}${endpoint}`;
     console.log(`Making request to: ${url}`, options);
     
-    // Setup headers (simplified - no auth token)
+    // Setup headers
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
       ...(options.headers || {}),

@@ -18,16 +18,16 @@ func RegisterAuthRoutes(router *mux.Router) {
 	// Use common CORS middleware
 	authRouter.Use(middleware.CORSMiddleware)
 
-	// Public routes - simplified auth without tokens
+	// Public routes
 	authRouter.HandleFunc("/register", controllers.Register).Methods("POST", "OPTIONS")
 	authRouter.HandleFunc("/login", controllers.Login).Methods("POST", "OPTIONS")
 	authRouter.HandleFunc("/forgot-password", controllers.ForgotPassword).Methods("POST", "OPTIONS")
 	authRouter.HandleFunc("/reset-password", controllers.ResetPassword).Methods("POST", "OPTIONS")
-	authRouter.HandleFunc("/me", controllers.GetCurrentUser).Methods("GET", "OPTIONS") // Simplified - no protection
-	authRouter.HandleFunc("/profile", controllers.UpdateProfile).Methods("PUT", "OPTIONS") // Simplified - no protection
-	authRouter.HandleFunc("/change-password", controllers.ChangePassword).Methods("PUT", "OPTIONS") // Simplified - no protection
+	authRouter.HandleFunc("/me", controllers.GetCurrentUser).Methods("GET", "OPTIONS")
+	authRouter.HandleFunc("/profile", controllers.UpdateProfile).Methods("PUT", "OPTIONS")
+	authRouter.HandleFunc("/change-password", controllers.ChangePassword).Methods("PUT", "OPTIONS")
 	
-	// Add simple logout route
+	// Logout route
 	authRouter.HandleFunc("/logout", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(`{"success": true, "message": "Logged out successfully"}`))
