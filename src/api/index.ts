@@ -1,3 +1,4 @@
+
 /**
  * API client for handling requests to backend
  */
@@ -41,7 +42,7 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
       console.log(`Response data:`, data);
     } catch (e) {
       console.error("Error parsing JSON response:", e);
-      data = {};
+      throw new Error("Ошибка при обработке ответа сервера");
     }
 
     // If response is not ok, throw error with server message or default

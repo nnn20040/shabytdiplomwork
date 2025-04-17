@@ -48,7 +48,10 @@ const LoginForm = () => {
       }
     } catch (error) {
       console.error('Login error:', error);
-      const errorMessage = error instanceof Error ? error.message : "Проблема с подключением к серверу. Проверьте работу бэкенда.";
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : "Проблема с подключением к серверу. Проверьте работу бэкенда.";
+      
       toast.error(errorMessage);
       setErrorMsg(errorMessage);
     } finally {

@@ -113,7 +113,12 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	// Validate input
 	if req.Email == "" || req.Password == "" {
 		log.Printf("Login error: Missing email or password")
-		http.Error(w, "Please provide email and password", http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{
+			Success: false,
+			Message: "Пожалуйста, укажите email и пароль",
+		})
 		return
 	}
 
@@ -127,7 +132,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(Response{
 			Success: false,
-			Message: "Invalid credentials",
+			Message: "Неверные данные для входа",
 		})
 		return
 	}
@@ -140,7 +145,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(Response{
 			Success: false,
-			Message: "Invalid credentials",
+			Message: "Неверные данные для входа",
 		})
 		return
 	}
@@ -150,7 +155,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	// Return success response with user data
 	response := Response{
 		Success: true,
-		Message: "Login successful",
+		Message: "Успешный вход",
 		User: map[string]interface{}{
 			"id":        user.ID,
 			"name":      user.Name,
