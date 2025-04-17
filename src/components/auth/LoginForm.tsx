@@ -13,13 +13,16 @@ const LoginForm = () => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMsg('');
     
     if (!email || !password) {
       toast.error("Пожалуйста, заполните все поля");
+      setErrorMsg("Пожалуйста, заполните все поля");
       return;
     }
     
@@ -44,7 +47,9 @@ const LoginForm = () => {
       }
     } catch (error) {
       console.error('Login error:', error);
-      toast.error(error instanceof Error ? error.message : "Проблема с подключением к серверу. Проверьте работу бэкенда.");
+      const errorMessage = error instanceof Error ? error.message : "Проблема с подключением к серверу. Проверьте работу бэкенда.";
+      toast.error(errorMessage);
+      setErrorMsg(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -60,6 +65,12 @@ const LoginForm = () => {
       </div>
       
       <form onSubmit={handleSubmit} className="space-y-6">
+        {errorMsg && (
+          <div className="p-3 bg-red-50 text-red-800 rounded-md text-sm">
+            {errorMsg}
+          </div>
+        )}
+        
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
           <Input

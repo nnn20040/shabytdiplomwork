@@ -105,29 +105,47 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	var req LoginRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
+		log.Printf("Login error: Failed to decode request body: %v", err)
 		http.Error(w, "Invalid request data", http.StatusBadRequest)
 		return
 	}
 
 	// Validate input
 	if req.Email == "" || req.Password == "" {
+		log.Printf("Login error: Missing email or password")
 		http.Error(w, "Please provide email and password", http.StatusBadRequest)
 		return
 	}
 
+	log.Printf("Login attempt for email: %s", req.Email)
+
 	// Find user by email
 	user, err := models.GetUserByEmail(r.Context(), req.Email)
 	if err != nil {
-		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+		log.Printf("Login error: User not found: %v", err)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(Response{
+			Success: false,
+			Message: "Invalid credentials",
+		})
 		return
 	}
 
 	// Verify password
 	err = models.ComparePassword(user.Password, req.Password)
 	if err != nil {
-		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+		log.Printf("Login error: Invalid password for user %s: %v", req.Email, err)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(Response{
+			Success: false,
+			Message: "Invalid credentials",
+		})
 		return
 	}
+
+	log.Printf("Login successful for user: %s", user.Email)
 
 	// Return success response with user data
 	response := Response{

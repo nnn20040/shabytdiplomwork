@@ -17,7 +17,7 @@ var allowedOrigins = []string{
 func CORSMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")
-		log.Printf("Received request from origin: %s", origin)
+		log.Printf("Received request from origin: %s, method: %s, path: %s", origin, r.Method, r.URL.Path)
 		
 		// Check if the origin is allowed
 		allowedOrigin := ""
@@ -35,6 +35,7 @@ func CORSMiddleware(next http.Handler) http.Handler {
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, Origin, Accept")
 			w.Header().Set("Access-Control-Allow-Credentials", "true")
+			w.Header().Set("Access-Control-Max-Age", "86400") // 24 hours
 		} else {
 			log.Printf("Origin not allowed: %s", origin)
 		}
