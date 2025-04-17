@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"backend/controllers"
-	"backend/middleware"
 
 	"github.com/gorilla/mux"
 )
@@ -36,20 +35,18 @@ func RegisterAuthRoutes(router *mux.Router) {
 		})
 	})
 
-	// Public routes
+	// Public routes - simplified auth without tokens
 	authRouter.HandleFunc("/register", controllers.Register).Methods("POST", "OPTIONS")
 	authRouter.HandleFunc("/login", controllers.Login).Methods("POST", "OPTIONS")
 	authRouter.HandleFunc("/forgot-password", controllers.ForgotPassword).Methods("POST", "OPTIONS")
 	authRouter.HandleFunc("/reset-password", controllers.ResetPassword).Methods("POST", "OPTIONS")
+	authRouter.HandleFunc("/me", controllers.GetCurrentUser).Methods("GET", "OPTIONS") // Simplified - no protection
+	authRouter.HandleFunc("/profile", controllers.UpdateProfile).Methods("PUT", "OPTIONS") // Simplified - no protection
+	authRouter.HandleFunc("/change-password", controllers.ChangePassword).Methods("PUT", "OPTIONS") // Simplified - no protection
 	
-	// Add logout route
+	// Add simple logout route
 	authRouter.HandleFunc("/logout", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"success": true}`))
+		w.Write([]byte(`{"success": true, "message": "Logged out successfully"}`))
 	}).Methods("POST", "OPTIONS")
-
-	// Protected routes - using Protect middleware
-	authRouter.Handle("/me", middleware.Protect(http.HandlerFunc(controllers.GetCurrentUser))).Methods("GET", "OPTIONS")
-	authRouter.Handle("/profile", middleware.Protect(http.HandlerFunc(controllers.UpdateProfile))).Methods("PUT", "OPTIONS")
-	authRouter.Handle("/change-password", middleware.Protect(http.HandlerFunc(controllers.ChangePassword))).Methods("PUT", "OPTIONS")
 }

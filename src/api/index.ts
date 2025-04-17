@@ -15,21 +15,15 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
     const url = `${API_URL}${endpoint}`;
     console.log(`Making request to: ${url}`, options);
     
-    // Include auth token if available
-    const token = localStorage.getItem('token');
+    // Setup headers (simplified - no auth token)
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
       ...(options.headers || {}),
     };
     
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-    
     const response = await fetch(url, {
       ...options,
       headers,
-      // Use 'same-origin' for production, 'include' for development
       credentials: 'include',
     });
 
@@ -79,9 +73,8 @@ export const authApi = {
       body: JSON.stringify(userData)
     });
     
-    // Store auth data in localStorage if successful
-    if (response.data.token) {
-      localStorage.setItem('token', response.data.token);
+    // Store user data in localStorage for simplified auth
+    if (response.data.user) {
       localStorage.setItem('user', JSON.stringify(response.data.user));
     }
     
@@ -96,30 +89,25 @@ export const authApi = {
       body: JSON.stringify(credentials)
     });
     
-    // Store auth data in localStorage if successful
-    if (response.data.token) {
-      localStorage.setItem('token', response.data.token);
+    // Store user data in localStorage for simplified auth
+    if (response.data.user) {
       localStorage.setItem('user', JSON.stringify(response.data.user));
     }
     
     return response.data;
   },
   
-  // Get current user
+  // Get current user - simplified
   getCurrentUser: async () => {
-    try {
-      console.log("Getting current user");
-      const response = await apiRequest('/api/auth/me');
-      return response.data;
-    } catch (error) {
-      // Clear invalid auth data
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      throw error;
+    // Just return the user from localStorage
+    const user = localStorage.getItem('user');
+    if (!user) {
+      throw new Error('User not found');
     }
+    return { success: true, user: JSON.parse(user) };
   },
 
-  // Logout user
+  // Logout user - simplified
   logout: async () => {
     try {
       console.log("Logging out user");
@@ -127,15 +115,32 @@ export const authApi = {
     } catch (error) {
       console.error("Error during logout:", error);
     } finally {
-      // Always clean up local storage, even if the API call fails
-      localStorage.removeItem('token');
+      // Always clean up local storage
       localStorage.removeItem('user');
     }
     
     return { success: true };
   },
   
-  // ... keep existing code (other auth methods)
+  // Forgot password
+  forgotPassword: async (email: string) => {
+    console.log("Requesting password reset for:", email);
+    const response = await apiRequest('/api/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email })
+    });
+    return response.data;
+  },
+  
+  // Reset password
+  resetPassword: async (resetData: { email: string; token: string; newPassword: string }) => {
+    console.log("Resetting password for:", resetData.email);
+    const response = await apiRequest('/api/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify(resetData)
+    });
+    return response.data;
+  },
 };
 
 /**
@@ -145,7 +150,7 @@ export const aiApi = {
   askQuestion: async (question: string) => {
     console.log("Asking AI question:", question);
     try {
-      const response = await apiRequest('/api/ai-assistant/ask', {
+      const response = await apiRequest('/api/ai-assistant/public-ask', {
         method: 'POST',
         body: JSON.stringify({ question })
       });
@@ -327,17 +332,8 @@ export const coursesApi = {
 export const testsApi = {
   // Create a test
   createTest: async (courseId: number | string, testData: any) => {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-      throw new Error('Токен не найден');
-    }
-    
     const response = await apiRequest(`/api/courses/${courseId}/tests`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      },
       body: JSON.stringify(testData)
     });
     
@@ -346,33 +342,14 @@ export const testsApi = {
   
   // Get test details
   getTest: async (courseId: number | string, testId: number | string) => {
-    const token = localStorage.getItem('token');
-    const headers: Record<string, string> = {};
-    
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-    
-    const response = await apiRequest(`/api/courses/${courseId}/tests/${testId}`, {
-      headers
-    });
-    
+    const response = await apiRequest(`/api/courses/${courseId}/tests/${testId}`);
     return response.data;
   },
   
   // Update a test
   updateTest: async (courseId: number | string, testId: number | string, testData: any) => {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-      throw new Error('Токен не найден');
-    }
-    
     const response = await apiRequest(`/api/courses/${courseId}/tests/${testId}`, {
       method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      },
       body: JSON.stringify(testData)
     });
     
@@ -381,17 +358,8 @@ export const testsApi = {
   
   // Delete a test
   deleteTest: async (courseId: number | string, testId: number | string) => {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-      throw new Error('Токен не найден');
-    }
-    
     const response = await apiRequest(`/api/courses/${courseId}/tests/${testId}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
+      method: 'DELETE'
     });
     
     return response.data;
@@ -399,17 +367,8 @@ export const testsApi = {
   
   // Submit test answers
   submitTest: async (courseId: number | string, testId: number | string, answers: any) => {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-      throw new Error('Токен не найден');
-    }
-    
     const response = await apiRequest(`/api/courses/${courseId}/tests/${testId}/submit`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      },
       body: JSON.stringify({ answers })
     });
     
@@ -418,18 +377,7 @@ export const testsApi = {
   
   // Get test results
   getTestResults: async (courseId: number | string, testId: number | string) => {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-      throw new Error('Токен не найден');
-    }
-    
-    const response = await apiRequest(`/api/courses/${courseId}/tests/${testId}/results`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-    
+    const response = await apiRequest(`/api/courses/${courseId}/tests/${testId}/results`);
     return response.data;
   }
 };
@@ -440,49 +388,20 @@ export const testsApi = {
 export const discussionsApi = {
   // Get course discussions
   getDiscussions: async (courseId: number | string) => {
-    const token = localStorage.getItem('token');
-    const headers: Record<string, string> = {};
-    
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-    
-    const response = await apiRequest(`/api/courses/${courseId}/discussions`, {
-      headers
-    });
-    
+    const response = await apiRequest(`/api/courses/${courseId}/discussions`);
     return response.data;
   },
   
   // Get discussion details
   getDiscussion: async (courseId: number | string, discussionId: number | string) => {
-    const token = localStorage.getItem('token');
-    const headers: Record<string, string> = {};
-    
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-    
-    const response = await apiRequest(`/api/courses/${courseId}/discussions/${discussionId}`, {
-      headers
-    });
-    
+    const response = await apiRequest(`/api/courses/${courseId}/discussions/${discussionId}`);
     return response.data;
   },
   
   // Create a discussion
   createDiscussion: async (courseId: number | string, discussionData: any) => {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-      throw new Error('Токен не найден');
-    }
-    
     const response = await apiRequest(`/api/courses/${courseId}/discussions`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      },
       body: JSON.stringify(discussionData)
     });
     
@@ -491,17 +410,8 @@ export const discussionsApi = {
   
   // Reply to a discussion
   replyToDiscussion: async (courseId: number | string, discussionId: number | string, content: string) => {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-      throw new Error('Токен не найден');
-    }
-    
     const response = await apiRequest(`/api/courses/${courseId}/discussions/${discussionId}/replies`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      },
       body: JSON.stringify({ content })
     });
     
@@ -515,35 +425,13 @@ export const discussionsApi = {
 export const analyticsApi = {
   // Get course analytics
   getCourseAnalytics: async (courseId: number | string) => {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-      throw new Error('Токен не найден');
-    }
-    
-    const response = await apiRequest(`/api/courses/${courseId}/analytics`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-    
+    const response = await apiRequest(`/api/courses/${courseId}/analytics`);
     return response.data;
   },
   
   // Get user progress
   getUserProgress: async () => {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-      throw new Error('Токен не найден');
-    }
-    
-    const response = await apiRequest('/api/user/progress', {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-    
+    const response = await apiRequest('/api/user/progress');
     return response.data;
   }
 };

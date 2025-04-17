@@ -33,8 +33,11 @@ const LoginForm = () => {
       
       toast.success("Успешный вход!");
       
+      // Store user in localStorage for simplified auth
+      localStorage.setItem('user', JSON.stringify(data.user));
+      
       // Redirect based on user role
-      if (data.user.role === 'teacher') {
+      if (data.user?.role === 'teacher') {
         navigate('/teacher-dashboard');
       } else {
         navigate('/student-dashboard');

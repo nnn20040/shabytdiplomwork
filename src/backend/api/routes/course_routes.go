@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"backend/controllers"
-	"backend/middleware"
 
 	"github.com/gorilla/mux"
 )
@@ -36,14 +35,12 @@ func RegisterCourseRoutes(router *mux.Router) {
 		})
 	})
 
-	// Public routes
+	// All routes are now public - simplified auth
 	courseRouter.HandleFunc("/", controllers.GetAllCourses).Methods("GET", "OPTIONS")
 	courseRouter.HandleFunc("/search", controllers.SearchCourses).Methods("GET", "OPTIONS")
 	courseRouter.HandleFunc("/{id}", controllers.GetCourseByID).Methods("GET", "OPTIONS")
-
-	// Protected routes
-	courseRouter.Handle("/", middleware.Protect(middleware.TeacherOnly(http.HandlerFunc(controllers.CreateCourse)))).Methods("POST", "OPTIONS")
-	courseRouter.Handle("/teacher/my-courses", middleware.Protect(middleware.TeacherOnly(http.HandlerFunc(controllers.GetTeacherCourses)))).Methods("GET", "OPTIONS")
-	courseRouter.Handle("/{id}", middleware.Protect(http.HandlerFunc(controllers.UpdateCourse))).Methods("PUT", "OPTIONS")
-	courseRouter.Handle("/{id}", middleware.Protect(http.HandlerFunc(controllers.DeleteCourse))).Methods("DELETE", "OPTIONS")
+	courseRouter.HandleFunc("/", controllers.CreateCourse).Methods("POST", "OPTIONS")
+	courseRouter.HandleFunc("/teacher/my-courses", controllers.GetTeacherCourses).Methods("GET", "OPTIONS")
+	courseRouter.HandleFunc("/{id}", controllers.UpdateCourse).Methods("PUT", "OPTIONS")
+	courseRouter.HandleFunc("/{id}", controllers.DeleteCourse).Methods("DELETE", "OPTIONS")
 }

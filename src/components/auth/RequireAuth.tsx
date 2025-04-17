@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
-import { authApi } from '@/api';
 
 interface RequireAuthProps {
   children: React.ReactNode;
@@ -17,11 +16,11 @@ const RequireAuth: React.FC<RequireAuthProps> = ({ children }) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Check if user is authenticated by looking for token in localStorage
-        const token = localStorage.getItem('token');
+        // Simplified auth - just check if user exists in localStorage
+        const user = localStorage.getItem('user');
         
-        if (!token) {
-          console.log("No token found in localStorage");
+        if (!user) {
+          console.log("No user found in localStorage");
           setIsAuthenticated(false);
           navigate('/login', { state: { from: location.pathname } });
           // Don't show the toast if coming from the registration or login page
@@ -31,20 +30,8 @@ const RequireAuth: React.FC<RequireAuthProps> = ({ children }) => {
           return;
         }
         
-        try {
-          // Try to get current user to verify token
-          console.log("Verifying token with backend");
-          await authApi.getCurrentUser();
-          setIsAuthenticated(true);
-        } catch (error) {
-          console.error("Token validation failed:", error);
-          // If token is invalid, remove it
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          setIsAuthenticated(false);
-          navigate('/login', { state: { from: location.pathname } });
-          toast.error('Сессия истекла. Пожалуйста, войдите снова.');
-        }
+        // User exists in localStorage, so they're authenticated
+        setIsAuthenticated(true);
       } catch (error) {
         console.error('Auth check error:', error);
         setIsAuthenticated(false);

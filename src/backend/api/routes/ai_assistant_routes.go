@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"backend/controllers"
-	"backend/middleware"
 
 	"github.com/gorilla/mux"
 )
@@ -36,10 +35,8 @@ func RegisterAIAssistantRoutes(router *mux.Router) {
 		})
 	})
 
-	// Protected routes
-	aiRouter.Handle("/ask", middleware.Protect(http.HandlerFunc(controllers.AskQuestion))).Methods("POST", "OPTIONS")
-	aiRouter.Handle("/history", middleware.Protect(http.HandlerFunc(controllers.GetHistory))).Methods("GET", "OPTIONS")
-
-	// Add a public endpoint for AI assistance without authentication
+	// All routes are now public - simplified auth
+	aiRouter.HandleFunc("/ask", controllers.AskQuestion).Methods("POST", "OPTIONS")
+	aiRouter.HandleFunc("/history", controllers.GetHistory).Methods("GET", "OPTIONS")
 	aiRouter.HandleFunc("/public-ask", controllers.PublicAskQuestion).Methods("POST", "OPTIONS")
 }
