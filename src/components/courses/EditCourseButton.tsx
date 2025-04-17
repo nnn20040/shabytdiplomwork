@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { Pencil } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 interface EditCourseButtonProps {
   courseId: string;
@@ -18,7 +19,19 @@ export const EditCourseButton = ({ courseId }: EditCourseButtonProps) => {
   }
 
   const handleEditCourse = () => {
-    navigate(`/course/${courseId}/edit`);
+    try {
+      // Проверка валидности courseId
+      if (!courseId) {
+        toast.error('Неверный идентификатор курса');
+        return;
+      }
+
+      // Переход на страницу редактирования курса
+      navigate(`/course/${courseId}/edit`);
+    } catch (error) {
+      console.error('Error navigating to course editing:', error);
+      toast.error('Произошла ошибка при переходе к редактированию курса');
+    }
   };
 
   return (

@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 interface AddLessonButtonProps {
   courseId: string;
@@ -18,7 +19,19 @@ export const AddLessonButton = ({ courseId }: AddLessonButtonProps) => {
   }
 
   const handleAddLesson = () => {
-    navigate(`/course/${courseId}/lesson/create`);
+    try {
+      // Проверка валидности courseId
+      if (!courseId) {
+        toast.error('Неверный идентификатор курса');
+        return;
+      }
+
+      // Переход на страницу создания урока
+      navigate(`/course/${courseId}/lesson/create`);
+    } catch (error) {
+      console.error('Error navigating to lesson creation:', error);
+      toast.error('Произошла ошибка при переходе к созданию урока');
+    }
   };
 
   return (
