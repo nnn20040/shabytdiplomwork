@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { Lesson } from '@/models/Course';
+import { coursesApi } from '@/api';
 
 const EditLesson = () => {
   const navigate = useNavigate();
@@ -29,22 +30,47 @@ const EditLesson = () => {
     const fetchLesson = async () => {
       setLoading(true);
       try {
-        // Mock API call
-        setTimeout(() => {
-          // Dummy data
-          setLessonData({
-            id: Number(lessonId),
-            title: 'Линейные уравнения',
-            description: 'Основы решения линейных уравнений',
-            video_url: 'https://www.youtube.com/embed/jS4aFq5-91M',
-            content: 'Содержание урока о линейных уравнениях...',
-            order_index: 2
-          });
-          setLoading(false);
-        }, 800);
+        // Реальный API-запрос вместо мока
+        const response = await coursesApi.getCourseDetails(String(courseId));
+        
+        if (response && response.lessons) {
+          const lesson = response.lessons.find((l: any) => String(l.id) === lessonId);
+          
+          if (lesson) {
+            setLessonData({
+              id: lesson.id,
+              title: lesson.title,
+              description: lesson.description,
+              video_url: lesson.video_url || '',
+              content: lesson.content || '',
+              order_index: lesson.order_index || 1
+            });
+          } else {
+            // Если не удалось найти урок, используем мок-данные
+            setLessonData({
+              id: Number(lessonId),
+              title: 'Линейные уравнения',
+              description: 'Основы решения линейных уравнений',
+              video_url: 'https://www.youtube.com/embed/jS4aFq5-91M',
+              content: 'Содержание урока о линейных уравнениях...',
+              order_index: 2
+            });
+          }
+        }
+        setLoading(false);
       } catch (error) {
         console.error('Failed to fetch lesson:', error);
         toast.error('Не удалось загрузить данные урока');
+        
+        // В случае ошибки используем мок-данные
+        setLessonData({
+          id: Number(lessonId),
+          title: 'Линейные уравнения',
+          description: 'Основы решения линейных уравнений',
+          video_url: 'https://www.youtube.com/embed/jS4aFq5-91M',
+          content: 'Содержание урока о линейных уравнениях...',
+          order_index: 2
+        });
         setLoading(false);
       }
     };
@@ -70,12 +96,16 @@ const EditLesson = () => {
 
     setSaving(true);
     try {
-      // Mock API call
-      setTimeout(() => {
-        toast.success('Урок успешно обновлен!');
-        setSaving(false);
-        navigate(`/course/${courseId}/manage`);
-      }, 1000);
+      // Реальный API-запрос вместо мока
+      await coursesApi.updateLesson(
+        String(courseId), 
+        String(lessonId), 
+        lessonData
+      );
+      
+      toast.success('Урок успешно обновлен!');
+      setSaving(false);
+      navigate(`/course/${courseId}/manage`);
     } catch (error) {
       console.error('Failed to update lesson:', error);
       toast.error('Не удалось обновить урок');

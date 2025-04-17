@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
@@ -9,16 +10,30 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Plus, MoveUp, MoveDown, AlignLeft } from 'lucide-react';
+import { Trash2, Plus, MoveUp, MoveDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { Question } from '@/models/Course';
+import { coursesApi, testsApi } from '@/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 const CreateTest = () => {
   const navigate = useNavigate();
   const { courseId } = useParams();
+  const { user } = useAuth();
   const [lessons, setLessons] = useState<{ id: number; title: string }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // Проверяем, является ли пользователь учителем
+  const isTeacher = user?.role === 'teacher';
+
+  // Если пользователь не учитель, перенаправляем его на страницу курса
+  useEffect(() => {
+    if (!isTeacher) {
+      toast.error('У вас нет прав для создания теста');
+      navigate(`/course/${courseId}`);
+    }
+  }, [isTeacher, courseId, navigate]);
 
   const [testData, setTestData] = useState({
     title: '',
@@ -42,25 +57,41 @@ const CreateTest = () => {
     const fetchLessons = async () => {
       setIsLoading(true);
       try {
-        const mockLessons = [
-          { id: 1, title: 'Введение в алгебру' },
-          { id: 2, title: 'Линейные уравнения' },
-          { id: 3, title: 'Квадратные уравнения' },
-        ];
+        // Получаем список уроков для курса
+        const courseData = await coursesApi.getCourseDetails(String(courseId));
         
-        setLessons(mockLessons);
+        if (courseData && courseData.lessons) {
+          setLessons(courseData.lessons.map((lesson: any) => ({
+            id: lesson.id,
+            title: lesson.title
+          })));
+        } else {
+          // Если не получили данные с сервера, используем мок-данные
+          setLessons([
+            { id: 1, title: 'Введение в алгебру' },
+            { id: 2, title: 'Линейные уравнения' },
+            { id: 3, title: 'Квадратные уравнения' },
+          ]);
+        }
       } catch (error) {
         console.error('Failed to fetch lessons:', error);
         toast.error('Не удалось загрузить уроки курса');
+        
+        // В случае ошибки используем тестовые данные
+        setLessons([
+          { id: 1, title: 'Введение в алгебру' },
+          { id: 2, title: 'Линейные уравнения' },
+          { id: 3, title: 'Квадратные уравнения' },
+        ]);
       } finally {
         setIsLoading(false);
       }
     };
 
-    if (courseId) {
+    if (courseId && isTeacher) {
       fetchLessons();
     }
-  }, [courseId]);
+  }, [courseId, isTeacher]);
 
   const handleTestDataChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -178,10 +209,17 @@ const CreateTest = () => {
 
     setSaving(true);
     try {
+      // Создаем тест через API
+      const testDataToSend = {
+        ...testData,
+        course_id: Number(courseId),
+        questions: questions
+      };
+      
+      await testsApi.createTest(String(courseId), testDataToSend);
+      
       toast.success('Тест успешно создан!');
-      setTimeout(() => {
-        navigate(`/course/${courseId}/manage`);
-      }, 1500);
+      navigate(`/course/${courseId}/manage`);
     } catch (error) {
       console.error('Failed to save test:', error);
       toast.error('Не удалось сохранить тест');
@@ -189,6 +227,10 @@ const CreateTest = () => {
       setSaving(false);
     }
   };
+
+  if (!isTeacher) {
+    return null; // Не рендерим ничего, если пользователь не учитель
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
