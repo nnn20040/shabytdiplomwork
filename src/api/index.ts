@@ -1,4 +1,3 @@
-
 /**
  * API client for handling requests to backend
  */
@@ -75,7 +74,7 @@ export const authApi = {
     });
     
     // Store user data in localStorage for simplified auth
-    if (response.data.user) {
+    if (response.data && response.data.user) {
       localStorage.setItem('user', JSON.stringify(response.data.user));
     }
     
@@ -91,7 +90,7 @@ export const authApi = {
     });
     
     // Store user data in localStorage for simplified auth
-    if (response.data.user) {
+    if (response.data && response.data.user) {
       localStorage.setItem('user', JSON.stringify(response.data.user));
     }
     

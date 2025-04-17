@@ -34,10 +34,11 @@ const LoginForm = () => {
       
       console.log("Login response:", data);
       
-      toast.success("Успешный вход!");
+      if (!data || !data.user) {
+        throw new Error("Неверный ответ от сервера");
+      }
       
-      // Store user in localStorage for simplified auth
-      localStorage.setItem('user', JSON.stringify(data.user));
+      toast.success("Успешный вход!");
       
       // Redirect based on user role
       if (data.user?.role === 'teacher') {
