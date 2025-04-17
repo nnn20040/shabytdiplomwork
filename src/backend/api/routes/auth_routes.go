@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"backend/controllers"
+	"backend/middleware"
 
 	"github.com/gorilla/mux"
 )
@@ -14,26 +15,8 @@ func RegisterAuthRoutes(router *mux.Router) {
 	// Auth routes
 	authRouter := router.PathPrefix("/api/auth").Subrouter()
 
-	// Enable CORS for all auth routes
-	authRouter.Use(func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Handle OPTIONS requests
-			if r.Method == http.MethodOptions {
-				w.Header().Set("Access-Control-Allow-Origin", "*")
-				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-				w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, Origin, Accept")
-				w.WriteHeader(http.StatusOK)
-				return
-			}
-			
-			// Set CORS headers for all other requests
-			w.Header().Set("Access-Control-Allow-Origin", "*")
-			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, Origin, Accept")
-			
-			next.ServeHTTP(w, r)
-		})
-	})
+	// Use common CORS middleware
+	authRouter.Use(middleware.CORSMiddleware)
 
 	// Public routes - simplified auth without tokens
 	authRouter.HandleFunc("/register", controllers.Register).Methods("POST", "OPTIONS")

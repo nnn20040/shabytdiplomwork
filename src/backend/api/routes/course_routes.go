@@ -2,9 +2,8 @@
 package routes
 
 import (
-	"net/http"
-
 	"backend/controllers"
+	"backend/middleware"
 
 	"github.com/gorilla/mux"
 )
@@ -14,26 +13,8 @@ func RegisterCourseRoutes(router *mux.Router) {
 	// Course routes
 	courseRouter := router.PathPrefix("/api/courses").Subrouter()
 
-	// Enable CORS for all course routes
-	courseRouter.Use(func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Handle OPTIONS requests
-			if r.Method == http.MethodOptions {
-				w.Header().Set("Access-Control-Allow-Origin", "*")
-				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-				w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, Origin, Accept")
-				w.WriteHeader(http.StatusOK)
-				return
-			}
-			
-			// Set CORS headers for all other requests
-			w.Header().Set("Access-Control-Allow-Origin", "*")
-			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, Origin, Accept")
-			
-			next.ServeHTTP(w, r)
-		})
-	})
+	// Use common CORS middleware
+	courseRouter.Use(middleware.CORSMiddleware)
 
 	// All routes are now public - simplified auth
 	courseRouter.HandleFunc("/", controllers.GetAllCourses).Methods("GET", "OPTIONS")
@@ -43,4 +24,32 @@ func RegisterCourseRoutes(router *mux.Router) {
 	courseRouter.HandleFunc("/teacher/my-courses", controllers.GetTeacherCourses).Methods("GET", "OPTIONS")
 	courseRouter.HandleFunc("/{id}", controllers.UpdateCourse).Methods("PUT", "OPTIONS")
 	courseRouter.HandleFunc("/{id}", controllers.DeleteCourse).Methods("DELETE", "OPTIONS")
+	
+	// Add featured courses route to match frontend API
+	courseRouter.HandleFunc("/featured", controllers.GetFeaturedCourses).Methods("GET", "OPTIONS")
+	
+	// Add course enrollment routes to match frontend API
+	courseRouter.HandleFunc("/{id}/enroll", controllers.EnrollCourse).Methods("POST", "OPTIONS")
+	
+	// Add lesson routes to match frontend API
+	courseRouter.HandleFunc("/{courseId}/lessons", controllers.CreateLesson).Methods("POST", "OPTIONS")
+	courseRouter.HandleFunc("/{courseId}/lessons/{lessonId}", controllers.UpdateLesson).Methods("PUT", "OPTIONS")
+	courseRouter.HandleFunc("/{courseId}/lessons/{lessonId}", controllers.DeleteLesson).Methods("DELETE", "OPTIONS")
+	
+	// Add test routes to match frontend API
+	courseRouter.HandleFunc("/{courseId}/tests", controllers.CreateTest).Methods("POST", "OPTIONS")
+	courseRouter.HandleFunc("/{courseId}/tests/{testId}", controllers.GetTest).Methods("GET", "OPTIONS")
+	courseRouter.HandleFunc("/{courseId}/tests/{testId}", controllers.UpdateTest).Methods("PUT", "OPTIONS")
+	courseRouter.HandleFunc("/{courseId}/tests/{testId}", controllers.DeleteTest).Methods("DELETE", "OPTIONS")
+	courseRouter.HandleFunc("/{courseId}/tests/{testId}/submit", controllers.SubmitTest).Methods("POST", "OPTIONS")
+	courseRouter.HandleFunc("/{courseId}/tests/{testId}/results", controllers.GetTestResults).Methods("GET", "OPTIONS")
+	
+	// Add discussion routes to match frontend API
+	courseRouter.HandleFunc("/{courseId}/discussions", controllers.GetDiscussions).Methods("GET", "OPTIONS")
+	courseRouter.HandleFunc("/{courseId}/discussions", controllers.CreateDiscussion).Methods("POST", "OPTIONS")
+	courseRouter.HandleFunc("/{courseId}/discussions/{discussionId}", controllers.GetDiscussion).Methods("GET", "OPTIONS")
+	courseRouter.HandleFunc("/{courseId}/discussions/{discussionId}/replies", controllers.ReplyToDiscussion).Methods("POST", "OPTIONS")
+	
+	// Add analytics routes to match frontend API
+	courseRouter.HandleFunc("/{id}/analytics", controllers.GetCourseAnalytics).Methods("GET", "OPTIONS")
 }

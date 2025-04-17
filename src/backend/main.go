@@ -61,6 +61,7 @@ func main() {
 	routes.RegisterAuthRoutes(router)
 	routes.RegisterCourseRoutes(router)
 	routes.RegisterAIAssistantRoutes(router)
+	routes.RegisterUserRoutes(router) // Register new user routes
 
 	// Serve static files in production
 	if os.Getenv("GO_ENV") == "production" {
