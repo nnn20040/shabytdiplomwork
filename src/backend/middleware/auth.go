@@ -2,8 +2,8 @@
 package middleware
 
 import (
-	"log"
 	"net/http"
+	"log"
 )
 
 // UserKey is the context key for the user object

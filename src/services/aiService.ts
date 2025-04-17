@@ -2,16 +2,13 @@
 import { toast } from 'sonner';
 import { aiApi } from '@/api';
 
-// Gemini API is now used on the backend, so we don't need to include the API key in the frontend
+// Removed unused imports
 export const setApiKey = (key: string) => {
-  // This is just a dummy function now since we're using the backend
-  // In a real app, we would still want to store API keys securely on the backend
   localStorage.setItem('ai_api_key_set', 'true');
   return true;
 };
 
 export const getApiKey = () => {
-  // Return a placeholder since the real API key is now on the backend
   return localStorage.getItem('ai_api_key_set') === 'true' ? 'API_KEY_SET' : '';
 };
 
@@ -22,7 +19,6 @@ export interface AIResponse {
 
 export const askAI = async (question: string): Promise<AIResponse> => {
   try {
-    // Use the API client to call the backend
     const response = await aiApi.askQuestion(question);
     
     if (response && response.data && response.data.response) {
@@ -38,7 +34,6 @@ export const askAI = async (question: string): Promise<AIResponse> => {
   }
 };
 
-// Fallback for testing without API
 export const getFallbackResponse = (question: string): AIResponse => {
   const lowercaseQuestion = question.toLowerCase();
   
