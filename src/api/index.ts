@@ -144,21 +144,25 @@ export const authApi = {
   
   // Update profile
   updateProfile: async (userData: { name: string; email: string }) => {
-    const response = await apiRequest('/api/auth/update-profile', {
-      method: 'PATCH',
+    console.log("Updating profile:", userData);
+    const response = await apiRequest('/api/auth/profile', {
+      method: 'PUT',
       body: JSON.stringify(userData)
     });
+    
+    // Update the stored user data
+    if (response.data && response.data.user) {
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+    }
     
     return response.data;
   },
   
   // Change password
-  changePassword: async (passwordData: { 
-    currentPassword: string; 
-    newPassword: string 
-  }) => {
+  changePassword: async (passwordData: { currentPassword: string; newPassword: string }) => {
+    console.log("Changing password");
     const response = await apiRequest('/api/auth/change-password', {
-      method: 'POST',
+      method: 'PUT',
       body: JSON.stringify(passwordData)
     });
     
@@ -229,7 +233,7 @@ export const getFallbackResponse = async (question: string) => {
     };
   }
   
-  if (lowercaseQuestion.includes('ент') || lowercaseQuestion.includes('единое национальное тестирование')) {
+  if (lowercaseQuestion.includes('ент') || lowercaseQuestion.includes('единое национальное ��естирование')) {
     return {
       success: true,
       data: {

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { authApi } from '@/api';
 import { Layout } from '@/components/layout/Layout';
@@ -27,6 +26,7 @@ const SettingsPage = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [notifications, setNotifications] = useState(true);
   const [emailNotifications, setEmailNotifications] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -37,12 +37,14 @@ const SettingsPage = () => {
 
   const handleSaveProfile = async () => {
     try {
-      const updatedUser = await authApi.updateProfile({ name, email });
-      // Instead of using updateUser which doesn't exist, we'll just show a success message
-      // The page will refresh with the updated user data on next load
+      setIsLoading(true);
+      await authApi.updateProfile({ name, email });
       toast.success(t('settings.saved_profile'));
     } catch (error) {
+      console.error('Error updating profile:', error);
       toast.error(t('settings.save_error'));
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -58,17 +60,21 @@ const SettingsPage = () => {
     }
     
     try {
+      setIsLoading(true);
       await authApi.changePassword({
         currentPassword,
         newPassword
       });
-      toast.success(t('settings.password_changed'));
       
+      toast.success(t('settings.password_changed'));
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
     } catch (error) {
+      console.error('Error changing password:', error);
       toast.error(t('settings.password_change_error'));
+    } finally {
+      setIsLoading(false);
     }
   };
 
