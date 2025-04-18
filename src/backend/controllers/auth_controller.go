@@ -23,8 +23,8 @@ type RegisterRequest struct {
 	Email     string `json:"email"`
 	Password  string `json:"password"`
 	Role      string `json:"role"`
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
 }
 
 // LoginRequest represents a user login request
@@ -141,7 +141,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("Login attempt for email: %s with password: %s", req.Email, req.Password)
+	log.Printf("Login attempt for email: %s", req.Email)
 
 	// Testing account for development
 	if req.Email == "test@example.com" && req.Password == "password123" {

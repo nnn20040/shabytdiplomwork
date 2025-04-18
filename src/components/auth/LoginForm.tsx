@@ -30,6 +30,8 @@ const LoginForm = () => {
     
     try {
       console.log("Attempting login with:", { email, password: "******" });
+      
+      // This will automatically handle the test account
       const data = await authApi.login({ email, password });
       
       console.log("Login response:", data);
@@ -38,7 +40,7 @@ const LoginForm = () => {
         throw new Error("Неверный ответ от сервера");
       }
       
-      toast.success("Успешный вход!");
+      toast.success(data.message || "Успешный вход!");
       
       // Redirect based on user role
       if (data.user?.role === 'teacher') {
@@ -66,6 +68,11 @@ const LoginForm = () => {
         <p className="text-muted-foreground">
           Войдите в аккаунт, чтобы продолжить
         </p>
+        {process.env.NODE_ENV !== 'production' && (
+          <div className="mt-2 p-2 bg-muted text-xs rounded">
+            <p>Тестовый аккаунт: test@example.com / password123</p>
+          </div>
+        )}
       </div>
       
       <form onSubmit={handleSubmit} className="space-y-6">
