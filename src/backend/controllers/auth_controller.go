@@ -19,10 +19,12 @@ type Response struct {
 
 // RegisterRequest represents a user registration request
 type RegisterRequest struct {
-	Name     string `json:"name"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	Role     string `json:"role"`
+	Name      string `json:"name"`
+	Email     string `json:"email"`
+	Password  string `json:"password"`
+	Role      string `json:"role"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
 }
 
 // LoginRequest represents a user login request
@@ -60,20 +62,34 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	var req RegisterRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
+		log.Printf("Register error: Failed to decode request body: %v", err)
 		http.Error(w, "Invalid request data", http.StatusBadRequest)
 		return
 	}
 
+	log.Printf("Register request received: %+v", req)
+
 	// Validate input
-	if req.Name == "" || req.Email == "" || req.Password == "" {
+	if req.Email == "" || req.Password == "" {
+		log.Printf("Register error: Missing required fields")
 		http.Error(w, "Please provide all required fields", http.StatusBadRequest)
 		return
+	}
+
+	// If name is not provided but first name is, create name from first and last name
+	if req.Name == "" && req.FirstName != "" {
+		if req.LastName != "" {
+			req.Name = req.FirstName + " " + req.LastName
+		} else {
+			req.Name = req.FirstName
+		}
 	}
 
 	// Create user
 	user, err := models.CreateUser(r.Context(), req.Name, req.Email, req.Password, req.Role)
 	if err != nil {
 		if err.Error() == "user with this email already exists" {
+			log.Printf("Register error: User with email already exists: %s", req.Email)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		} else {
 			log.Printf("Register error: %v", err)
@@ -82,9 +98,12 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Printf("User registered successfully: %s", user.Email)
+
 	// Return success response without token
 	response := Response{
 		Success: true,
+		Message: "Registration successful",
 		User: map[string]interface{}{
 			"id":        user.ID,
 			"name":      user.Name,

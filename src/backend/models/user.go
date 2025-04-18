@@ -34,6 +34,14 @@ type User struct {
 
 // CreateUser creates a new user in the database
 func CreateUser(ctx context.Context, name, email, password, role string) (*User, error) {
+	// Check if user with this email already exists
+	existingUser, err := GetUserByEmail(ctx, email)
+	if err == nil && existingUser != nil {
+		return nil, fmt.Errorf("user with this email already exists")
+	} else if err != sql.ErrNoRows && err != nil {
+		return nil, fmt.Errorf("error checking for existing user: %w", err)
+	}
+
 	// Hash password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {

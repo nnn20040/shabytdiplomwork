@@ -21,9 +21,16 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
       ...(options.headers || {}),
     };
     
+    // Make sure we convert the body to a JSON string
+    let body = options.body;
+    if (body && typeof body === 'object') {
+      body = JSON.stringify(body);
+    }
+    
     const response = await fetch(url, {
       ...options,
       headers,
+      body: body as BodyInit,
       credentials: 'include', // This ensures cookies are sent with requests
     });
 
@@ -61,16 +68,22 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
  */
 export const authApi = {
   // Register a new user
-  register: async (userData: {
-    name: string;
-    email: string;
-    password: string;
-    role: string;
-  }) => {
-    console.log("Registering user:", { ...userData, password: "****" });
+  register: async (userData: any) => {
+    console.log("Registering user with data:", {
+      ...userData,
+      password: "****" // Hide password in logs
+    });
+    
+    // Make sure first_name and last_name are properly set
+    const requestData = {
+      ...userData,
+      first_name: userData.firstName || userData.first_name,
+      last_name: userData.lastName || userData.last_name,
+    };
+    
     const response = await apiRequest('/api/auth/register', {
       method: 'POST',
-      body: JSON.stringify(userData)
+      body: requestData
     });
     
     // Store user data in localStorage for simplified auth
@@ -233,13 +246,13 @@ export const getFallbackResponse = async (question: string) => {
     };
   }
   
-  if (lowercaseQuestion.includes('ент') || lowercaseQuestion.includes('единое национальное ��естирование')) {
+  if (lowercaseQuestion.includes('ент') || lowercaseQuestion.includes('единое национальное тестирование')) {
     return {
       success: true,
       data: {
         id: `fallback_${Date.now()}`,
         question,
-        response: 'Единое национальное тестирование (ЕНТ) - это система оценки знаний выпускников в Казахстане. Тестирование проводится по нескольким предметам, включая обязательные (математика, история Казахстана, грамотность чтения) и профильные, которые выби��аются в зависимости от будущей специальности.',
+        response: 'Единое национальное тестирование (ЕНТ) - это система оценки знаний выпускников в Казахстане. Тестирование проводится по нескольким предметам, включая обязательные (математика, история Казахстана, грамотность чтения) и профильные, которые выбираются в зависимости от будущей специальности.',
         created_at: new Date().toISOString()
       }
     };
