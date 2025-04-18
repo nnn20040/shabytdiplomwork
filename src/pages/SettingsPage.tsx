@@ -1,19 +1,32 @@
+
 import { useState, useEffect } from 'react';
 import { authApi } from '@/api';
 import { Layout } from '@/components/layout/Layout';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { ApiKeySettings } from '@/components/settings/ApiKeySettings';
 
 const SettingsPage = () => {
-  const { t } = useLanguage();
-  const { user, updateUser } = useAuth();
-
+  const { t, language, setLanguage } = useLanguage();
+  const { user } = useAuth();
+  const { darkMode, toggleDarkMode, highContrast, toggleHighContrast } = useTheme();
+  
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [notifications, setNotifications] = useState(true);
+  const [emailNotifications, setEmailNotifications] = useState(true);
 
   useEffect(() => {
     if (user) {
@@ -25,7 +38,8 @@ const SettingsPage = () => {
   const handleSaveProfile = async () => {
     try {
       const updatedUser = await authApi.updateProfile({ name, email });
-      updateUser(updatedUser);
+      // Instead of using updateUser which doesn't exist, we'll just show a success message
+      // The page will refresh with the updated user data on next load
       toast.success(t('settings.saved_profile'));
     } catch (error) {
       toast.error(t('settings.save_error'));
