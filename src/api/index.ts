@@ -1,4 +1,3 @@
-
 /**
  * API client for handling requests to backend
  */
@@ -142,6 +141,29 @@ export const authApi = {
     });
     return response.data;
   },
+  
+  // Update profile
+  updateProfile: async (userData: { name: string; email: string }) => {
+    const response = await apiRequest('/api/auth/update-profile', {
+      method: 'PATCH',
+      body: JSON.stringify(userData)
+    });
+    
+    return response.data;
+  },
+  
+  // Change password
+  changePassword: async (passwordData: { 
+    currentPassword: string; 
+    newPassword: string 
+  }) => {
+    const response = await apiRequest('/api/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify(passwordData)
+    });
+    
+    return response.data;
+  },
 };
 
 /**
@@ -213,7 +235,7 @@ export const getFallbackResponse = async (question: string) => {
       data: {
         id: `fallback_${Date.now()}`,
         question,
-        response: 'Единое национальное тестирование (ЕНТ) - это система оценки знаний выпускников в Казахстане. Тестирование проводится по нескольким предметам, включая обязательные (математика, история Казахстана, грамотность чтения) и профильные, которые выбираются в зависимости от будущей специальности.',
+        response: 'Единое национальное тестирование (ЕНТ) - это система оценки знаний выпускников в Казахстане. Тестирование проводится по нескольким предметам, включая обязательные (математика, история Казахстана, грамотность чтения) и профильные, которые выби��аются в зависимости от будущей специальности.',
         created_at: new Date().toISOString()
       }
     };

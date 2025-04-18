@@ -1,58 +1,38 @@
-
 import { useState, useEffect } from 'react';
+import { authApi } from '@/api';
 import { Layout } from '@/components/layout/Layout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Link } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useTheme } from '@/contexts/ThemeContext';
-import { ApiKeySettings } from '@/components/settings/ApiKeySettings';
+import { useAuth } from '@/contexts/AuthContext';
 
 const SettingsPage = () => {
-  const { language, setLanguage, t } = useLanguage();
-  const { highContrast, toggleHighContrast, darkMode, toggleDarkMode } = useTheme();
-  
+  const { t } = useLanguage();
+  const { user, updateUser } = useAuth();
+
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [notifications, setNotifications] = useState(true);
-  const [emailNotifications, setEmailNotifications] = useState(true);
-  
+
   useEffect(() => {
-    // Загрузка данных пользователя из localStorage
-    const userData = localStorage.getItem('user');
-    if (userData) {
-      const user = JSON.parse(userData);
+    if (user) {
       setName(user.name || '');
       setEmail(user.email || '');
     }
-  }, []);
-  
-  const handleSaveProfile = () => {
-    // Сохранение обновленных данных пользователя в localStorage
-    const userData = localStorage.getItem('user');
-    if (userData) {
-      const user = JSON.parse(userData);
-      const updatedUser = {
-        ...user,
-        name,
-        email
-      };
-      localStorage.setItem('user', JSON.stringify(updatedUser));
+  }, [user]);
+
+  const handleSaveProfile = async () => {
+    try {
+      const updatedUser = await authApi.updateProfile({ name, email });
+      updateUser(updatedUser);
+      toast.success(t('settings.saved_profile'));
+    } catch (error) {
+      toast.error(t('settings.save_error'));
     }
-    
-    toast.success(t('settings.saved_profile'));
   };
-  
-  const handleChangePassword = () => {
+
+  const handleChangePassword = async () => {
     if (newPassword !== confirmPassword) {
       toast.error(t('settings.password_mismatch'));
       return;
@@ -63,12 +43,21 @@ const SettingsPage = () => {
       return;
     }
     
-    toast.success(t('settings.password_changed'));
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
+    try {
+      await authApi.changePassword({
+        currentPassword,
+        newPassword
+      });
+      toast.success(t('settings.password_changed'));
+      
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error) {
+      toast.error(t('settings.password_change_error'));
+    }
   };
-  
+
   return (
     <Layout>
       <div className="container py-10">
