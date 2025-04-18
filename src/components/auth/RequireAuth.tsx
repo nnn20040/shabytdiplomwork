@@ -16,13 +16,14 @@ const RequireAuth: React.FC<RequireAuthProps> = ({ children }) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Simplified auth - just check if user exists in localStorage
+        // Simply check if user exists in localStorage
         const user = localStorage.getItem('user');
         
         if (!user) {
           console.log("No user found in localStorage");
           setIsAuthenticated(false);
           navigate('/login', { state: { from: location.pathname } });
+          
           // Don't show the toast if coming from the registration or login page
           if (!location.pathname.includes('register') && !location.pathname.includes('login')) {
             toast.error('Для доступа к этой странице необходимо войти в систему');

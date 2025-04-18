@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authApi } from '@/api';
+import { toast } from 'sonner';
 
 // Тип пользователя
 interface User {
@@ -44,11 +45,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const { user } = await authApi.getCurrentUser();
-        setUser(user);
+        const stored = localStorage.getItem('user');
+        if (stored) {
+          setUser(JSON.parse(stored));
+        }
       } catch (error) {
         console.error('Failed to get current user:', error);
-        setUser(null);
       } finally {
         setIsLoading(false);
       }
@@ -63,10 +65,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const response = await authApi.login({ email, password });
       if (response && response.user) {
         setUser(response.user);
+        toast.success("Успешный вход в систему!");
       }
       return response;
     } catch (error) {
       console.error('Login failed:', error);
+      toast.error("Ошибка входа в систему");
       throw error;
     }
   };
@@ -77,10 +81,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const response = await authApi.register({ name, email, password, role });
       if (response && response.user) {
         setUser(response.user);
+        toast.success("Регистрация успешна!");
       }
       return response;
     } catch (error) {
       console.error('Registration failed:', error);
+      toast.error("Ошибка при регистрации");
       throw error;
     }
   };
@@ -90,6 +96,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await authApi.logout();
       setUser(null);
+      toast.success("Вы вышли из системы");
     } catch (error) {
       console.error('Logout failed:', error);
       // Даже в случае ошибки очищаем состояние пользователя

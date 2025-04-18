@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { EyeIcon, EyeOffIcon } from 'lucide-react';
 import { toast } from 'sonner';
-import { authApi } from '@/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 const RegisterForm = () => {
   const [firstName, setFirstName] = useState('');
@@ -20,6 +20,7 @@ const RegisterForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
+  const { register } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,23 +38,19 @@ const RegisterForm = () => {
     setIsLoading(true);
     
     try {
-      const userData = {
-        name: `${firstName} ${lastName}`,
-        email,
-        password,
-        role,
-        firstName,  // Add explicit firstName
-        lastName    // Add explicit lastName
-      };
+      const name = `${firstName} ${lastName}`;
       
       console.log("Sending registration data:", {
-        ...userData,
-        password: '***скрыто***'
+        name,
+        email,
+        password: '***скрыто***',
+        role,
+        firstName,
+        lastName
       });
 
-      const response = await authApi.register(userData);
+      await register(name, email, password, role);
       
-      console.log("Registration response:", response);
       toast.success("Регистрация успешна! Добро пожаловать в StudyHub!");
       
       if (role === 'teacher') {
@@ -63,7 +60,7 @@ const RegisterForm = () => {
       }
     } catch (error) {
       console.error('Registration error:', error);
-      toast.error(error instanceof Error ? error.message : "Проблема с подключением к серверу. Проверьте работу бэкенда.");
+      toast.error(error instanceof Error ? error.message : "Ошибка при регистрации");
     } finally {
       setIsLoading(false);
     }
@@ -76,6 +73,9 @@ const RegisterForm = () => {
         <p className="text-muted-foreground">
           Присоединяйтесь к тысячам студентов, успешно сдавших ЕНТ
         </p>
+        <div className="mt-2 p-2 bg-muted text-xs rounded">
+          <p>В текущей версии регистрация работает в демо-режиме</p>
+        </div>
       </div>
       
       <form onSubmit={handleSubmit} className="space-y-5">

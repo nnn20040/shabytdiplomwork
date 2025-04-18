@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { EyeIcon, EyeOffIcon } from 'lucide-react';
 import { toast } from 'sonner';
-import { authApi } from '@/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 const LoginForm = () => {
   const [email, setEmail] = useState('');
@@ -15,6 +15,7 @@ const LoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,16 +32,11 @@ const LoginForm = () => {
     try {
       console.log("Attempting login with:", { email, password: "******" });
       
-      // This will automatically handle the test account
-      const data = await authApi.login({ email, password });
+      const data = await login(email, password);
       
       console.log("Login response:", data);
       
-      if (!data || !data.user) {
-        throw new Error("Неверный ответ от сервера");
-      }
-      
-      toast.success(data.message || "Успешный вход!");
+      toast.success("Успешный вход!");
       
       // Redirect based on user role
       if (data.user?.role === 'teacher') {
@@ -52,7 +48,7 @@ const LoginForm = () => {
       console.error('Login error:', error);
       const errorMessage = error instanceof Error 
         ? error.message 
-        : "Проблема с подключением к серверу. Проверьте работу бэкенда.";
+        : "Ошибка входа";
       
       toast.error(errorMessage);
       setErrorMsg(errorMessage);
@@ -68,11 +64,9 @@ const LoginForm = () => {
         <p className="text-muted-foreground">
           Войдите в аккаунт, чтобы продолжить
         </p>
-        {process.env.NODE_ENV !== 'production' && (
-          <div className="mt-2 p-2 bg-muted text-xs rounded">
-            <p>Тестовый аккаунт: test@example.com / password123</p>
-          </div>
-        )}
+        <div className="mt-2 p-2 bg-muted text-xs rounded">
+          <p>В текущей версии любые учетные данные будут работать для входа</p>
+        </div>
       </div>
       
       <form onSubmit={handleSubmit} className="space-y-6">
