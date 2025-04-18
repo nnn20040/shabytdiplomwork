@@ -42,18 +42,18 @@ const RegisterForm = () => {
         email,
         password,
         role,
-        first_name: firstName,
-        last_name: lastName
+        firstName,  // Add explicit firstName
+        lastName    // Add explicit lastName
       };
       
-      console.log("Отправка данных регистрации:", {
+      console.log("Sending registration data:", {
         ...userData,
         password: '***скрыто***'
       });
 
       const response = await authApi.register(userData);
       
-      console.log("Успешная регистрация, ответ от сервера:", response);
+      console.log("Registration response:", response);
       toast.success("Регистрация успешна! Добро пожаловать в StudyHub!");
       
       if (role === 'teacher') {
