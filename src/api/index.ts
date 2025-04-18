@@ -74,16 +74,9 @@ export const authApi = {
       password: "****" // Hide password in logs
     });
     
-    // Make sure first_name and last_name are properly set
-    const requestData = {
-      ...userData,
-      first_name: userData.firstName || userData.first_name,
-      last_name: userData.lastName || userData.last_name,
-    };
-    
     const response = await apiRequest('/api/auth/register', {
       method: 'POST',
-      body: requestData
+      body: userData
     });
     
     // Store user data in localStorage for simplified auth
@@ -240,7 +233,7 @@ export const getFallbackResponse = async (question: string) => {
       data: {
         id: `fallback_${Date.now()}`,
         question,
-        response: 'Физика - это естественная наука, изучающая материю, её движение и поведение в пространстве и времени, а также связанные с этим понятия энергии и силы. Основные разделы физики включают механику, электродинамику, термодинамику, оптику, квантовую физику и теорию относительности.',
+        response: 'Физика - это естественная н��ука, изучающая материю, её движение и поведение в пространстве и времени, а также связанные с этим понятия энергии и силы. Основные разделы физики включают механику, электродинамику, термодинамику, оптику, квантовую физику и теорию относительности.',
         created_at: new Date().toISOString()
       }
     };
