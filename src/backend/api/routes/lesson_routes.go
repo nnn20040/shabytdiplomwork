@@ -19,8 +19,8 @@ func RegisterLessonRoutes(router *mux.Router) {
 	
 	// Define routes
 	lessonRouter.HandleFunc("", controllers.GetLessons).Methods("GET", "OPTIONS")
-	lessonRouter.HandleFunc("", controllers.CreateLesson).Methods("POST", "OPTIONS") 
+	lessonRouter.HandleFunc("", middleware.RequireAuth(controllers.CreateLesson)).Methods("POST", "OPTIONS") 
 	lessonRouter.HandleFunc("/{lessonId}", controllers.GetLesson).Methods("GET", "OPTIONS")
-	lessonRouter.HandleFunc("/{lessonId}", controllers.UpdateLesson).Methods("PUT", "OPTIONS")
-	lessonRouter.HandleFunc("/{lessonId}", controllers.DeleteLesson).Methods("DELETE", "OPTIONS")
+	lessonRouter.HandleFunc("/{lessonId}", middleware.RequireAuth(controllers.UpdateLesson)).Methods("PUT", "OPTIONS")
+	lessonRouter.HandleFunc("/{lessonId}", middleware.RequireAuth(controllers.DeleteLesson)).Methods("DELETE", "OPTIONS")
 }
