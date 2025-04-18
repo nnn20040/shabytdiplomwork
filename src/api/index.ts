@@ -69,7 +69,7 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
  * Authentication API calls
  */
 export const authApi = {
-  // Register a new user - simplified
+  // Register a new user
   register: async (userData: any) => {
     try {
       console.log("Registering user with data:", {
@@ -77,60 +77,53 @@ export const authApi = {
         password: "****" // Hide password in logs
       });
       
-      // Create a test user directly without server call
-      const testUser = {
-        id: `user_${Date.now()}`,
-        name: userData.name || `${userData.firstName} ${userData.lastName}`,
-        email: userData.email,
-        role: userData.role || "student",
-        firstName: userData.firstName,
-        lastName: userData.lastName
-      };
+      const response = await apiRequest('/api/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: userData.name || `${userData.firstName} ${userData.lastName}`,
+          email: userData.email,
+          password: userData.password,
+          role: userData.role || "student",
+          firstName: userData.firstName,
+          lastName: userData.lastName
+        })
+      });
+
+      if (response.data && response.data.user) {
+        // Store user data in localStorage
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+      }
       
-      // Store user data in localStorage
-      localStorage.setItem('user', JSON.stringify(testUser));
-      
-      return {
-        success: true,
-        message: "Registration successful",
-        user: testUser
-      };
+      return response.data;
     } catch (error) {
       console.error("Registration error:", error);
       throw error;
     }
   },
   
-  // Login user - simplified
+  // Login user
   login: async (credentials: { email: string; password: string }) => {
     try {
       console.log("Logging in user:", { email: credentials.email, password: "****" });
       
-      // Always use the test account approach for simplicity
-      const testUser = {
-        id: `user_${Date.now()}`,
-        name: "Test User",
-        email: credentials.email,
-        role: "student",
-        firstName: "Test",
-        lastName: "User"
-      };
+      const response = await apiRequest('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify(credentials)
+      });
+
+      if (response.data && response.data.user) {
+        // Store user data in localStorage
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+      }
       
-      // Store test user in localStorage
-      localStorage.setItem('user', JSON.stringify(testUser));
-      
-      return { 
-        success: true, 
-        message: "Login successful", 
-        user: testUser 
-      };
+      return response.data;
     } catch (error) {
       console.error("Login error:", error);
       throw error;
     }
   },
   
-  // Get current user - simplified
+  // Get current user
   getCurrentUser: async () => {
     try {
       // Just return the user from localStorage
@@ -145,7 +138,7 @@ export const authApi = {
     }
   },
 
-  // Logout user - simplified
+  // Logout user
   logout: async () => {
     try {
       console.log("Logging out user");
@@ -242,7 +235,7 @@ export const getFallbackResponse = async (question: string) => {
       data: {
         id: `fallback_${Date.now()}`,
         question,
-        response: 'Математика - это наука о структ��рах, порядке и отношениях, которая исторически р��звивалась из подсчетов, измерений и описания форм объектов. В современной математике существует множество разделов: алгебра, геометрия, математический анализ, теория чисел, теория вероятностей и другие.',
+        response: 'Математика - это наука о структ��рах, порядке и отношениях, которая исторически р��звивалась из по��счетов, измерений и описания форм объектов. В современной математике существует множество разделов: алгебра, геометрия, математический анализ, теория чисел, теория вероятностей и другие.',
         created_at: new Date().toISOString()
       }
     };

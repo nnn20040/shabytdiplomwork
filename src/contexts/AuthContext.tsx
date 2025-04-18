@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authApi } from '@/api';
 import { toast } from 'sonner';
@@ -70,7 +69,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return response;
     } catch (error) {
       console.error('Login failed:', error);
-      toast.error("Ошибка входа в систему");
+      const errorMessage = error instanceof Error ? error.message : "Ошибка входа в систему";
+      toast.error(errorMessage);
       throw error;
     }
   };
@@ -86,7 +86,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return response;
     } catch (error) {
       console.error('Registration failed:', error);
-      toast.error("Ошибка при регистрации");
+      const errorMessage = error instanceof Error ? error.message : "Ошибка при регистрации";
+      toast.error(errorMessage);
       throw error;
     }
   };
