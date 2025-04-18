@@ -2,7 +2,6 @@
 package controllers
 
 import (
-	"context"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -15,8 +14,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// Response представляет общую структуру ответа API
-type Response struct {
+// LessonResponse представляет общую структуру ответа API для уроков
+type LessonResponse struct {
 	Success bool        `json:"success"`
 	Message string      `json:"message,omitempty"`
 	Data    interface{} `json:"data,omitempty"`
@@ -124,7 +123,7 @@ func CreateLesson(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Возвращаем успешный ответ
-	response := Response{
+	response := LessonResponse{
 		Success: true,
 		Message: "Урок успешно создан",
 		Data:    lesson,
@@ -218,7 +217,7 @@ func UpdateLesson(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Возвращаем успешный ответ
-	response := Response{
+	response := LessonResponse{
 		Success: true,
 		Message: "Урок успешно обновлен",
 		Data:    lesson,
@@ -297,7 +296,7 @@ func DeleteLesson(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Возвращаем успешный ответ
-	response := Response{
+	response := LessonResponse{
 		Success: true,
 		Message: "Урок успешно удален",
 	}
@@ -381,7 +380,7 @@ func GetLessons(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Возвращаем успешный ответ
-	response := Response{
+	response := LessonResponse{
 		Success: true,
 		Data:    lessons,
 	}
@@ -432,7 +431,7 @@ func GetLesson(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Возвращаем успешный ответ
-	response := Response{
+	response := LessonResponse{
 		Success: true,
 		Data:    lesson,
 	}

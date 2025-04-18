@@ -1,3 +1,4 @@
+
 package main
 
 import (
@@ -46,8 +47,9 @@ func main() {
 	// Register routes
 	routes.RegisterAuthRoutes(router)
 	routes.RegisterCourseRoutes(router)
+	routes.RegisterLessonRoutes(router) // Add lessons routes
 	routes.RegisterAIAssistantRoutes(router)
-	routes.RegisterUserRoutes(router) // Register new user routes
+	routes.RegisterUserRoutes(router)
 
 	// Serve static files in production
 	if os.Getenv("GO_ENV") == "production" {
