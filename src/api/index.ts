@@ -118,9 +118,10 @@ export const authApi = {
       };
     }
     
+    // Fix: Pass credentials as the body property in the options object
     const response = await apiRequest('/api/auth/login', {
       method: 'POST',
-      body: credentials // This will be correctly stringified in apiRequest
+      body: credentials // This will be stringified in apiRequest
     });
     
     // Store user data in localStorage for simplified auth
@@ -249,7 +250,7 @@ export const getFallbackResponse = async (question: string) => {
       data: {
         id: `fallback_${Date.now()}`,
         question,
-        response: 'Математика - это наука о структурах, порядке и отношениях, которая исторически развивалась из подсчетов, измерений и описания форм объектов. В современной математике существует множество разделов: алгебра, геометрия, математический анализ, теория чисел, теория вероятностей и другие.',
+        response: 'Математика - это наука о структурах, порядке и отношениях, которая исторически р��звивалась из подсчетов, измерений и описания форм объектов. В современной математике существует множество разделов: алгебра, геометрия, математический анализ, теория чисел, теория вероятностей и другие.',
         created_at: new Date().toISOString()
       }
     };
