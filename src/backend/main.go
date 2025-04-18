@@ -47,7 +47,7 @@ func main() {
 	// Register routes
 	routes.RegisterAuthRoutes(router)
 	routes.RegisterCourseRoutes(router)
-	routes.RegisterLessonRoutes(router) // Add lessons routes
+	routes.RegisterLessonRoutes(router) // Register lessons routes
 	routes.RegisterAIAssistantRoutes(router)
 	routes.RegisterUserRoutes(router)
 
