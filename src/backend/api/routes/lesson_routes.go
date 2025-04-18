@@ -8,7 +8,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// RegisterLessonRoutes registers lesson routes
+// RegisterLessonRoutes registers lesson routes for the API
+// These routes handle CRUD operations for course lessons
 func RegisterLessonRoutes(router *mux.Router) {
 	// Create a lessons subrouter
 	lessonRouter := router.PathPrefix("/api/courses/{courseId}/lessons").Subrouter()
