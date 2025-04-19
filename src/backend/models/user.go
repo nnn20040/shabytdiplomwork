@@ -26,55 +26,6 @@ type User struct {
 	ProfileImageURL  *string    `json:"profile_image_url,omitempty"`
 	IsActive         bool       `json:"is_active"`
 	LanguagePreference string   `json:"language_preference"`
-	AccessToken      *string    `json:"-"`
-	RefreshToken     *string    `json:"-"`
-	TokenExpiresAt   *time.Time `json:"-"`
-	ResetToken       *string    `json:"-"`
-	ResetTokenExpiry *int64     `json:"-"`
-}
-
-// SaveTokens saves the user's access and refresh tokens
-func (u *User) SaveTokens(ctx context.Context, accessToken, refreshToken string, expiresAt time.Time) error {
-	_, err := config.ExecContext(ctx,
-		`UPDATE users 
-		 SET access_token = $1, 
-			 refresh_token = $2, 
-			 token_expires_at = $3,
-			 updated_at = NOW() 
-		 WHERE id = $4`,
-		accessToken, refreshToken, expiresAt, u.ID)
-	
-	if err != nil {
-		return fmt.Errorf("error saving tokens: %w", err)
-	}
-	
-	u.AccessToken = &accessToken
-	u.RefreshToken = &refreshToken
-	u.TokenExpiresAt = &expiresAt
-	
-	return nil
-}
-
-// ClearTokens removes the user's tokens
-func (u *User) ClearTokens(ctx context.Context) error {
-	_, err := config.ExecContext(ctx,
-		`UPDATE users 
-		 SET access_token = NULL, 
-			 refresh_token = NULL, 
-			 token_expires_at = NULL,
-			 updated_at = NOW() 
-		 WHERE id = $1`,
-		u.ID)
-	
-	if err != nil {
-		return fmt.Errorf("error clearing tokens: %w", err)
-	}
-	
-	u.AccessToken = nil
-	u.RefreshToken = nil
-	u.TokenExpiresAt = nil
-	
-	return nil
 }
 
 // CreateUser creates a new user in the database
@@ -245,19 +196,4 @@ func DeleteUser(ctx context.Context, id string) error {
 // ComparePassword compares a provided password with the user's hashed password
 func ComparePassword(hashedPassword, providedPassword string) error {
 	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(providedPassword))
-}
-
-// SaveResetToken saves a password reset token for a user
-func SaveResetToken(ctx context.Context, id, resetToken string, resetTokenExpiry int64) error {
-	return config.SaveResetToken(ctx, id, resetToken, resetTokenExpiry)
-}
-
-// VerifyResetToken verifies a password reset token
-func VerifyResetToken(ctx context.Context, id, token string) (bool, error) {
-	return config.VerifyResetToken(ctx, id, token)
-}
-
-// ClearResetToken clears a user's password reset token
-func ClearResetToken(ctx context.Context, id string) error {
-	return config.ClearResetToken(ctx, id)
 }
