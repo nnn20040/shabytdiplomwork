@@ -1,4 +1,3 @@
-
 package models
 
 import (
@@ -9,27 +8,73 @@ import (
 	"strings"
 
 	"backend/config"
-
 	"golang.org/x/crypto/bcrypt"
 )
 
 // User represents a user in the system
 type User struct {
-	ID               string    `json:"id"`
-	Email            string    `json:"email"`
-	Password         string    `json:"-"` // "-" means this field will be omitted from JSON output
-	FirstName        string    `json:"first_name"`
-	LastName         string    `json:"last_name"`
-	Name             string    `json:"name"` // Derived from FirstName and LastName
-	Role             string    `json:"role"`
-	CreatedAt        time.Time `json:"created_at"`
-	UpdatedAt        time.Time `json:"updated_at"`
+	ID               string     `json:"id"`
+	Email            string     `json:"email"`
+	Password         string     `json:"-"`
+	FirstName        string     `json:"first_name"`
+	LastName         string     `json:"last_name"`
+	Name             string     `json:"name"`
+	Role             string     `json:"role"`
+	CreatedAt        time.Time  `json:"created_at"`
+	UpdatedAt        time.Time  `json:"updated_at"`
 	LastLogin        *time.Time `json:"last_login,omitempty"`
-	ProfileImageURL  *string   `json:"profile_image_url,omitempty"`
-	IsActive         bool      `json:"is_active"`
-	LanguagePreference string  `json:"language_preference"`
-	ResetToken       *string   `json:"-"`
-	ResetTokenExpiry *int64    `json:"-"`
+	ProfileImageURL  *string    `json:"profile_image_url,omitempty"`
+	IsActive         bool       `json:"is_active"`
+	LanguagePreference string   `json:"language_preference"`
+	AccessToken      *string    `json:"-"`
+	RefreshToken     *string    `json:"-"`
+	TokenExpiresAt   *time.Time `json:"-"`
+	ResetToken       *string    `json:"-"`
+	ResetTokenExpiry *int64     `json:"-"`
+}
+
+// SaveTokens saves the user's access and refresh tokens
+func (u *User) SaveTokens(ctx context.Context, accessToken, refreshToken string, expiresAt time.Time) error {
+	_, err := config.ExecContext(ctx,
+		`UPDATE users 
+		 SET access_token = $1, 
+			 refresh_token = $2, 
+			 token_expires_at = $3,
+			 updated_at = NOW() 
+		 WHERE id = $4`,
+		accessToken, refreshToken, expiresAt, u.ID)
+	
+	if err != nil {
+		return fmt.Errorf("error saving tokens: %w", err)
+	}
+	
+	u.AccessToken = &accessToken
+	u.RefreshToken = &refreshToken
+	u.TokenExpiresAt = &expiresAt
+	
+	return nil
+}
+
+// ClearTokens removes the user's tokens
+func (u *User) ClearTokens(ctx context.Context) error {
+	_, err := config.ExecContext(ctx,
+		`UPDATE users 
+		 SET access_token = NULL, 
+			 refresh_token = NULL, 
+			 token_expires_at = NULL,
+			 updated_at = NOW() 
+		 WHERE id = $1`,
+		u.ID)
+	
+	if err != nil {
+		return fmt.Errorf("error clearing tokens: %w", err)
+	}
+	
+	u.AccessToken = nil
+	u.RefreshToken = nil
+	u.TokenExpiresAt = nil
+	
+	return nil
 }
 
 // CreateUser creates a new user in the database

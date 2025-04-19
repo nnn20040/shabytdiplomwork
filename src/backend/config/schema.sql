@@ -1,5 +1,4 @@
-
--- Users table
+-- Users table with token fields
 CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email VARCHAR(255) UNIQUE NOT NULL,
@@ -12,7 +11,12 @@ CREATE TABLE IF NOT EXISTS users (
     last_login TIMESTAMP,
     profile_image_url VARCHAR(255),
     is_active BOOLEAN DEFAULT TRUE,
-    language_preference VARCHAR(10) DEFAULT 'ru' -- ru, kk, en
+    language_preference VARCHAR(10) DEFAULT 'ru', -- ru, kk, en
+    access_token VARCHAR(500),
+    refresh_token VARCHAR(500),
+    token_expires_at TIMESTAMP,
+    reset_token VARCHAR(255),
+    reset_token_expiry BIGINT
 );
 
 -- Registration logs table with improved information
@@ -353,3 +357,7 @@ CREATE INDEX IF NOT EXISTS idx_login_logs_user_id ON login_logs(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id ON user_sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_sessions_token ON user_sessions(session_token);
 CREATE INDEX IF NOT EXISTS idx_registration_logs_email ON registration_logs(email);
+
+-- Add new indexes for token fields
+CREATE INDEX IF NOT EXISTS idx_users_access_token ON users(access_token);
+CREATE INDEX IF NOT EXISTS idx_users_refresh_token ON users(refresh_token);
