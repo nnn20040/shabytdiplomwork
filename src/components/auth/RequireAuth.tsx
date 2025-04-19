@@ -13,9 +13,12 @@ const RequireAuth: React.FC<RequireAuthProps> = ({ children }) => {
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [redirected, setRedirected] = useState(false);
 
   useEffect(() => {
-    if (!isLoading && !user) {
+    if (!isLoading && !user && !redirected) {
+      console.log("No authenticated user found, redirecting to login");
+      setRedirected(true);
       navigate('/login', { state: { from: location.pathname } });
       
       // Don't show the toast if coming from the registration or login page
@@ -23,7 +26,7 @@ const RequireAuth: React.FC<RequireAuthProps> = ({ children }) => {
         toast.error('Для доступа к этой странице необходимо войти в систему');
       }
     }
-  }, [user, isLoading, navigate, location]);
+  }, [user, isLoading, navigate, location, redirected]);
 
   if (isLoading) {
     return (

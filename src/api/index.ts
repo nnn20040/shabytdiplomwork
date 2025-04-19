@@ -1,3 +1,4 @@
+
 /**
  * API client for handling requests to backend
  */
@@ -21,18 +22,18 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
       ...(options.headers || {}),
     };
     
-    // Make sure we convert the body to a JSON string
-    let body = options.body;
-    if (body && typeof body === 'object') {
-      body = JSON.stringify(body);
+    // Make sure we send the body properly
+    let requestBody = options.body;
+    if (requestBody && typeof requestBody === 'object') {
+      requestBody = JSON.stringify(requestBody);
     }
     
-    console.log("Request body:", body);
+    console.log("Request body:", requestBody);
     
     const response = await fetch(url, {
       ...options,
       headers,
-      body: body as BodyInit,
+      body: requestBody as BodyInit,
       credentials: 'include', // This ensures cookies are sent with requests
     });
 

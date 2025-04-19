@@ -4,6 +4,7 @@ package middleware
 import (
 	"log"
 	"net/http"
+	"strings"
 )
 
 var allowedOrigins = []string{
@@ -11,6 +12,8 @@ var allowedOrigins = []string{
 	"http://localhost:5173",
 	"http://127.0.0.1:8080",
 	"http://127.0.0.1:5173",
+	"http://localhost:3000",
+	"http://127.0.0.1:3000",
 }
 
 // CORSMiddleware adds CORS headers to every response
@@ -22,16 +25,23 @@ func CORSMiddleware(next http.Handler) http.Handler {
 		// Check if the origin is allowed
 		allowedOrigin := ""
 		for _, allowed := range allowedOrigins {
-			if allowed == origin {
+			if allowed == origin || strings.TrimSpace(origin) == "" {
 				allowedOrigin = origin
 				break
 			}
 		}
 		
-		// If origin is allowed, set specific origin instead of wildcard
-		if allowedOrigin != "" {
+		// If origin is allowed or empty, set headers
+		if allowedOrigin != "" || strings.TrimSpace(origin) == "" {
 			log.Printf("Setting CORS headers for origin: %s", allowedOrigin)
-			w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
+			
+			// If no origin is specified, allow all for development
+			if strings.TrimSpace(origin) == "" {
+				w.Header().Set("Access-Control-Allow-Origin", "*")
+			} else {
+				w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
+			}
+			
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, Origin, Accept")
 			w.Header().Set("Access-Control-Allow-Credentials", "true")

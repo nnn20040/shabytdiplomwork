@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authApi } from '@/api';
 import { toast } from 'sonner';
@@ -44,12 +45,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        console.log("Checking authentication...");
         const stored = localStorage.getItem('user');
         if (stored) {
-          setUser(JSON.parse(stored));
+          const userData = JSON.parse(stored);
+          console.log("Found user in localStorage:", userData);
+          setUser(userData);
+        } else {
+          console.log("No user found in localStorage");
         }
       } catch (error) {
         console.error('Failed to get current user:', error);
+        localStorage.removeItem('user');
       } finally {
         setIsLoading(false);
       }
@@ -61,9 +68,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Функция входа в систему
   const login = async (email: string, password: string) => {
     try {
+      console.log("Login attempt with:", { email, password: "***" });
       const response = await authApi.login({ email, password });
+      
+      console.log("Login response:", response);
       if (response && response.user) {
         setUser(response.user);
+        localStorage.setItem('user', JSON.stringify(response.user));
         toast.success("Успешный вход в систему!");
       }
       return response;
@@ -78,9 +89,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Функция регистрации
   const register = async (name: string, email: string, password: string, role: string) => {
     try {
+      console.log("Registration attempt with:", { name, email, password: "***", role });
       const response = await authApi.register({ name, email, password, role });
+      
+      console.log("Registration response:", response);
       if (response && response.user) {
         setUser(response.user);
+        localStorage.setItem('user', JSON.stringify(response.user));
         toast.success("Регистрация успешна!");
       }
       return response;
@@ -96,11 +111,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     try {
       await authApi.logout();
+      localStorage.removeItem('user');
       setUser(null);
       toast.success("Вы вышли из системы");
     } catch (error) {
       console.error('Logout failed:', error);
       // Даже в случае ошибки очищаем состояние пользователя
+      localStorage.removeItem('user');
       setUser(null);
     }
   };
