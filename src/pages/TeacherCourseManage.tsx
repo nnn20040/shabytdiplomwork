@@ -244,13 +244,13 @@ const TeacherCourseManage = () => {
                       <TableCell>{lesson.description}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Button variant="outline" size="sm" onClick={() => navigate(`/course/${courseId}/lesson/${lesson.id}/edit`)}>
+                          <Button variant="outline" size="sm" onClick={() => navigate(`/course/${courseId}/lesson/${Number(lesson.id)}/edit`)}>
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button variant="outline" size="sm" onClick={() => navigate(`/course/${courseId}/lesson/${lesson.id}`)}>
+                          <Button variant="outline" size="sm" onClick={() => navigate(`/course/${courseId}/lesson/${Number(lesson.id)}`)}>
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button variant="destructive" size="sm" onClick={() => handleDeleteLesson(lesson.id)}>
+                          <Button variant="destructive" size="sm" onClick={() => handleDeleteLesson(Number(lesson.id))}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
@@ -290,13 +290,13 @@ const TeacherCourseManage = () => {
                       <TableCell>{test.passing_score}%</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Button variant="outline" size="sm" onClick={() => navigate(`/course/${courseId}/test/${test.id}/edit`)}>
+                          <Button variant="outline" size="sm" onClick={() => navigate(`/course/${courseId}/test/${Number(test.id)}/edit`)}>
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button variant="outline" size="sm" onClick={() => navigate(`/course/${courseId}/test/${test.id}/results`)}>
+                          <Button variant="outline" size="sm" onClick={() => navigate(`/course/${courseId}/test/${Number(test.id)}/results`)}>
                             <BarChart className="h-4 w-4" />
                           </Button>
-                          <Button variant="destructive" size="sm" onClick={() => handleDeleteTest(test.id)}>
+                          <Button variant="destructive" size="sm" onClick={() => handleDeleteTest(Number(test.id))}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>

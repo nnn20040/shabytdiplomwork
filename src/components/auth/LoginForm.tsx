@@ -5,31 +5,32 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { EyeIcon, EyeOffIcon } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 const LoginForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const { toast } = useToast();
+  const [errorMsg, setErrorMsg] = useState('');
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMsg('');
     
     if (!email || !password) {
-      toast({
-        title: "Ошибка",
-        description: "Пожалуйста, заполните все поля",
-        variant: "destructive",
-      });
+      toast.error("Пожалуйста, заполните все поля");
+      setErrorMsg("Пожалуйста, заполните все поля");
       return;
     }
     
     setIsLoading(true);
     
     try {
+<<<<<<< HEAD
       const response = await fetch('http://localhost:5000/api/auth/login', {
         method: 'POST',
         headers: {
@@ -37,38 +38,30 @@ const LoginForm = () => {
         },
         body: JSON.stringify({ email, password }),
       });
+=======
+      console.log("Attempting login with:", { email, password: "******" });
+>>>>>>> cd921a5ac2f69d998d31ec5ec2307706058d18ee
       
-      const data = await response.json();
+      const data = await login(email, password);
       
-      if (response.ok) {
-        // Save token and user info to localStorage
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        
-        toast({
-          title: "Успешный вход",
-          description: "Добро пожаловать в StudyHub!",
-        });
-        
-        // Redirect based on user role
-        if (data.user.role === 'teacher') {
-          navigate('/teacher-dashboard');
-        } else {
-          navigate('/student-dashboard');
-        }
+      console.log("Login response:", data);
+      
+      toast.success("Успешный вход!");
+      
+      // Redirect based on user role
+      if (data.user?.role === 'teacher') {
+        navigate('/teacher-dashboard');
       } else {
-        toast({
-          title: "Ошибка",
-          description: data.message || "Неверные email или пароль",
-          variant: "destructive",
-        });
+        navigate('/student-dashboard');
       }
     } catch (error) {
-      toast({
-        title: "Ошибка",
-        description: "Проблема с подключением к серверу",
-        variant: "destructive",
-      });
+      console.error('Login error:', error);
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : "Ошибка входа";
+      
+      toast.error(errorMessage);
+      setErrorMsg(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -81,9 +74,18 @@ const LoginForm = () => {
         <p className="text-muted-foreground">
           Войдите в аккаунт, чтобы продолжить
         </p>
+        <div className="mt-2 p-2 bg-muted text-xs rounded">
+          <p>В текущей версии любые учетные данные будут работать для входа</p>
+        </div>
       </div>
       
       <form onSubmit={handleSubmit} className="space-y-6">
+        {errorMsg && (
+          <div className="p-3 bg-red-50 text-red-800 rounded-md text-sm">
+            {errorMsg}
+          </div>
+        )}
+        
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
           <Input

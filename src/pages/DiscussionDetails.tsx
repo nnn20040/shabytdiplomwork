@@ -36,8 +36,8 @@ const DiscussionDetails = () => {
         setTimeout(() => {
           // Simulate fetching post details
           const mockPost: ForumPost = {
-            id: Number(discussionId),
-            course_id: Number(courseId),
+            id: discussionId ? discussionId : '',
+            course_id: courseId ? Number(courseId) : 0,
             user_id: 101,
             user_name: 'Иван Иванов',
             title: 'Вопрос по квадратным уравнениям',
@@ -50,7 +50,7 @@ const DiscussionDetails = () => {
           const mockComments: ForumComment[] = [
             {
               id: 1,
-              post_id: Number(discussionId),
+              post_id: discussionId ? Number(discussionId) : 0,
               user_id: 201,
               user_name: 'Болат Асанов',
               content: 'Добрый день, Иван! Вы правильно нашли корень уравнения x² - 6x + 9 = 0, это действительно x = 3.\n\nКогда мы говорим о "двух одинаковых корнях", мы имеем в виду, что это корень кратности 2. В общем случае, квадратное уравнение имеет два корня (с учетом кратности). Когда дискриминант равен нулю, эти два корня совпадают.\n\nС точки зрения формулы корней x = (-b ± √D) / (2a), при D = 0 слагаемое √D обращается в ноль, и оба корня действительно получаются одинаковыми: x = -b/(2a).\n\nМатематики говорят о "двух корнях" в том числе из соображений непрерывности теории: если немного изменить коэффициенты уравнения, дискриминант станет положительным, и появятся два разных корня. При D = 0 эти два корня как бы "сливаются" в один.',
@@ -58,7 +58,7 @@ const DiscussionDetails = () => {
             },
             {
               id: 2,
-              post_id: Number(discussionId),
+              post_id: discussionId ? Number(discussionId) : 0,
               user_id: 101,
               user_name: 'Иван Иванов',
               content: 'Спасибо большое за объяснение! Теперь понял, что речь идет о корне кратности 2. И действительно, если представить, что коэффициенты немного меняются, то логично, что корни разойдутся на два разных значения.',
@@ -66,7 +66,7 @@ const DiscussionDetails = () => {
             },
             {
               id: 3,
-              post_id: Number(discussionId),
+              post_id: discussionId ? Number(discussionId) : 0,
               user_id: 102,
               user_name: 'Мария Петрова',
               content: 'У меня был такой же вопрос! Спасибо преподавателю за понятное объяснение и Ивану за вопрос.',
@@ -112,7 +112,7 @@ const DiscussionDetails = () => {
       setTimeout(() => {
         const newComment: ForumComment = {
           id: comments.length + 1,
-          post_id: Number(discussionId),
+          post_id: discussionId ? Number(discussionId) : 0,
           user_id: 103, // Current user ID (mock)
           user_name: 'Текущий пользователь', // Current user name (mock)
           content: replyText,
@@ -182,7 +182,7 @@ const DiscussionDetails = () => {
           <Card className="mb-8">
             <CardHeader>
               <div className="flex justify-between items-start">
-                <CardTitle className="text-2xl">{post.title}</CardTitle>
+                <CardTitle className="text-2xl">{post?.title}</CardTitle>
                 <div className="flex items-center space-x-2">
                   <Button variant="ghost" size="sm">
                     <Share className="h-4 w-4 mr-1" />
@@ -196,21 +196,21 @@ const DiscussionDetails = () => {
               </div>
               <div className="flex items-center mt-2">
                 <Avatar className="h-10 w-10 mr-3">
-                  <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${post.user_name}`} />
-                  <AvatarFallback>{post.user_name.substring(0, 2)}</AvatarFallback>
+                  <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${post?.user_name}`} />
+                  <AvatarFallback>{post?.user_name?.substring(0, 2)}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="font-medium">{post.user_name}</p>
+                  <p className="font-medium">{post?.user_name}</p>
                   <div className="flex items-center text-sm text-muted-foreground">
                     <Clock className="h-3 w-3 mr-1" />
-                    <span>{formatDate(post.created_at)}</span>
+                    <span>{post?.created_at ? formatDate(post.created_at) : ''}</span>
                   </div>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
               <div className="prose prose-sm dark:prose-invert max-w-none">
-                {post.content.split('\n\n').map((paragraph, index) => (
+                {post?.content?.split('\n\n').map((paragraph, index) => (
                   <p key={index}>{paragraph}</p>
                 ))}
               </div>
@@ -236,14 +236,14 @@ const DiscussionDetails = () => {
                 <div className="flex items-start">
                   <Avatar className="h-10 w-10 mr-3">
                     <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${comment.user_name}`} />
-                    <AvatarFallback>{comment.user_name.substring(0, 2)}</AvatarFallback>
+                    <AvatarFallback>{comment.user_name?.substring(0, 2)}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
                     <div className="bg-secondary p-4 rounded-lg">
                       <div className="flex justify-between items-center mb-2">
                         <p className="font-medium">{comment.user_name}</p>
                         <span className="text-xs text-muted-foreground">
-                          {formatDate(comment.created_at)}
+                          {comment.created_at ? formatDate(comment.created_at) : ''}
                         </span>
                       </div>
                       <div className="prose prose-sm dark:prose-invert max-w-none">

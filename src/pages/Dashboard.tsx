@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
@@ -23,9 +22,16 @@ import { Link } from 'react-router-dom';
 
 const Dashboard = () => {
   const [isLoaded, setIsLoaded] = useState(false);
+  const [user, setUser] = useState<{ name: string; email: string; role: string } | null>(null);
 
   useEffect(() => {
     setIsLoaded(true);
+    
+    // Fetch user data from localStorage
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
   }, []);
 
   // Mock data for enrolled courses
@@ -133,6 +139,14 @@ const Dashboard = () => {
     },
   ];
 
+  const getInitials = (name: string) => {
+    return name
+      ?.split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase() || 'U';
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -141,7 +155,7 @@ const Dashboard = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
             <div className={`transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-              <h1 className="text-3xl font-bold">Привет, Арман 👋</h1>
+              <h1 className="text-3xl font-bold">Привет, {user?.name || 'Пользователь'} 👋</h1>
               <p className="text-muted-foreground mt-1">Добро пожаловать в личный кабинет</p>
             </div>
             <div className={`transition-all duration-700 delay-200 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
@@ -152,15 +166,15 @@ const Dashboard = () => {
                 </div>
                 <div className="flex items-center">
                   <Avatar className="h-10 w-10 border-2 border-primary">
-                    <AvatarImage src="https://randomuser.me/api/portraits/men/32.jpg" />
-                    <AvatarFallback>АС</AvatarFallback>
+                    <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${user?.name || 'User'}`} />
+                    <AvatarFallback>{getInitials(user?.name || 'User')}</AvatarFallback>
                   </Avatar>
                 </div>
               </div>
             </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className={`grid grid-cols-1 md:grid-cols-3 gap-6 mb-8`}>
             <Card className={`transition-all duration-700 delay-300 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Общий прогресс</CardTitle>

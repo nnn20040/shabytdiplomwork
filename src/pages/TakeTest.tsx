@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
@@ -44,56 +43,57 @@ const TakeTest = () => {
         
         // Mock data for now
         const mockTest: Test = {
-          id: 1,
+          id: testId || '',
           title: 'Контрольный тест по алгебре',
           description: 'Проверка знаний по линейным и квадратным уравнениям',
-          time_limit: 30, // 30 minutes
+          timeLimit: 30, // 30 minutes
+          time_limit: 30,
+          passingScore: 70,
           passing_score: 70,
-          course_id: 1
+          course_id: courseId ? Number(courseId) : 0,
+          questions: [
+            {
+              id: 1,
+              question: 'Решите уравнение: 2x + 5 = 15',
+              options: ['x = 5', 'x = 10', 'x = 7.5', 'x = 5.5'],
+              correct_answer: 0, // Correct answer is "x = 5"
+              points: 1
+            },
+            {
+              id: 2,
+              question: 'Найдите значение выражения: 3(2 + 4) - 5',
+              options: ['13', '18', '13.5', '14'],
+              correct_answer: 1, // Correct answer is "18"
+              points: 1
+            },
+            {
+              id: 3,
+              question: 'Найдите корни квадратного уравнения: x² - 5x + 6 = 0',
+              options: ['x₁ = 2, x₂ = 3', 'x₁ = -2, x₂ = -3', 'x₁ = 6, x₂ = -1', 'x₁ = 1, x₂ = 6'],
+              correct_answer: 0, // Correct answer is "x₁ = 2, x₂ = 3"
+              points: 2
+            },
+            {
+              id: 4,
+              question: 'Решите систему уравнений: { x + y = 5, x - y = 1 }',
+              options: ['x = 3, y = 2', 'x = 2, y = 3', 'x = 4, y = 1', 'x = 1, y = 4'],
+              correct_answer: 0, // Correct answer is "x = 3, y = 2"
+              points: 2
+            },
+            {
+              id: 5,
+              question: 'Вычислите: (2³)²',
+              options: ['32', '64', '36', '8'],
+              correct_answer: 1, // Correct answer is "64"
+              points: 1
+            }
+          ]
         };
         
-        const mockQuestions: Question[] = [
-          {
-            id: 1,
-            question: 'Решите уравнение: 2x + 5 = 15',
-            options: ['x = 5', 'x = 10', 'x = 7.5', 'x = 5.5'],
-            correct_answer: 0, // Correct answer is "x = 5"
-            points: 1
-          },
-          {
-            id: 2,
-            question: 'Найдите значение выражения: 3(2 + 4) - 5',
-            options: ['13', '18', '13.5', '14'],
-            correct_answer: 1, // Correct answer is "18"
-            points: 1
-          },
-          {
-            id: 3,
-            question: 'Найдите корни квадратного уравнения: x² - 5x + 6 = 0',
-            options: ['x₁ = 2, x₂ = 3', 'x₁ = -2, x₂ = -3', 'x₁ = 6, x₂ = -1', 'x₁ = 1, x₂ = 6'],
-            correct_answer: 0, // Correct answer is "x₁ = 2, x₂ = 3"
-            points: 2
-          },
-          {
-            id: 4,
-            question: 'Решите систему уравнений: { x + y = 5, x - y = 1 }',
-            options: ['x = 3, y = 2', 'x = 2, y = 3', 'x = 4, y = 1', 'x = 1, y = 4'],
-            correct_answer: 0, // Correct answer is "x = 3, y = 2"
-            points: 2
-          },
-          {
-            id: 5,
-            question: 'Вычислите: (2³)²',
-            options: ['32', '64', '36', '8'],
-            correct_answer: 1, // Correct answer is "64"
-            points: 1
-          }
-        ];
-        
         setTest(mockTest);
-        setQuestions(mockQuestions);
+        setQuestions(mockTest.questions);
         // Set initial time from test data (convert minutes to seconds)
-        setTimeLeft(mockTest.time_limit * 60);
+        setTimeLeft((mockTest.timeLimit || mockTest.time_limit || 30) * 60);
       } catch (error) {
         console.error('Failed to fetch test data:', error);
         toast.error('Не удалось загрузить тест');
@@ -110,7 +110,7 @@ const TakeTest = () => {
         clearInterval(timerRef.current);
       }
     };
-  }, [testId]);
+  }, [testId, courseId]);
   
   // Start timer when test starts
   useEffect(() => {
@@ -141,10 +141,10 @@ const TakeTest = () => {
     setTestStarted(true);
   };
   
-  const handleAnswer = (questionId: number, answerIndex: number) => {
+  const handleAnswer = (questionId: number | string, answerIndex: number) => {
     setAnswers(prev => ({
       ...prev,
-      [questionId]: answerIndex
+      [typeof questionId === 'number' ? questionId : Number(questionId)]: answerIndex
     }));
   };
   
@@ -171,7 +171,14 @@ const TakeTest = () => {
     
     questions.forEach(question => {
       totalPoints += question.points;
-      if (answers[question.id] === question.correct_answer) {
+      
+      const questionId = typeof question.id === 'number' ? question.id : Number(question.id);
+      const correctAnswer = question.correct_answer !== undefined ? question.correct_answer : 
+                            (question.correctAnswers !== undefined ? 
+                              (typeof question.correctAnswers === 'string' ? question.correctAnswers : question.correctAnswers[0]) 
+                              : 0);
+                              
+      if (answers[questionId] === correctAnswer) {
         earnedPoints += question.points;
       }
     });
@@ -261,7 +268,7 @@ const TakeTest = () => {
                 <div className="border-t border-b py-4 space-y-2">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Время на выполнение:</span>
-                    <span className="font-medium">{test?.time_limit} минут</span>
+                    <span className="font-medium">{test?.timeLimit || test?.time_limit} минут</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Количество вопросов:</span>
@@ -269,7 +276,7 @@ const TakeTest = () => {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Проходной балл:</span>
-                    <span className="font-medium">{test?.passing_score}%</span>
+                    <span className="font-medium">{test?.passingScore || test?.passing_score}%</span>
                   </div>
                 </div>
                 
@@ -326,13 +333,13 @@ const TakeTest = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <p className="text-lg">{currentQuestion.question}</p>
+                  <p className="text-lg">{currentQuestion.question || currentQuestion.text}</p>
                   
                   <RadioGroup 
-                    value={answers[currentQuestion.id]?.toString() || ''} 
+                    value={(answers[typeof currentQuestion.id === 'number' ? currentQuestion.id : Number(currentQuestion.id)]?.toString()) || ''} 
                     onValueChange={(value) => handleAnswer(currentQuestion.id, parseInt(value))}
                   >
-                    {currentQuestion.options.map((option, index) => (
+                    {currentQuestion.options?.map((option, index) => (
                       <div key={index} className="flex items-start space-x-2 p-2 hover:bg-secondary/50 rounded-md">
                         <RadioGroupItem value={index.toString()} id={`option-${index}`} />
                         <Label 

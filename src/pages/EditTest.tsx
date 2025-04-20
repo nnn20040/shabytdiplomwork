@@ -10,13 +10,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Plus, MoveUp, MoveDown, AlignLeft } from 'lucide-react';
+import { Trash2, Plus, MoveUp, MoveDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { Question, Test } from '@/models/Course';
+import { coursesApi, testsApi } from '@/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 const EditTest = () => {
   const navigate = useNavigate();
   const { courseId, testId } = useParams();
+  const { user } = useAuth();
   const [lessons, setLessons] = useState<{ id: number; title: string }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -31,18 +34,51 @@ const EditTest = () => {
 
   const [questions, setQuestions] = useState<Question[]>([]);
 
+  // Проверяем, является ли пользователь учителем
+  const isTeacher = user?.role === 'teacher';
+
+  // Если пользователь не учитель, перенаправляем его на страницу курса
+  useEffect(() => {
+    if (!isTeacher) {
+      toast.error('У вас нет прав для редактирования теста');
+      navigate(`/course/${courseId}`);
+    }
+  }, [isTeacher, courseId, navigate]);
+
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // Mock API calls to fetch the test and available lessons
-        const mockLessons = [
-          { id: 1, title: 'Введение в алгебру' },
-          { id: 2, title: 'Линейные уравнения' },
-          { id: 3, title: 'Квадратные уравнения' },
-        ];
+        // Получаем уроки курса
+        const courseData = await coursesApi.getCourseDetails(String(courseId));
+        if (courseData && courseData.lessons) {
+          setLessons(courseData.lessons.map((lesson: any) => ({
+            id: lesson.id,
+            title: lesson.title
+          })));
+        }
         
-        // Mock test data
+        // Получаем данные теста
+        const testData = await testsApi.getTest(String(courseId), String(testId));
+        if (testData) {
+          setTestData({
+            id: testData.id,
+            title: testData.title,
+            description: testData.description,
+            time_limit: testData.time_limit,
+            passing_score: testData.passing_score,
+            lesson_id: testData.lesson_id
+          });
+          
+          if (testData.questions) {
+            setQuestions(testData.questions);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch data:', error);
+        toast.error('Не удалось загрузить данные теста');
+        
+        // В случае ошибки используем тестовые данные
         const mockTest = {
           id: Number(testId),
           title: 'Тест по линейным уравнениям',
@@ -53,7 +89,6 @@ const EditTest = () => {
           lesson_id: 2
         };
         
-        // Mock questions
         const mockQuestions = [
           {
             id: 1,
@@ -71,21 +106,26 @@ const EditTest = () => {
           }
         ];
         
-        setLessons(mockLessons);
         setTestData(mockTest);
         setQuestions(mockQuestions);
-      } catch (error) {
-        console.error('Failed to fetch data:', error);
-        toast.error('Не удалось загрузить данные теста');
+        
+        // Добавляем мок-данные уроков, если не удалось получить их с сервера
+        if (lessons.length === 0) {
+          setLessons([
+            { id: 1, title: 'Введение в алгебру' },
+            { id: 2, title: 'Линейные уравнения' },
+            { id: 3, title: 'Квадратные уравнения' },
+          ]);
+        }
       } finally {
         setIsLoading(false);
       }
     };
 
-    if (courseId && testId) {
+    if (courseId && testId && isTeacher) {
       fetchData();
     }
-  }, [courseId, testId]);
+  }, [courseId, testId, isTeacher, lessons.length]);
 
   const handleTestDataChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -203,18 +243,27 @@ const EditTest = () => {
 
     setSaving(true);
     try {
-      // Mock API call
-      setTimeout(() => {
-        toast.success('Тест успешно обновлен!');
-        setSaving(false);
-        navigate(`/course/${courseId}/manage`);
-      }, 1500);
+      // Обновляем тест через API
+      const updatedTestData = {
+        ...testData,
+        questions: questions
+      };
+      
+      await testsApi.updateTest(String(courseId), String(testId), updatedTestData);
+      
+      toast.success('Тест успешно обновлен!');
+      navigate(`/course/${courseId}/manage`);
     } catch (error) {
       console.error('Failed to update test:', error);
       toast.error('Не удалось обновить тест');
+    } finally {
       setSaving(false);
     }
   };
+
+  if (!isTeacher) {
+    return null; // Не рендерим ничего, если пользователь не учитель
+  }
 
   if (isLoading) {
     return (

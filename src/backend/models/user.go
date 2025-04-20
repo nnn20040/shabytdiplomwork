@@ -3,12 +3,11 @@ package models
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"time"
+	"strings"
 
 	"backend/config"
-
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -16,28 +15,29 @@ var ErrNotFound = errors.New("resource not found")
 
 // User represents a user in the system
 type User struct {
-	ID               string    `json:"id"`
-	Name             string    `json:"name"`
-	Email            string    `json:"email"`
-	Password         string    `json:"-"` // "-" means this field will be omitted from JSON output
-	Role             string    `json:"role"`
-	CreatedAt        time.Time `json:"created_at"`
-	UpdatedAt        time.Time `json:"updated_at"`
-	ResetToken       *string   `json:"-"`
-	ResetTokenExpiry *int64    `json:"-"`
+	ID               string     `json:"id"`
+	Email            string     `json:"email"`
+	Password         string     `json:"-"`
+	FirstName        string     `json:"first_name"`
+	LastName         string     `json:"last_name"`
+	Name             string     `json:"name"`
+	Role             string     `json:"role"`
+	CreatedAt        time.Time  `json:"created_at"`
+	UpdatedAt        time.Time  `json:"updated_at"`
+	LastLogin        *time.Time `json:"last_login,omitempty"`
+	ProfileImageURL  *string    `json:"profile_image_url,omitempty"`
+	IsActive         bool       `json:"is_active"`
+	LanguagePreference string   `json:"language_preference"`
 }
 
 // CreateUser creates a new user in the database
 func CreateUser(ctx context.Context, name, email, password, role string) (*User, error) {
-	// Check if user already exists
-	var count int
-	err := config.QueryRowContext(ctx, "SELECT COUNT(*) FROM users WHERE email = $1", email).Scan(&count)
-	if err != nil {
-		return nil, fmt.Errorf("error checking if user exists: %w", err)
-	}
-
-	if count > 0 {
-		return nil, errors.New("user with this email already exists")
+	// Check if user with this email already exists
+	existingUser, err := GetUserByEmail(ctx, email)
+	if err == nil && existingUser != nil {
+		return nil, fmt.Errorf("user with this email already exists")
+	} else if err != sql.ErrNoRows && err != nil {
+		return nil, fmt.Errorf("error checking for existing user: %w", err)
 	}
 
 	// Hash password
@@ -51,58 +51,122 @@ func CreateUser(ctx context.Context, name, email, password, role string) (*User,
 		role = "student"
 	}
 
-	// Insert user into database
-	var user User
-	err = config.QueryRowContext(ctx,
-		"INSERT INTO users (name, email, password, role) VALUES ($1, $2, $3, $4) RETURNING id, name, email, role, created_at, updated_at",
-		name, email, string(hashedPassword), role).Scan(&user.ID, &user.Name, &user.Email, &user.Role, &user.CreatedAt, &user.UpdatedAt)
-	if err != nil {
-		return nil, fmt.Errorf("error creating user: %w", err)
+	// Split name into first name and last name
+	nameParts := strings.Split(name, " ")
+	firstName := nameParts[0]
+	lastName := ""
+	if len(nameParts) > 1 {
+		lastName = strings.Join(nameParts[1:], " ")
 	}
 
-	return &user, nil
+	// Create user in the database
+	userData, err := config.CreateUser(ctx, firstName, lastName, email, string(hashedPassword), role)
+	if err != nil {
+		return nil, err
+	}
+
+	user := &User{
+		ID:        userData["ID"].(string),
+		Email:     userData["Email"].(string),
+		FirstName: userData["FirstName"].(string),
+		LastName:  userData["LastName"].(string),
+		Name:      userData["Name"].(string),
+		Role:      userData["Role"].(string),
+		CreatedAt: userData["CreatedAt"].(time.Time),
+		UpdatedAt: userData["UpdatedAt"].(time.Time),
+		IsActive:  true,
+		LanguagePreference: "ru",
+	}
+
+	return user, nil
 }
 
 // GetUserByID retrieves a user by ID
 func GetUserByID(ctx context.Context, id string) (*User, error) {
-	var user User
-	err := config.QueryRowContext(ctx,
-		"SELECT id, name, email, role, created_at, updated_at FROM users WHERE id = $1",
-		id).Scan(&user.ID, &user.Name, &user.Email, &user.Role, &user.CreatedAt, &user.UpdatedAt)
+	userData, err := config.GetUserByID(ctx, id)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, fmt.Errorf("error getting user by ID: %w", err)
+		return nil, err
 	}
-	return &user, nil
+
+	user := &User{
+		ID:        userData["ID"].(string),
+		Email:     userData["Email"].(string),
+		FirstName: userData["FirstName"].(string),
+		LastName:  userData["LastName"].(string),
+		Name:      userData["Name"].(string),
+		Role:      userData["Role"].(string),
+		CreatedAt: userData["CreatedAt"].(time.Time),
+		UpdatedAt: userData["UpdatedAt"].(time.Time),
+	}
+
+	return user, nil
 }
 
 // GetUserByEmail retrieves a user by email
 func GetUserByEmail(ctx context.Context, email string) (*User, error) {
-	var user User
-	err := config.QueryRowContext(ctx,
-		"SELECT id, name, email, password, role, created_at, updated_at, reset_token, reset_token_expiry FROM users WHERE email = $1",
-		email).Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.Role, &user.CreatedAt, &user.UpdatedAt, &user.ResetToken, &user.ResetTokenExpiry)
+	userData, err := config.GetUserByEmail(ctx, email)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, fmt.Errorf("error getting user by email: %w", err)
+		return nil, err
 	}
-	return &user, nil
+
+	user := &User{
+		ID:        userData["ID"].(string),
+		Email:     userData["Email"].(string),
+		FirstName: userData["FirstName"].(string),
+		LastName:  userData["LastName"].(string),
+		Name:      userData["Name"].(string),
+		Password:  userData["Password"].(string),
+		Role:      userData["Role"].(string),
+		CreatedAt: userData["CreatedAt"].(time.Time),
+		UpdatedAt: userData["UpdatedAt"].(time.Time),
+	}
+
+	if resetToken, ok := userData["ResetToken"]; ok {
+		token := resetToken.(string)
+		user.ResetToken = &token
+	}
+
+	if resetTokenExpiry, ok := userData["ResetTokenExpiry"]; ok {
+		expiry := resetTokenExpiry.(int64)
+		user.ResetTokenExpiry = &expiry
+	}
+
+	return user, nil
 }
 
 // UpdateUser updates user information
 func UpdateUser(ctx context.Context, id, name, email, role string) (*User, error) {
-	var user User
-	err := config.QueryRowContext(ctx,
-		"UPDATE users SET name = $1, email = $2, role = $3, updated_at = NOW() WHERE id = $4 RETURNING id, name, email, role, created_at, updated_at",
-		name, email, role, id).Scan(&user.ID, &user.Name, &user.Email, &user.Role, &user.CreatedAt, &user.UpdatedAt)
-	if err != nil {
-		return nil, fmt.Errorf("error updating user: %w", err)
+	// Split name into first name and last name
+	nameParts := strings.Split(name, " ")
+	firstName := nameParts[0]
+	lastName := ""
+	if len(nameParts) > 1 {
+		lastName = strings.Join(nameParts[1:], " ")
 	}
-	return &user, nil
+
+	userData, err := config.UpdateUser(ctx, id, firstName, lastName, email, role)
+	if err != nil {
+		return nil, err
+	}
+
+	user := &User{
+		ID:        userData["ID"].(string),
+		Email:     userData["Email"].(string),
+		FirstName: userData["FirstName"].(string),
+		LastName:  userData["LastName"].(string),
+		Name:      userData["Name"].(string),
+		Role:      userData["Role"].(string),
+		CreatedAt: userData["CreatedAt"].(time.Time),
+		UpdatedAt: userData["UpdatedAt"].(time.Time),
+	}
+
+	return user, nil
 }
 
 // UpdatePassword updates a user's password
@@ -134,47 +198,4 @@ func DeleteUser(ctx context.Context, id string) error {
 // ComparePassword compares a provided password with the user's hashed password
 func ComparePassword(hashedPassword, providedPassword string) error {
 	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(providedPassword))
-}
-
-// SaveResetToken saves a password reset token for a user
-func SaveResetToken(ctx context.Context, id, resetToken string, resetTokenExpiry int64) error {
-	_, err := config.ExecContext(ctx,
-		"UPDATE users SET reset_token = $1, reset_token_expiry = $2 WHERE id = $3",
-		resetToken, resetTokenExpiry, id)
-	if err != nil {
-		return fmt.Errorf("error saving reset token: %w", err)
-	}
-	return nil
-}
-
-// VerifyResetToken verifies a password reset token
-func VerifyResetToken(ctx context.Context, id, token string) (bool, error) {
-	var storedToken string
-	var expiry int64
-	err := config.QueryRowContext(ctx,
-		"SELECT reset_token, reset_token_expiry FROM users WHERE id = $1",
-		id).Scan(&storedToken, &expiry)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return false, nil
-		}
-		return false, fmt.Errorf("error verifying reset token: %w", err)
-	}
-
-	// Check if token matches and has not expired
-	if storedToken == token && expiry > time.Now().Unix() {
-		return true, nil
-	}
-	return false, nil
-}
-
-// ClearResetToken clears a user's password reset token
-func ClearResetToken(ctx context.Context, id string) error {
-	_, err := config.ExecContext(ctx,
-		"UPDATE users SET reset_token = NULL, reset_token_expiry = NULL WHERE id = $3",
-		id)
-	if err != nil {
-		return fmt.Errorf("error clearing reset token: %w", err)
-	}
-	return nil
 }

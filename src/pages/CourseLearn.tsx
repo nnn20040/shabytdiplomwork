@@ -114,7 +114,7 @@ const CourseLearn = () => {
         // Set default lesson if not specified
         if (!currentLessonId && mockCourse.sections && mockCourse.sections.length > 0 && mockCourse.sections[0].lessons.length > 0) {
           const firstLesson = mockCourse.sections[0].lessons[0];
-          setCurrentLessonId(firstLesson.id);
+          setCurrentLessonId(String(firstLesson.id));
           setCurrentLesson(firstLesson);
           
           // Update URL
@@ -125,7 +125,7 @@ const CourseLearn = () => {
           
           for (const section of mockCourse.sections || []) {
             for (const lesson of section.lessons) {
-              if (lesson.id === currentLessonId) {
+              if (String(lesson.id) === currentLessonId) {
                 foundLesson = lesson;
                 break;
               }
@@ -138,7 +138,7 @@ const CourseLearn = () => {
           } else {
             // If lesson not found, set to first lesson
             const firstLesson = mockCourse.sections[0].lessons[0];
-            setCurrentLessonId(firstLesson.id);
+            setCurrentLessonId(String(firstLesson.id));
             setCurrentLesson(firstLesson);
             navigate(`/course/${id}/learn?lesson=${firstLesson.id}`, { replace: true });
           }
@@ -163,7 +163,7 @@ const CourseLearn = () => {
         
         // Set all sections expanded by default
         if (mockCourse.sections) {
-          setExpandedSections(mockCourse.sections.map(section => section.id));
+          setExpandedSections(mockCourse.sections.map(section => String(section.id)));
         }
       } catch (error) {
         console.error('Error fetching course:', error);
@@ -177,7 +177,7 @@ const CourseLearn = () => {
   }, [id, currentLessonId, navigate]);
   
   const handleLessonSelect = (lesson: Lesson) => {
-    setCurrentLessonId(lesson.id);
+    setCurrentLessonId(String(lesson.id));
     setCurrentLesson(lesson);
     navigate(`/course/${id}/learn?lesson=${lesson.id}`, { replace: true });
     window.scrollTo(0, 0);
@@ -191,7 +191,7 @@ const CourseLearn = () => {
       if (updatedCourse.sections) {
         for (const section of updatedCourse.sections) {
           for (let i = 0; i < section.lessons.length; i++) {
-            if (section.lessons[i].id === currentLesson.id) {
+            if (String(section.lessons[i].id) === String(currentLesson.id)) {
               section.lessons[i].completed = true;
               break;
             }
@@ -233,7 +233,7 @@ const CourseLearn = () => {
         }
         
         // Mark that we found the current lesson
-        if (section.lessons[i].id === currentLesson.id) {
+        if (String(section.lessons[i].id) === String(currentLesson.id)) {
           foundCurrent = true;
           
           // If this is the last lesson of this section, we'll continue to the next section
@@ -254,7 +254,7 @@ const CourseLearn = () => {
     
     for (const section of course.sections) {
       for (const lesson of section.lessons) {
-        if (lesson.id === currentLesson.id) {
+        if (String(lesson.id) === String(currentLesson.id)) {
           return previousLesson;
         }
         previousLesson = lesson;
@@ -278,12 +278,12 @@ const CourseLearn = () => {
     }
   };
   
-  const toggleSectionExpand = (sectionId: string) => {
+  const toggleSectionExpand = (sectionId: string | number) => {
     setExpandedSections(prev => {
-      if (prev.includes(sectionId)) {
-        return prev.filter(id => id !== sectionId);
+      if (prev.includes(String(sectionId))) {
+        return prev.filter(id => id !== String(sectionId));
       } else {
-        return [...prev, sectionId];
+        return [...prev, String(sectionId)];
       }
     });
   };
@@ -349,13 +349,13 @@ const CourseLearn = () => {
                         onClick={() => toggleSectionExpand(section.id)}
                       >
                         <span>{section.title}</span>
-                        <ChevronDown className={`h-4 w-4 transition-transform ${expandedSections.includes(section.id) ? 'rotate-180' : ''}`} />
+                        <ChevronDown className={`h-4 w-4 transition-transform ${expandedSections.includes(String(section.id)) ? 'rotate-180' : ''}`} />
                       </button>
                       
-                      {expandedSections.includes(section.id) && (
+                      {expandedSections.includes(String(section.id)) && (
                         <ul className="mt-2 space-y-1">
                           {section.lessons.map((lesson) => {
-                            const isActive = currentLessonId === lesson.id;
+                            const isActive = currentLessonId === String(lesson.id);
                             const isCompleted = lesson.completed;
                             
                             return (

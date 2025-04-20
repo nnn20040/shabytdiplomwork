@@ -1,4 +1,3 @@
-
 package services
 
 import (
@@ -13,6 +12,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // GeminiResponse represents the response from Google Gemini API
@@ -24,6 +24,11 @@ type GeminiResponse struct {
 			} `json:"parts"`
 		} `json:"content"`
 	} `json:"candidates"`
+	Error struct {
+		Code    int    `json:"code"`
+		Message string `json:"message"`
+		Status  string `json:"status"`
+	} `json:"error"`
 }
 
 // EvaluateMathExpression evaluates a mathematical expression
@@ -72,11 +77,11 @@ func GenerateAIResponse(question, userRole string) (string, error) {
 	}
 
 	// For text questions, use the Gemini API
-	return getAIResponse(question)
+	return getAIResponse(question, userRole)
 }
 
 // getAIResponse gets a response from the Google Gemini API
-func getAIResponse(question string) (string, error) {
+func getAIResponse(question, userRole string) (string, error) {
 	// Using Google Gemini API for better AI responses
 	apiKey := os.Getenv("GEMINI_API_KEY")
 	if apiKey == "" {
@@ -85,26 +90,45 @@ func getAIResponse(question string) (string, error) {
 
 	url := "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent"
 	
-	// Prepare request body
+	// Prepare request body with system prompt tailored for educational content
+	systemPrompt := `Вы - образовательный ассистент для подготовки к ЕНТ (Единому Национальному Тестированию) в Казахстане.
+	Отвечайте на вопросы студентов по школьной программе на том языке, на котором задан вопрос (казахский или русский).
+	Будьте полезным, информативным и точным.
+	Если вы не знаете ответа, так и скажите.
+	Приоритет точности информации над красотой изложения.
+	Если вопрос задан на казахском, отвечайте на казахском.
+	Если вопрос задан на русском, отвечайте на русском.`
+
+	// Add role-specific instructions
+	if userRole == "teacher" {
+		systemPrompt += `\nВы общаетесь с преподавателем. Предлагайте методические рекомендации и профессиональные советы.`
+	}
+
 	requestBody := map[string]interface{}{
 		"contents": []map[string]interface{}{
 			{
 				"parts": []map[string]interface{}{
 					{
-						"text": fmt.Sprintf(`Ты - образовательный ассистент для подготовки к ЕНТ (Единому Национальному Тестированию) в Казахстане.
-						Отвечай на вопросы студентов по школьной программе.
-						Будь полезным, информативным и точным.
-						Если ты не знаешь ответа, так и скажи.
-						Вопрос: %s`, question),
+						"text": fmt.Sprintf("%s\nВопрос: %s", systemPrompt, question),
 					},
 				},
 			},
 		},
 		"generationConfig": map[string]interface{}{
-			"temperature":     0.5,
-			"maxOutputTokens": 1024,
+			"temperature":     0.3,
+			"maxOutputTokens": 2048,
 			"topP":            0.8,
 			"topK":            40,
+		},
+		"safetySettings": []map[string]interface{}{
+			{
+				"category":    "HARM_CATEGORY_HATE_SPEECH",
+				"threshold":   "BLOCK_MEDIUM_AND_ABOVE",
+			},
+			{
+				"category":    "HARM_CATEGORY_DANGEROUS_CONTENT",
+				"threshold":   "BLOCK_MEDIUM_AND_ABOVE",
+			},
 		},
 	}
 
@@ -126,7 +150,7 @@ func getAIResponse(question string) (string, error) {
 	req.Header.Set("x-goog-api-key", apiKey)
 
 	// Send request
-	client := &http.Client{}
+	client := &http.Client{Timeout: 30 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Printf("Error sending request: %v", err)
@@ -134,23 +158,32 @@ func getAIResponse(question string) (string, error) {
 	}
 	defer resp.Body.Close()
 
-	// Check response status
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		log.Printf("API response error: %s", string(body))
+	// Read response body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("Error reading response body: %v", err)
 		return getFallbackResponse(question), nil
 	}
 
 	// Parse response
 	var response GeminiResponse
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+	if err := json.Unmarshal(body, &response); err != nil {
 		log.Printf("Error parsing response: %v", err)
+		return getFallbackResponse(question), nil
+	}
+
+	// Check for API error
+	if response.Error.Code != 0 {
+		log.Printf("API error: %s", response.Error.Message)
 		return getFallbackResponse(question), nil
 	}
 
 	// Extract text from response
 	if len(response.Candidates) > 0 && len(response.Candidates[0].Content.Parts) > 0 {
-		return response.Candidates[0].Content.Parts[0].Text, nil
+		text := response.Candidates[0].Content.Parts[0].Text
+		// Remove any leading/trailing whitespace
+		text = strings.TrimSpace(text)
+		return text, nil
 	}
 
 	return getFallbackResponse(question), nil
@@ -158,33 +191,64 @@ func getAIResponse(question string) (string, error) {
 
 // getFallbackResponse provides a fallback response when the AI API fails
 func getFallbackResponse(question string) string {
+	// Detect language
+	isKazakh := containsKazakhCharacters(question)
+	
 	lowercaseQuestion := strings.ToLower(question)
 	
-	if strings.Contains(lowercaseQuestion, "казахстан") {
-		return "Казахстан — государство в Центральной Азии, бывшая советская республика. Столица — Астана. Население составляет более 19 миллионов человек. Государственным языком является казахский, а русский имеет статус языка межнационального общения. Казахстан обрел независимость в 1991 году после распада Советского Союза."
-	} else if strings.Contains(lowercaseQuestion, "ент") {
-		return "ЕНТ (Единое Национальное Тестирование) - это стандартизированный экзамен для выпускников школ в Казахстане. Он используется для поступления в высшие учебные заведения. Основные предметы включают математику, историю Казахстана, грамматику казахского/русского языка и предметы по выбору в зависимости от выбранной специальности."
-	} else if strings.Contains(lowercaseQuestion, "математик") || strings.Contains(lowercaseQuestion, "алгебр") || strings.Contains(lowercaseQuestion, "геометр") {
-		return "В математической части ЕНТ тестируются знания по алгебре, геометрии и математическому анализу. Ключевые темы включают функции, уравнения, неравенства, векторы, производные и интегралы. Рекомендую начать с базовых концепций и постепенно переходить к более сложным задачам."
-	} else if strings.Contains(lowercaseQuestion, "физик") {
-		return "Физика на ЕНТ охватывает механику, термодинамику, электричество и магнетизм, оптику и элементы квантовой физики. Особое внимание уделяется умению решать задачи и применять физические законы. Регулярная практика решения задач - ключ к успеху в этом разделе."
-	} else if strings.Contains(lowercaseQuestion, "истори") {
-		return "История Казахстана на ЕНТ охватывает периоды от древности до современности. Важные темы включают: древние государства на территории Казахстана, средневековые ханства, присоединение к Российской империи, советский период и независимый Казахстан. Необходимо знать ключевые даты, личности и события."
-	} else if strings.Contains(lowercaseQuestion, "химия") || strings.Contains(lowercaseQuestion, "хими") {
-		return "Химия на ЕНТ включает общую, неорганическую и органическую химию. Важно знать периодическую таблицу, химические реакции, уметь решать задачи на расчет массы, объема и концентрации веществ. Рекомендую регулярно практиковаться в решении химических задач и уравнений."
-	} else if strings.Contains(lowercaseQuestion, "биолог") {
-		return "Биология на ЕНТ включает цитологию, ботанику, зоологию, анатомию, генетику и экологию. Особое внимание уделяется терминологии, классификации организмов и пониманию биологических процессов. Используйте мнемонические приемы для запоминания сложных терминов и систематики."
-	} else if strings.Contains(lowercaseQuestion, "английск") || strings.Contains(lowercaseQuestion, "англ") {
-		return "Английский язык на ЕНТ проверяет навыки грамматики, лексики, чтения и понимания текста. Важно знать основные времена, конструкции, фразовые глаголы и иметь хороший словарный запас. Рекомендую регулярно читать тексты на английском и решать практические задания."
-	} else if strings.Contains(lowercaseQuestion, "привет") || strings.Contains(lowercaseQuestion, "здравств") {
-		return "Здравствуйте! Я Shabyt ЕНТ-ассистент. Я могу помочь вам с подготовкой к экзамену, ответить на вопросы по школьной программе или объяснить сложные темы. Что вас интересует?"
-	} else if strings.Contains(lowercaseQuestion, "как дела") || strings.Contains(lowercaseQuestion, "как у тебя дела") {
-		return "У меня всё хорошо, спасибо! Я готов помочь вам с вопросами по подготовке к ЕНТ. Какой предмет вас интересует?"
-	} else if strings.Contains(lowercaseQuestion, "помощь") || strings.Contains(lowercaseQuestion, "помоги") {
-		return "Я могу помочь вам с подготовкой к ЕНТ по разным предметам, объяснить сложные концепции и предложить стратегии обучения. Просто задайте мне конкретный вопрос по любому предмету."
+	if isKazakh {
+		// Kazakh fallback responses
+		if strings.Contains(lowercaseQuestion, "қазақстан") {
+			return "Қазақстан — Орталық Азиядағы мемлекет, бұрынғы кеңестік республика. Астанасы — Астана. Халқы 19 миллионнан астам адамды құрайды. Мемлекеттік тіл — қазақ тілі, ал орыс тілі ұлтаралық қатынас тілі мәртебесіне ие. Қазақстан 1991 жылы Кеңес Одағы ыдырағаннан кейін тәуелсіздік алды."
+		} else if strings.Contains(lowercaseQuestion, "ұбт") {
+			return "ҰБТ (Ұлттық Бірыңғай Тестілеу) - Қазақстандағы мектеп бітірушілер үшін стандартталған емтихан. Ол жоғары оқу орындарына түсу үшін қолданылады. Негізгі пәндерге математика, Қазақстан тарихы, қазақ/орыс тілінің грамматикасы және таңдалған мамандыққа байланысты таңдау пәндері кіреді."
+		} else if strings.Contains(lowercaseQuestion, "математика") || strings.Contains(lowercaseQuestion, "алгебра") || strings.Contains(lowercaseQuestion, "геометрия") {
+			return "ҰБТ-ның математикалық бөлімінде алгебра, геометрия және математикалық талдау бойынша білім тексеріледі. Негізгі тақырыптарға функциялар, теңдеулер, теңсіздіктер, векторлар, туындылар және интегралдар кіреді. Негізгі ұғымдардан бастап, біртіндеп күрделі есептерге көшуді ұсынамын."
+		} else if strings.Contains(lowercaseQuestion, "сәлем") || strings.Contains(lowercaseQuestion, "амансыз") {
+			return "Сәлеметсіз бе! Мен Shabyt ҰБТ-көмекшісімін. Мен сізге емтиханға дайындалуға, мектеп бағдарламасы бойынша сұрақтарға жауап беруге немесе күрделі тақырыптарды түсіндіруге көмектесе аламын. Сізі не қызықтырады?"
+		} else {
+			return "Мен сізге ҰБТ пәндері, дайындық стратегиялары және мектеп бағдарламасының әртүрлі тақырыптары туралы ақпарат бере аламын. Маған нақты пән немесе тақырып туралы сұрақ қойыңыз, мен пайдалы ақпарат беруге тырысамын."
+		}
 	} else {
-		return "Я могу помочь вам с информацией по предметам ЕНТ, стратегиям подготовки и различным темам школьной программы. Задайте мне вопрос о конкретном предмете или теме, и я постараюсь предоставить полезную информацию."
+		// Russian fallback responses (keep existing fallback responses)
+		if strings.Contains(lowercaseQuestion, "казахстан") {
+			return "Казахстан — государство в Центральной Азии, бывшая советская республика. Столица — Астана. Население составляет более 19 миллионов человек. Государственным языком является казахский, а русский имеет статус языка межнационального общения. Казахстан обрел независимость в 1991 году после распада Советского Союза."
+		} else if strings.Contains(lowercaseQuestion, "ент") {
+			return "ЕНТ (Единое Национальное Тестирование) - это стандартизированный экзамен для выпускников школ в Казахстане. Он используется для поступления в высшие учебные заведения. Основные предметы включают математику, историю Казахстана, грамматику казахского/русского языка и предметы по выбору в зависимости от выбранной специальности."
+		} else if strings.Contains(lowercaseQuestion, "математик") || strings.Contains(lowercaseQuestion, "алгебр") || strings.Contains(lowercaseQuestion, "геометр") {
+			return "В математической части ЕНТ тестируются знания по алгебре, геометрии и математическому анализу. Ключевые темы включают функции, уравнения, неравенства, векторы, производные и интегралы. Рекомендую начать с базовых концепций и постепенно переходить к более сложным задачам."
+		} else if strings.Contains(lowercaseQuestion, "привет") || strings.Contains(lowercaseQuestion, "здравств") {
+			return "Здравствуйте! Я Shabyt ЕНТ-ассистент. Я могу помочь вам с подготовкой к экзамену, ответить на вопросы по школьной программе или объяснить сложные темы. Что вас интересует?"
+		} else {
+			return "Я могу помочь вам с информацией по предметам ЕНТ, стратегиям подготовки и различным темам школьной программы. Задайте мне вопрос о конкретном предмете или теме, и я постараюсь предоставить полезную информацию."
+		}
 	}
+}
+
+// containsKazakhCharacters checks if a string contains Kazakh-specific characters
+func containsKazakhCharacters(text string) bool {
+	// Kazakh-specific characters not in Russian: Әә, Ғғ, Ққ, Ңң, Өө, Ұұ, Үү, Һһ, Іі
+	kazakh := []string{"Ә", "ә", "Ғ", "ғ", "Қ", "қ", "Ң", "ң", "Ө", "ө", "Ұ", "ұ", "Ү", "ү", "Һ", "һ", "І", "і"}
+	
+	for _, char := range kazakh {
+		if strings.Contains(text, char) {
+			return true
+		}
+	}
+	
+	// If no Kazakh-specific characters are found, check for Kazakh words
+	kazakhWords := []string{"мен", "біз", "сен", "с��з", "ол", "олар", "бұл", "қазақ", "қазақша", "рақмет"}
+	
+	words := strings.Fields(strings.ToLower(text))
+	for _, word := range words {
+		for _, kazakhWord := range kazakhWords {
+			if word == kazakhWord {
+				return true
+			}
+		}
+	}
+	
+	return false
 }
 
 // Helper functions for math expression evaluation

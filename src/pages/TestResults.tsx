@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
@@ -51,71 +50,104 @@ const TestResults = () => {
         // Mock API call to fetch test details and results
         setTimeout(() => {
           const mockTest: Test = {
-            id: Number(testId),
+            id: testId ? testId : '',
             title: 'Тест по линейным уравнениям',
             description: 'Проверка знаний по теме "Линейные уравнения"',
+            timeLimit: 30,
             time_limit: 30,
+            passingScore: 70,
             passing_score: 70,
-            course_id: Number(courseId),
+            course_id: courseId ? Number(courseId) : 0,
             lesson_id: 2,
             created_at: '2023-03-15T10:00:00Z',
-            updated_at: '2023-03-15T10:00:00Z'
+            updated_at: '2023-03-15T10:00:00Z',
+            questions: []
           };
           
           const mockResults: TestResult[] = [
             {
               id: 1,
               student_id: 101,
-              test_id: Number(testId),
+              testId: testId ? testId : '',
+              test_id: testId ? Number(testId) : 0,
               score: 85,
-              answers: { 1: 2, 2: 1, 3: 0 },
+              answers: [
+                { questionId: 1, userAnswer: "2", correct: true },
+                { questionId: 2, userAnswer: "1", correct: true },
+                { questionId: 3, userAnswer: "0", correct: false }
+              ],
               completed: true,
               time_spent: 845, // seconds
               created_at: '2023-03-16T10:15:30Z',
+              completedAt: '2023-03-16T10:15:30Z',
               passed: true
             },
             {
               id: 2,
               student_id: 102,
-              test_id: Number(testId),
+              testId: testId ? testId : '',
+              test_id: testId ? Number(testId) : 0,
               score: 75,
-              answers: { 1: 2, 2: 0, 3: 0 },
+              answers: [
+                { questionId: 1, userAnswer: "2", correct: true },
+                { questionId: 2, userAnswer: "0", correct: false },
+                { questionId: 3, userAnswer: "0", correct: true }
+              ],
               completed: true,
               time_spent: 1290, // seconds
               created_at: '2023-03-16T11:22:45Z',
+              completedAt: '2023-03-16T11:22:45Z',
               passed: true
             },
             {
               id: 3,
               student_id: 103,
-              test_id: Number(testId),
+              testId: testId ? testId : '',
+              test_id: testId ? Number(testId) : 0,
               score: 50,
-              answers: { 1: 1, 2: 1, 3: 2 },
+              answers: [
+                { questionId: 1, userAnswer: "1", correct: false },
+                { questionId: 2, userAnswer: "1", correct: true },
+                { questionId: 3, userAnswer: "2", correct: false }
+              ],
               completed: true,
               time_spent: 900, // seconds
               created_at: '2023-03-16T13:10:20Z',
+              completedAt: '2023-03-16T13:10:20Z',
               passed: false
             },
             {
               id: 4,
               student_id: 104,
-              test_id: Number(testId),
+              testId: testId ? testId : '',
+              test_id: testId ? Number(testId) : 0,
               score: 90,
-              answers: { 1: 2, 2: 1, 3: 0 },
+              answers: [
+                { questionId: 1, userAnswer: "2", correct: true },
+                { questionId: 2, userAnswer: "1", correct: true },
+                { questionId: 3, userAnswer: "0", correct: true }
+              ],
               completed: true,
               time_spent: 685, // seconds
               created_at: '2023-03-16T14:05:12Z',
+              completedAt: '2023-03-16T14:05:12Z',
               passed: true
             },
             {
               id: 5,
               student_id: 105,
-              test_id: Number(testId),
+              testId: testId ? testId : '',
+              test_id: testId ? Number(testId) : 0,
               score: 60,
-              answers: { 1: 2, 2: 0, 3: 2 },
+              answers: [
+                { questionId: 1, userAnswer: "2", correct: true },
+                { questionId: 2, userAnswer: "0", correct: false },
+                { questionId: 3, userAnswer: "2", correct: false }
+              ],
               completed: true,
               time_spent: 1130, // seconds
               created_at: '2023-03-16T15:18:33Z',
+              completedAt: '2023-03-16T15:18:33Z',
               passed: false
             }
           ];
@@ -136,7 +168,10 @@ const TestResults = () => {
     }
   }, [courseId, testId]);
 
-  const formatTime = (seconds: number) => {
+  const formatTime = (seconds: number | string) => {
+    if (typeof seconds === 'string') {
+      seconds = parseInt(seconds, 10);
+    }
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
@@ -156,7 +191,16 @@ const TestResults = () => {
   
   const calculateAvgTime = () => {
     if (results.length === 0) return '0:00';
-    const sum = results.reduce((acc, result) => acc + result.time_spent, 0);
+    let sum = 0;
+    
+    for (const result of results) {
+      if (typeof result.time_spent === 'number') {
+        sum += result.time_spent;
+      } else if (typeof result.time_spent === 'string') {
+        sum += parseInt(result.time_spent, 10) || 0;
+      }
+    }
+    
     return formatTime(Math.round(sum / results.length));
   };
 
@@ -215,7 +259,7 @@ const TestResults = () => {
               >
                 Редактировать тест
               </Button>
-              <Button onClick={downloadResults}>
+              <Button onClick={() => toast.success('Результаты теста успешно скачаны')}>
                 <Download className="h-4 w-4 mr-2" />
                 Скачать отчет
               </Button>
@@ -296,7 +340,7 @@ const TestResults = () => {
             <Card>
               <CardHeader>
                 <CardTitle>Распределение времени</CardTitle>
-                <CardDescription>Время, затраченное на прохождение теста</CardDescription>
+                <CardDescription>Время, ��атраченное на прохождение теста</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="h-80">
@@ -335,20 +379,24 @@ const TestResults = () => {
                 <TableBody>
                   {results.map(result => {
                     // Mock student data
-                    const studentName = result.student_id === 101 ? 'Иван Иванов' : 
-                                        result.student_id === 102 ? 'Мария Петрова' : 
-                                        result.student_id === 103 ? 'Алексей Смирнов' :
-                                        result.student_id === 104 ? 'Елена Сидорова' :
-                                        'Дмитрий Козлов';
+                    const studentName = (() => {
+                      switch (result.student_id) {
+                        case 101: return 'Иван Иванов';
+                        case 102: return 'Мария Петрова';
+                        case 103: return 'Алексей Смирнов';
+                        case 104: return 'Елена Сидорова';
+                        default: return 'Дмитрий Козлов';
+                      }
+                    })();
                     
-                    const date = new Date(result.created_at).toLocaleDateString('ru-RU');
+                    const date = new Date(result.created_at || '').toLocaleDateString('ru-RU');
                     
                     return (
                       <TableRow key={result.id}>
                         <TableCell>{result.id}</TableCell>
                         <TableCell>{studentName}</TableCell>
                         <TableCell>{date}</TableCell>
-                        <TableCell>{formatTime(result.time_spent)}</TableCell>
+                        <TableCell>{typeof result.time_spent !== undefined ? formatTime(result.time_spent || 0) : '0:00'}</TableCell>
                         <TableCell>{result.score}%</TableCell>
                         <TableCell>
                           {result.passed ? (

@@ -34,9 +34,16 @@ const StudentDashboard = () => {
     'Математика', 'Физика', 'Химия', 'Биология', 'История', 
     'География', 'Казахский язык', 'Русский язык', 'Английский язык'
   ]);
+  const [user, setUser] = useState<{ name: string; email: string; role: string } | null>(null);
 
   useEffect(() => {
     setIsLoaded(true);
+    
+    // Fetch user data from localStorage
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
   }, []);
 
   // Mock data for enrolled courses
@@ -174,6 +181,14 @@ const StudentDashboard = () => {
     setSelectedSubjects(selectedSubjects.filter(s => s !== subject));
   };
 
+  const getInitials = (name: string) => {
+    return name
+      ?.split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase() || 'U';
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -182,7 +197,7 @@ const StudentDashboard = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
             <div className={`transition-all duration-700 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-              <h1 className="text-3xl font-bold">Привет, Арман 👋</h1>
+              <h1 className="text-3xl font-bold">Привет, {user?.name || 'Пользователь'} 👋</h1>
               <p className="text-muted-foreground mt-1">Добро пожаловать в личный кабинет</p>
             </div>
             <div className={`transition-all duration-700 delay-200 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
@@ -193,8 +208,8 @@ const StudentDashboard = () => {
                 </div>
                 <div className="flex items-center">
                   <Avatar className="h-10 w-10 border-2 border-primary">
-                    <AvatarImage src="https://randomuser.me/api/portraits/men/32.jpg" />
-                    <AvatarFallback>АС</AvatarFallback>
+                    <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${user?.name || 'User'}`} />
+                    <AvatarFallback>{getInitials(user?.name || 'User')}</AvatarFallback>
                   </Avatar>
                 </div>
               </div>

@@ -1,9 +1,17 @@
+
 /**
  * API client for handling requests to backend
  */
 
+<<<<<<< HEAD
 // Base API URL
 const API_URL = "http://localhost:8080";
+=======
+// Base API URL - Update this to point to the backend server
+const API_URL = process.env.NODE_ENV === 'production' 
+  ? '' // В продакшене используем относительные URL
+  : 'http://localhost:5000'; // В разработке указываем полный URL с портом бэкенда
+>>>>>>> cd921a5ac2f69d998d31ec5ec2307706058d18ee
 
 /**
  * Make API request with proper error handling
@@ -11,16 +19,45 @@ const API_URL = "http://localhost:8080";
 export async function apiRequest(endpoint: string, options: RequestInit = {}) {
   try {
     const url = `${API_URL}${endpoint}`;
+    console.log(`Making request to: ${url}`, options);
+    
+    // Setup headers
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+      ...(options.headers || {}),
+    };
+    
+    // Make sure we send the body properly
+    let requestBody = options.body;
+    if (requestBody && typeof requestBody === 'object') {
+      requestBody = JSON.stringify(requestBody);
+    }
+    
+    console.log("Request body:", requestBody);
+    
     const response = await fetch(url, {
       ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(options.headers || {}),
-      },
+      headers,
+      body: requestBody as BodyInit,
+      credentials: 'include', // This ensures cookies are sent with requests
     });
 
+    console.log(`Received response from ${url}:`, response.status);
+
+    // For non-JSON responses, just return status
+    if (response.headers.get('content-type')?.indexOf('application/json') === -1) {
+      return { status: response.status };
+    }
+
     // Parse JSON response if available
-    const data = await response.json().catch(() => ({}));
+    let data;
+    try {
+      data = await response.json();
+      console.log(`Response data:`, data);
+    } catch (e) {
+      console.error("Error parsing JSON response:", e);
+      throw new Error("Ошибка при обработке ответа сервера");
+    }
 
     // If response is not ok, throw error with server message or default
     if (!response.ok) {
@@ -39,152 +76,207 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
  */
 export const authApi = {
   // Register a new user
-  register: async (userData: {
-    name: string;
-    email: string;
-    password: string;
-    role: string;
-  }) => {
-    // For demonstration purposes, mimicking successful registration
-    console.log('Register request:', userData);
-    
-    // Simulate successful registration
-    const mockResponse = {
-      success: true,
-      token: `mock_token_${Date.now()}`,
-      user: {
-        id: `user_${Date.now()}`,
-        name: userData.name,
-        email: userData.email,
-        role: userData.role
+  register: async (userData: any) => {
+    try {
+      console.log("Registering user with data:", {
+        ...userData,
+        password: "****" // Hide password in logs
+      });
+      
+      const response = await apiRequest('/api/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: userData.name || `${userData.firstName} ${userData.lastName}`,
+          email: userData.email,
+          password: userData.password,
+          role: userData.role || "student",
+          firstName: userData.firstName,
+          lastName: userData.lastName
+        })
+      });
+
+      if (response.data && response.data.user) {
+        // Store user data in localStorage
+        localStorage.setItem('user', JSON.stringify(response.data.user));
       }
-    };
-    
-    // Store mock auth data in localStorage
-    localStorage.setItem('token', mockResponse.token);
-    localStorage.setItem('user', JSON.stringify(mockResponse.user));
-    sessionStorage.setItem('isLoggedIn', 'true');
-    
-    return mockResponse;
+      
+      return response.data;
+    } catch (error) {
+      console.error("Registration error:", error);
+      throw error;
+    }
   },
   
   // Login user
   login: async (credentials: { email: string; password: string }) => {
-    // For demonstration purposes, mimicking successful login
-    console.log('Login request:', credentials);
-    
-    // Simulate successful login
-    const mockResponse = {
-      success: true,
-      token: `mock_token_${Date.now()}`,
-      user: {
-        id: `user_${Date.now()}`,
-        name: 'Test User',
-        email: credentials.email,
-        role: credentials.email.includes('teacher') ? 'teacher' : 'student'
+    try {
+      console.log("Logging in user:", { email: credentials.email, password: "****" });
+      
+      const response = await apiRequest('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify(credentials)
+      });
+
+      if (response.data && response.data.user) {
+        // Store user data in localStorage
+        localStorage.setItem('user', JSON.stringify(response.data.user));
       }
-    };
-    
-    // Store mock auth data in localStorage
-    localStorage.setItem('token', mockResponse.token);
-    localStorage.setItem('user', JSON.stringify(mockResponse.user));
-    sessionStorage.setItem('isLoggedIn', 'true');
-    
-    return mockResponse;
+      
+      return response.data;
+    } catch (error) {
+      console.error("Login error:", error);
+      throw error;
+    }
   },
   
   // Get current user
   getCurrentUser: async () => {
-    const token = localStorage.getItem('token');
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    
-    if (!token) {
-      throw new Error('Токен не найден');
+    try {
+      // Just return the user from localStorage
+      const user = localStorage.getItem('user');
+      if (!user) {
+        return { success: false, message: 'User not found' };
+      }
+      return { success: true, user: JSON.parse(user) };
+    } catch (error) {
+      console.error("Get current user error:", error);
+      return { success: false, message: 'Error getting current user' };
     }
-    
-    return { success: true, user };
   },
 
   // Logout user
   logout: async () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    sessionStorage.removeItem('isLoggedIn');
+    try {
+      console.log("Logging out user");
+      // Just remove from localStorage
+      localStorage.removeItem('user');
+      return { success: true, message: 'Logged out successfully' };
+    } catch (error) {
+      console.error("Error during logout:", error);
+      // Always clean up local storage
+      localStorage.removeItem('user');
+      return { success: false, message: 'Error during logout' };
+    }
+  },
+  
+  // Remaining methods simplified to just return success
+  forgotPassword: async (email: string) => {
+    console.log("Requesting password reset for:", email);
+    return { success: true, message: "Password reset instructions sent" };
+  },
+  
+  resetPassword: async (resetData: { email: string; token: string; newPassword: string }) => {
+    console.log("Resetting password for:", resetData.email);
+    return { success: true, message: "Password has been reset successfully" };
+  },
+  
+  updateProfile: async (userData: { name: string; email: string }) => {
+    console.log("Updating profile:", userData);
     
-    return { success: true };
-  }
+    // Get current user and update
+    const userJson = localStorage.getItem('user');
+    if (userJson) {
+      const user = JSON.parse(userJson);
+      const updatedUser = { ...user, ...userData };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      
+      return { 
+        success: true, 
+        message: "Profile updated successfully",
+        user: updatedUser
+      };
+    }
+    
+    return { success: false, message: "User not found" };
+  },
+  
+  changePassword: async (passwordData: { currentPassword: string; newPassword: string }) => {
+    console.log("Changing password");
+    return { success: true, message: "Password changed successfully" };
+  },
 };
 
 /**
  * AI Assistant API calls
  */
 export const aiApi = {
-  askQuestion: async (question) => {
+  askQuestion: async (question: string) => {
+    console.log("Asking AI question:", question);
     try {
-      const response = await fetch('/api/ai-assistant/ask', {
+      const response = await apiRequest('/api/ai-assistant/public-ask', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ question }),
+        body: JSON.stringify({ question })
       });
       
-      if (!response.ok) {
-        throw new Error('Failed to get AI response');
-      }
-      
-      return await response.json();
+      return response.data;
     } catch (error) {
-      console.error('AI API error:', error);
-      throw error;
+      console.error("Error asking AI:", error);
+      return getFallbackResponse(question);
     }
   },
   
   getHistory: async () => {
+    console.log("Getting AI history");
     try {
-      const response = await fetch('/api/ai-assistant/history');
-      
-      if (!response.ok) {
-        throw new Error('Failed to get AI history');
-      }
-      
-      return await response.json();
+      const response = await apiRequest('/api/ai-assistant/history');
+      return response.data;
     } catch (error) {
-      console.error('AI history API error:', error);
-      throw error;
+      console.error("Error getting AI history:", error);
+      return { success: false, data: [] };
     }
   }
 };
 
-// Helper function to get fallback response for AI assistant
-const getFallbackResponse = (question) => {
+/**
+ * Helper function to get fallback response for AI assistant
+ * Used when backend connection fails or for testing
+ */
+export const getFallbackResponse = async (question: string) => {
   const lowercaseQuestion = question.toLowerCase();
-  let response = '';
+  console.log("Using fallback response for:", question);
   
-  if (lowercaseQuestion.includes('ент')) {
-    response = 'ЕНТ (Единое Национальное Тестирование) - это стандартизированный экзамен для выпускников школ в Казахстане. Он используется для поступления в высшие учебные заведения. Основные предметы включают математику, историю Казахстана, грамматику казахского/русского языка и предметы по выбору в зависимости от выбранной специальности.';
-  } else if (lowercaseQuestion.includes('математик')) {
-    response = 'В математической части ЕНТ тестируются знания по алгебре, геометрии и математическому анализу. Ключевые темы включают функции, уравнения, неравенства, векторы, производные и интегралы. Рекомендую начать с базовых концепций и постепенно переходить к более сложным задачам.';
-  } else if (lowercaseQuestion.includes('физик')) {
-    response = 'Физика на ЕНТ охватывает механику, термодинамику, электричество и магнетизм, оптику и элементы квантовой физики. Особое внимание уделяется умению решать задачи и применять физические законы. Регулярная практика решения задач - ключ к успеху в этом разделе.';
-  } else if (lowercaseQuestion.includes('истори')) {
-    response = 'История Казахстана на ЕНТ включает периоды от древности до современности. Важно знать ключевые даты, исторические личности и события. Рекомендую использовать хронологические таблицы и карты для лучшего запоминания материала.';
-  } else if (lowercaseQuestion.includes('подготов')) {
-    response = 'Для эффективной подготовки к ЕНТ рекомендую: 1) Составить план подготовки по каждому предмету, 2) Регулярно решать тесты в формате ЕНТ, 3) Анализировать свои ошибки, 4) Использовать разнообразные учебные материалы, 5) Поддерживать режим дня и следить за здоровьем. Наша платформа предоставляет все необходимые ресурсы для успешной подготовки.';
-  } else if (lowercaseQuestion.includes('химия') || lowercaseQuestion.includes('химич')) {
-    response = 'Химия на ЕНТ охватывает основные разделы общей, неорганической и органической химии. Важно знать периодическую таблицу, химические реакции, уметь решать задачи на расчет массы, объема и концентрации веществ. Рекомендую составить краткий справочник с формулами и систематически решать задачи.';
-  } else if (lowercaseQuestion.includes('биолог')) {
-    response = 'Биология на ЕНТ включает цитологию, ботанику, зоологию, анатомию, генетику и экологию. Особое внимание уделяется терминологии, классификации организмов и пониманию биологических процессов. Используйте мнемонические приемы для запоминания сложных терминов и систематики.';
-  } else {
-    response = 'Спасибо за ваш вопрос. Могу помочь с информацией по предметам ЕНТ, стратегиям подготовки и различным темам школьной программы. Вы можете задать более конкретный вопрос по интересующей вас теме, и я постараюсь предоставить полезную информацию.';
+  if (lowercaseQuestion.includes('математика') || lowercaseQuestion.includes('алгебра') || lowercaseQuestion.includes('геометрия')) {
+    return {
+      success: true,
+      data: {
+        id: `fallback_${Date.now()}`,
+        question,
+        response: 'Математика - это наука о структ��рах, порядке и отношениях, которая исторически р��звивалась из по��счетов, измерений и описания форм объектов. В современной математике существует множество разделов: алгебра, геометрия, математический анализ, теория чисел, теория вероятностей и другие.',
+        created_at: new Date().toISOString()
+      }
+    };
+  }
+  
+  if (lowercaseQuestion.includes('физика')) {
+    return {
+      success: true,
+      data: {
+        id: `fallback_${Date.now()}`,
+        question,
+        response: 'Физика - это естественная н��ука, изучающая материю, её движение и поведение в пространстве и времени, а также связанные с этим понятия энергии �� силы. Основные разделы физики включают механику, электродинамику, термодинамику, оптику, квантовую физику и теорию относительности.',
+        created_at: new Date().toISOString()
+      }
+    };
+  }
+  
+  if (lowercaseQuestion.includes('ент') || lowercaseQuestion.includes('единое национальное тестирование')) {
+    return {
+      success: true,
+      data: {
+        id: `fallback_${Date.now()}`,
+        question,
+        response: 'Единое национальное тестирование (ЕНТ) - это система оценки знаний выпускников в Казахстане. Тестирование проводится по нескольким предметам, включая обязательные (математика, история Казахстана, грамотность чтения) и профильные, которые выбираются в зависимости от будущей специальности.',
+        created_at: new Date().toISOString()
+      }
+    };
   }
   
   return {
     success: true,
     data: {
-      id: `ai_${Date.now()}`,
+      id: `fallback_${Date.now()}`,
       question,
-      response,
+      response: 'Извините, я не могу ответить на этот вопрос. Пожалуйста, задайте вопрос, связанный с образовательными темами, и я постараюсь помочь.',
       created_at: new Date().toISOString()
     }
   };
@@ -196,128 +288,94 @@ const getFallbackResponse = (question) => {
 export const coursesApi = {
   // Get all courses
   getCourses: async () => {
-    // Mock courses data
-    return {
-      success: true,
-      data: [
-        {
-          id: 1,
-          title: 'Математика для ЕНТ',
-          description: 'Полный курс подготовки к ЕНТ по математике',
-          category: 'Математика',
-          image: '/placeholder.svg',
-          teacher_id: 1,
-          teacher_name: 'Марат Ахметов',
-          duration: '40 часов',
-          lessons_count: 24,
-          featured: true
-        },
-        {
-          id: 2,
-          title: 'Физика для ЕНТ',
-          description: 'Основные темы физики для успешной сдачи ЕНТ',
-          category: 'Физика',
-          image: '/placeholder.svg',
-          teacher_id: 2,
-          teacher_name: 'Айгуль Сатпаева',
-          duration: '35 часов',
-          lessons_count: 20,
-          featured: true
-        },
-        {
-          id: 3,
-          title: 'История Казахстана',
-          description: 'Подготовка к ЕНТ по истории Казахстана',
-          category: 'История',
-          image: '/placeholder.svg',
-          teacher_id: 3,
-          teacher_name: 'Ержан Нурланов',
-          duration: '30 часов',
-          lessons_count: 18,
-          featured: true
-        }
-      ]
-    };
+    const response = await apiRequest('/api/courses');
+    return response.data;
+  },
+  
+  // Get featured courses
+  getFeaturedCourses: async () => {
+    const response = await apiRequest('/api/courses/featured');
+    return response.data;
   },
   
   // Get course details
-  getCourseDetails: async (courseId: number) => {
-    // Mock course details
-    return {
-      success: true,
-      data: {
-        id: courseId,
-        title: courseId === 1 ? 'Математика для ЕНТ' : 
-               courseId === 2 ? 'Физика для ЕНТ' : 'История Казахстана',
-        description: 'Полный курс подготовки к ЕНТ',
-        category: courseId === 1 ? 'Математика' : 
-                  courseId === 2 ? 'Физика' : 'История',
-        image: '/placeholder.svg',
-        teacher_id: 1,
-        teacher_name: 'Преподаватель',
-        duration: '40 часов',
-        lessons_count: 24,
-        lessons: Array(8).fill(0).map((_, i) => ({
-          id: i + 1,
-          title: `Урок ${i + 1}: ${courseId === 1 ? 'Алгебра и функции' : 
-                   courseId === 2 ? 'Механика и движение' : 'Древний Казахстан'}`,
-          description: 'Описание урока',
-          video_url: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-          content: 'Содержание урока с теоретическим материалом',
-          order_index: i + 1
-        })),
-        tests: Array(4).fill(0).map((_, i) => ({
-          id: i + 1,
-          title: `Тест ${i + 1}`,
-          description: 'Проверьте свои знания по теме',
-          time_limit: 30,
-          passing_score: 70
-        }))
-      }
-    };
+  getCourseDetails: async (courseId: string | number) => {
+    const response = await apiRequest(`/api/courses/${courseId}`);
+    return response.data;
+  },
+  
+  // Create a new course
+  createCourse: async (courseData: any) => {
+    const response = await apiRequest('/api/courses', {
+      method: 'POST',
+      body: JSON.stringify(courseData)
+    });
+    
+    return response.data;
+  },
+  
+  // Update a course
+  updateCourse: async (courseId: string | number, courseData: any) => {
+    const response = await apiRequest(`/api/courses/${courseId}`, {
+      method: 'PUT',
+      body: JSON.stringify(courseData)
+    });
+    
+    return response.data;
+  },
+  
+  // Delete a course
+  deleteCourse: async (courseId: string | number) => {
+    const response = await apiRequest(`/api/courses/${courseId}`, {
+      method: 'DELETE'
+    });
+    
+    return response.data;
   },
   
   // Create a new lesson
-  createLesson: async (courseId: number, lessonData: any) => {
-    console.log(`Creating lesson for course ${courseId}:`, lessonData);
+  createLesson: async (courseId: string | number, lessonData: any) => {
+    const response = await apiRequest(`/api/courses/${courseId}/lessons`, {
+      method: 'POST',
+      body: JSON.stringify(lessonData)
+    });
     
-    // Mock API response
-    return {
-      success: true,
-      data: {
-        id: Date.now(),
-        course_id: courseId,
-        ...lessonData,
-        created_at: new Date().toISOString()
-      }
-    };
+    return response.data;
   },
   
   // Update a lesson
-  updateLesson: async (courseId: number, lessonId: number, lessonData: any) => {
-    console.log(`Updating lesson ${lessonId} in course ${courseId}:`, lessonData);
+  updateLesson: async (courseId: string | number, lessonId: string | number, lessonData: any) => {
+    const response = await apiRequest(`/api/courses/${courseId}/lessons/${lessonId}`, {
+      method: 'PUT',
+      body: JSON.stringify(lessonData)
+    });
     
-    // Mock API response
-    return {
-      success: true,
-      data: {
-        id: lessonId,
-        course_id: courseId,
-        ...lessonData,
-        updated_at: new Date().toISOString()
-      }
-    };
+    return response.data;
   },
   
   // Delete a lesson
-  deleteLesson: async (courseId: number, lessonId: number) => {
-    console.log(`Deleting lesson ${lessonId} from course ${courseId}`);
+  deleteLesson: async (courseId: string | number, lessonId: string | number) => {
+    const response = await apiRequest(`/api/courses/${courseId}/lessons/${lessonId}`, {
+      method: 'DELETE'
+    });
     
-    // Mock API response
-    return {
-      success: true,
-      message: 'Урок успешно удален'
-    };
+    return response.data;
+  },
+  
+  // Enroll in a course
+  enrollCourse: async (courseId: string | number) => {
+    const response = await apiRequest(`/api/courses/${courseId}/enroll`, {
+      method: 'POST'
+    });
+    
+    return response.data;
+  },
+  
+  // Get enrolled courses
+  getEnrolledCourses: async () => {
+    const response = await apiRequest('/api/enrollments');
+    
+    return response.data;
   }
 };
 
@@ -326,88 +384,54 @@ export const coursesApi = {
  */
 export const testsApi = {
   // Create a test
-  createTest: async (courseId: number, testData: any) => {
-    console.log(`Creating test for course ${courseId}:`, testData);
+  createTest: async (courseId: number | string, testData: any) => {
+    const response = await apiRequest(`/api/courses/${courseId}/tests`, {
+      method: 'POST',
+      body: JSON.stringify(testData)
+    });
     
-    // Mock API response
-    return {
-      success: true,
-      data: {
-        id: Date.now(),
-        course_id: courseId,
-        ...testData,
-        created_at: new Date().toISOString()
-      }
-    };
+    return response.data;
   },
   
   // Get test details
-  getTest: async (courseId: number, testId: number) => {
-    console.log(`Getting test ${testId} for course ${courseId}`);
+  getTest: async (courseId: number | string, testId: number | string) => {
+    const response = await apiRequest(`/api/courses/${courseId}/tests/${testId}`);
+    return response.data;
+  },
+  
+  // Update a test
+  updateTest: async (courseId: number | string, testId: number | string, testData: any) => {
+    const response = await apiRequest(`/api/courses/${courseId}/tests/${testId}`, {
+      method: 'PUT',
+      body: JSON.stringify(testData)
+    });
     
-    // Mock test data
-    return {
-      success: true,
-      data: {
-        id: testId,
-        course_id: courseId,
-        title: `Тест ${testId} по курсу`,
-        description: 'Проверьте свои знания по материалам курса',
-        time_limit: 30,
-        passing_score: 70,
-        questions: [
-          {
-            id: 1,
-            text: 'Какой метод решения квадратных уравнений использует формулу с дискриминантом?',
-            type: 'radio',
-            options: [
-              { id: 1, text: 'Метод группировки' },
-              { id: 2, text: 'Метод выделения полного квадрата' },
-              { id: 3, text: 'Формула Виета' },
-              { id: 4, text: 'Метод дискриминанта' }
-            ],
-            correct_option_id: 4
-          },
-          {
-            id: 2,
-            text: 'Выберите все верные утверждения о функциях:',
-            type: 'checkbox',
-            options: [
-              { id: 1, text: 'Функция y = x² всегда возрастает' },
-              { id: 2, text: 'Линейная функция имеет вид y = kx + b' },
-              { id: 3, text: 'Функция y = 1/x определена при x = 0' },
-              { id: 4, text: 'Функция y = sin(x) является периодической' }
-            ],
-            correct_option_ids: [2, 4]
-          }
-        ]
-      }
-    };
+    return response.data;
+  },
+  
+  // Delete a test
+  deleteTest: async (courseId: number | string, testId: number | string) => {
+    const response = await apiRequest(`/api/courses/${courseId}/tests/${testId}`, {
+      method: 'DELETE'
+    });
+    
+    return response.data;
   },
   
   // Submit test answers
-  submitTest: async (courseId: number, testId: number, answers: any) => {
-    console.log(`Submitting answers for test ${testId} in course ${courseId}:`, answers);
+  submitTest: async (courseId: number | string, testId: number | string, answers: any) => {
+    const response = await apiRequest(`/api/courses/${courseId}/tests/${testId}/submit`, {
+      method: 'POST',
+      body: JSON.stringify({ answers })
+    });
     
-    // Calculate a mock score
-    const totalQuestions = Object.keys(answers).length;
-    const correctAnswers = Math.floor(Math.random() * (totalQuestions + 1));
-    const score = Math.round((correctAnswers / totalQuestions) * 100);
-    
-    // Mock API response
-    return {
-      success: true,
-      data: {
-        id: Date.now(),
-        test_id: testId,
-        course_id: courseId,
-        user_id: 'current_user',
-        score,
-        passed: score >= 70,
-        answers,
-        submitted_at: new Date().toISOString()
-      }
-    };
+    return response.data;
+  },
+  
+  // Get test results
+  getTestResults: async (courseId: number | string, testId: number | string) => {
+    const response = await apiRequest(`/api/courses/${courseId}/tests/${testId}/results`);
+    return response.data;
   }
 };
 
@@ -416,135 +440,35 @@ export const testsApi = {
  */
 export const discussionsApi = {
   // Get course discussions
-  getDiscussions: async (courseId: number) => {
-    console.log(`Getting discussions for course ${courseId}`);
-    
-    // Mock discussions data
-    return {
-      success: true,
-      data: [
-        {
-          id: 1,
-          course_id: courseId,
-          title: 'Вопрос по квадратным уравнениям',
-          content: 'У меня возникла трудность с решением квадратных уравнений...',
-          author_id: 'student1',
-          author_name: 'Иван Иванов',
-          replies_count: 3,
-          created_at: new Date(Date.now() - 5 * 86400000).toISOString() // 5 days ago
-        },
-        {
-          id: 2,
-          course_id: courseId,
-          title: 'Проблема с тестом',
-          content: 'При прохождении теста возникла проблема с вопросом №5...',
-          author_id: 'student2',
-          author_name: 'Мария Петрова',
-          replies_count: 1,
-          created_at: new Date(Date.now() - 2 * 86400000).toISOString() // 2 days ago
-        }
-      ]
-    };
+  getDiscussions: async (courseId: number | string) => {
+    const response = await apiRequest(`/api/courses/${courseId}/discussions`);
+    return response.data;
   },
   
   // Get discussion details
-  getDiscussion: async (courseId: number, discussionId: number) => {
-    console.log(`Getting discussion ${discussionId} for course ${courseId}`);
-    
-    // Mock discussion data
-    return {
-      success: true,
-      data: {
-        id: discussionId,
-        course_id: courseId,
-        title: discussionId === 1 ? 'Вопрос по квадратным уравнениям' : 'Проблема с тестом',
-        content: discussionId === 1 
-          ? 'У меня возникла трудность с решением квадратных уравнений. Не могу понять, как правильно применять формулу дискриминанта в случаях, когда коэффициент при x² отрицательный. Можете объяснить на примере?'
-          : 'При прохождении теста возникла проблема с вопросом №5. Кажется, что в нем нет правильного ответа среди вариантов. Можете проверить?',
-        author_id: discussionId === 1 ? 'student1' : 'student2',
-        author_name: discussionId === 1 ? 'Иван Иванов' : 'Мария Петрова',
-        created_at: new Date(Date.now() - (discussionId === 1 ? 5 : 2) * 86400000).toISOString(),
-        replies: discussionId === 1 
-          ? [
-              {
-                id: 1,
-                discussion_id: discussionId,
-                content: 'Формула дискриминанта D = b² - 4ac работает независимо от знака коэффициента a. Если a отрицательный, это просто влияет на направление ветвей параболы. Пример: -2x² + 4x + 1 = 0. Здесь a = -2, b = 4, c = 1. Находим D = 4² - 4(-2)(1) = 16 + 8 = 24. Далее используем стандартную формулу x = (-b ± √D) / 2a.',
-                author_id: 'teacher1',
-                author_name: 'Преподаватель',
-                is_teacher: true,
-                created_at: new Date(Date.now() - 4.5 * 86400000).toISOString()
-              },
-              {
-                id: 2,
-                discussion_id: discussionId,
-                content: 'Спасибо за объяснение! Так a может быть любым числом, кроме нуля?',
-                author_id: 'student1',
-                author_name: 'Иван Иванов',
-                is_teacher: false,
-                created_at: new Date(Date.now() - 4 * 86400000).toISOString()
-              },
-              {
-                id: 3,
-                discussion_id: discussionId,
-                content: 'Совершенно верно! Если a = 0, то это уже не квадратное уравнение, а линейное (bx + c = 0). Рад, что смог помочь!',
-                author_id: 'teacher1',
-                author_name: 'Преподаватель',
-                is_teacher: true,
-                created_at: new Date(Date.now() - 3.5 * 86400000).toISOString()
-              }
-            ]
-          : [
-              {
-                id: 4,
-                discussion_id: discussionId,
-                content: 'Спасибо за сообщение! Я проверю тест и исправлю проблему. Вы можете пока пропустить этот вопрос и продолжить тест.',
-                author_id: 'teacher1',
-                author_name: 'Преподаватель',
-                is_teacher: true,
-                created_at: new Date(Date.now() - 1.5 * 86400000).toISOString()
-              }
-            ]
-      }
-    };
+  getDiscussion: async (courseId: number | string, discussionId: number | string) => {
+    const response = await apiRequest(`/api/courses/${courseId}/discussions/${discussionId}`);
+    return response.data;
   },
   
   // Create a discussion
-  createDiscussion: async (courseId: number, discussionData: any) => {
-    console.log(`Creating discussion for course ${courseId}:`, discussionData);
+  createDiscussion: async (courseId: number | string, discussionData: any) => {
+    const response = await apiRequest(`/api/courses/${courseId}/discussions`, {
+      method: 'POST',
+      body: JSON.stringify(discussionData)
+    });
     
-    // Mock API response
-    return {
-      success: true,
-      data: {
-        id: Date.now(),
-        course_id: courseId,
-        ...discussionData,
-        author_id: 'current_user',
-        author_name: 'Текущий пользователь',
-        replies_count: 0,
-        created_at: new Date().toISOString()
-      }
-    };
+    return response.data;
   },
   
   // Reply to a discussion
-  replyToDiscussion: async (courseId: number, discussionId: number, content: string) => {
-    console.log(`Replying to discussion ${discussionId} in course ${courseId}:`, content);
+  replyToDiscussion: async (courseId: number | string, discussionId: number | string, content: string) => {
+    const response = await apiRequest(`/api/courses/${courseId}/discussions/${discussionId}/replies`, {
+      method: 'POST',
+      body: JSON.stringify({ content })
+    });
     
-    // Mock API response
-    return {
-      success: true,
-      data: {
-        id: Date.now(),
-        discussion_id: discussionId,
-        content,
-        author_id: 'current_user',
-        author_name: 'Текущий пользователь',
-        is_teacher: false, // Based on current user role
-        created_at: new Date().toISOString()
-      }
-    };
+    return response.data;
   }
 };
 
@@ -553,43 +477,14 @@ export const discussionsApi = {
  */
 export const analyticsApi = {
   // Get course analytics
-  getCourseAnalytics: async (courseId: number) => {
-    console.log(`Getting analytics for course ${courseId}`);
-    
-    // Mock analytics data
-    return {
-      success: true,
-      data: {
-        course_id: courseId,
-        students_count: 35,
-        completion_rate: 68,
-        average_test_score: 75.4,
-        lessons_data: [
-          { lesson_id: 1, title: 'Урок 1', views: 35, completions: 30 },
-          { lesson_id: 2, title: 'Урок 2', views: 32, completions: 28 },
-          { lesson_id: 3, title: 'Урок 3', views: 30, completions: 25 },
-          { lesson_id: 4, title: 'Урок 4', views: 28, completions: 22 },
-          { lesson_id: 5, title: 'Урок 5', views: 25, completions: 18 },
-          { lesson_id: 6, title: 'Урок 6', views: 20, completions: 15 },
-          { lesson_id: 7, title: 'Урок 7', views: 18, completions: 12 },
-          { lesson_id: 8, title: 'Урок 8', views: 15, completions: 10 }
-        ],
-        tests_data: [
-          { test_id: 1, title: 'Тест 1', attempts: 30, average_score: 82 },
-          { test_id: 2, title: 'Тест 2', attempts: 25, average_score: 78 },
-          { test_id: 3, title: 'Тест 3', attempts: 20, average_score: 72 },
-          { test_id: 4, title: 'Тест 4', attempts: 15, average_score: 70 }
-        ],
-        activity_by_day: [
-          { date: '2023-03-01', count: 25 },
-          { date: '2023-03-02', count: 30 },
-          { date: '2023-03-03', count: 28 },
-          { date: '2023-03-04', count: 32 },
-          { date: '2023-03-05', count: 35 },
-          { date: '2023-03-06', count: 30 },
-          { date: '2023-03-07', count: 25 }
-        ]
-      }
-    };
+  getCourseAnalytics: async (courseId: number | string) => {
+    const response = await apiRequest(`/api/courses/${courseId}/analytics`);
+    return response.data;
+  },
+  
+  // Get user progress
+  getUserProgress: async () => {
+    const response = await apiRequest('/api/user/progress');
+    return response.data;
   }
 };

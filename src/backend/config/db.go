@@ -37,7 +37,11 @@ func InitDB() error {
 
 	dbname := os.Getenv("DB_NAME")
 	if dbname == "" {
+<<<<<<< HEAD
 		dbname = "yourdb"
+=======
+		dbname = "shabyt4_db"
+>>>>>>> cd921a5ac2f69d998d31ec5ec2307706058d18ee
 	}
 
 	sslMode := "disable"
@@ -73,6 +77,47 @@ func InitDB() error {
 	}
 
 	log.Printf("Database connected successfully at: %v", now)
+	
+	// Check if database has the correct tables and create if needed
+	err = ensureTablesExist(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to ensure tables exist: %w", err)
+	}
+	
+	return nil
+}
+
+// ensureTablesExist checks if the required tables exist and creates them if needed
+func ensureTablesExist(ctx context.Context) error {
+	// Check if users table exists
+	var exists bool
+	err := DB.QueryRowContext(ctx, "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'users')").Scan(&exists)
+	if err != nil {
+		return fmt.Errorf("error checking if users table exists: %w", err)
+	}
+	
+	if !exists {
+		log.Println("Creating database tables...")
+		
+		// Read schema.sql
+		schema, err := os.ReadFile("config/schema.sql")
+		if err != nil {
+			// Try alternative path
+			schema, err = os.ReadFile("./config/schema.sql")
+			if err != nil {
+				return fmt.Errorf("error reading schema.sql: %w", err)
+			}
+		}
+		
+		// Execute schema.sql
+		_, err = DB.ExecContext(ctx, string(schema))
+		if err != nil {
+			return fmt.Errorf("error executing schema.sql: %w", err)
+		}
+		
+		log.Println("Database tables created successfully")
+	}
+	
 	return nil
 }
 
@@ -94,4 +139,224 @@ func ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Re
 // BeginTx starts a transaction
 func BeginTx(ctx context.Context) (*sql.Tx, error) {
 	return DB.BeginTx(ctx, nil)
+}
+
+// LogRegistration logs a new user registration
+func LogRegistration(ctx context.Context, userID, email, ipAddress, userAgent, referrer string) error {
+	_, err := ExecContext(ctx,
+		"INSERT INTO registration_logs (user_id, email, ip_address, user_agent, referrer, registration_source) VALUES ($1, $2, $3, $4, $5, $6)",
+		userID, email, ipAddress, userAgent, referrer, "web")
+		
+	if err != nil {
+		log.Printf("Failed to log registration: %v", err)
+		// Continue even if logging fails
+		return nil
+	}
+	
+	return nil
+}
+
+// LogLogin logs a user login attempt
+func LogLogin(ctx context.Context, userID, ipAddress, userAgent, status, failureReason string) error {
+	_, err := ExecContext(ctx,
+		"INSERT INTO login_logs (user_id, ip_address, user_agent, status, failure_reason, login_source) VALUES ($1, $2, $3, $4, $5, $6)",
+		userID, ipAddress, userAgent, status, failureReason, "web")
+		
+	if err != nil {
+		log.Printf("Failed to log login: %v", err)
+		// Continue even if logging fails
+		return nil
+	}
+	
+	return nil
+}
+
+// CreateUserSession creates a new user session
+func CreateUserSession(ctx context.Context, userID, sessionToken, ipAddress, userAgent string, expiresAt time.Time) error {
+	_, err := ExecContext(ctx,
+		"INSERT INTO user_sessions (user_id, session_token, ip_address, user_agent, expires_at) VALUES ($1, $2, $3, $4, $5)",
+		userID, sessionToken, ipAddress, userAgent, expiresAt)
+		
+	if err != nil {
+		return fmt.Errorf("failed to create user session: %w", err)
+	}
+	
+	return nil
+}
+
+// GetUserByID retrieves a user by ID
+func GetUserByID(ctx context.Context, id string) (map[string]interface{}, error) {
+	var user = make(map[string]interface{})
+	var id_val, first_name, last_name, email, role string
+	var created_at, updated_at time.Time
+	
+	err := QueryRowContext(ctx,
+		"SELECT id, first_name, last_name, email, role, created_at, updated_at FROM users WHERE id = $1",
+		id).Scan(&id_val, &first_name, &last_name, &email, &role, &created_at, &updated_at)
+	
+	if err != nil {
+		return nil, fmt.Errorf("error getting user by ID: %w", err)
+	}
+	
+	user["ID"] = id_val
+	user["FirstName"] = first_name
+	user["LastName"] = last_name
+	user["Name"] = first_name + " " + last_name
+	user["Email"] = email
+	user["Role"] = role
+	user["CreatedAt"] = created_at
+	user["UpdatedAt"] = updated_at
+	
+	return user, nil
+}
+
+// GetUserByEmail retrieves a user by email
+func GetUserByEmail(ctx context.Context, email string) (map[string]interface{}, error) {
+	var user = make(map[string]interface{})
+	var id, first_name, last_name, email_val, password, role string
+	var created_at, updated_at time.Time
+	var reset_token sql.NullString
+	var reset_token_expiry sql.NullInt64
+	
+	err := QueryRowContext(ctx,
+		"SELECT id, first_name, last_name, email, password, role, created_at, updated_at, reset_token, reset_token_expiry FROM users WHERE email = $1",
+		email).Scan(&id, &first_name, &last_name, &email_val, &password, &role, &created_at, &updated_at, &reset_token, &reset_token_expiry)
+	
+	if err != nil {
+		return nil, fmt.Errorf("error getting user by email: %w", err)
+	}
+	
+	user["ID"] = id
+	user["FirstName"] = first_name
+	user["LastName"] = last_name
+	user["Name"] = first_name + " " + last_name
+	user["Email"] = email_val
+	user["Password"] = password
+	user["Role"] = role
+	user["CreatedAt"] = created_at
+	user["UpdatedAt"] = updated_at
+	
+	if reset_token.Valid {
+		user["ResetToken"] = reset_token.String
+	}
+	
+	if reset_token_expiry.Valid {
+		user["ResetTokenExpiry"] = reset_token_expiry.Int64
+	}
+	
+	return user, nil
+}
+
+// CreateUser creates a new user in the database
+func CreateUser(ctx context.Context, firstName, lastName, email, password, role string) (map[string]interface{}, error) {
+	var user = make(map[string]interface{})
+	var id, first_name, last_name, email_val, role_val string
+	var created_at, updated_at time.Time
+	
+	// Check if user already exists
+	var count int
+	err := QueryRowContext(ctx, "SELECT COUNT(*) FROM users WHERE email = $1", email).Scan(&count)
+	if err != nil {
+		return nil, fmt.Errorf("error checking if user exists: %w", err)
+	}
+
+	if count > 0 {
+		return nil, fmt.Errorf("user with this email already exists")
+	}
+	
+	// Insert user into database
+	err = QueryRowContext(ctx,
+		"INSERT INTO users (first_name, last_name, email, password, role, is_active, language_preference) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, first_name, last_name, email, role, created_at, updated_at",
+		firstName, lastName, email, password, role, true, "ru").Scan(&id, &first_name, &last_name, &email_val, &role_val, &created_at, &updated_at)
+	
+	if err != nil {
+		return nil, fmt.Errorf("error creating user: %w", err)
+	}
+	
+	user["ID"] = id
+	user["FirstName"] = first_name
+	user["LastName"] = last_name
+	user["Name"] = first_name + " " + last_name
+	user["Email"] = email_val
+	user["Role"] = role_val
+	user["CreatedAt"] = created_at
+	user["UpdatedAt"] = updated_at
+	
+	return user, nil
+}
+
+// UpdateUser updates user information
+func UpdateUser(ctx context.Context, id, firstName, lastName, email, role string) (map[string]interface{}, error) {
+	var user = make(map[string]interface{})
+	var id_val, first_name, last_name, email_val, role_val string
+	var created_at, updated_at time.Time
+	
+	err := QueryRowContext(ctx,
+		"UPDATE users SET first_name = $1, last_name = $2, email = $3, role = $4, updated_at = NOW() WHERE id = $5 RETURNING id, first_name, last_name, email, role, created_at, updated_at",
+		firstName, lastName, email, role, id).Scan(&id_val, &first_name, &last_name, &email_val, &role_val, &created_at, &updated_at)
+	
+	if err != nil {
+		return nil, fmt.Errorf("error updating user: %w", err)
+	}
+	
+	user["ID"] = id_val
+	user["FirstName"] = first_name
+	user["LastName"] = last_name
+	user["Name"] = first_name + " " + last_name
+	user["Email"] = email_val
+	user["Role"] = role_val
+	user["CreatedAt"] = created_at
+	user["UpdatedAt"] = updated_at
+	
+	return user, nil
+}
+
+// SaveResetToken saves a password reset token for a user
+func SaveResetToken(ctx context.Context, id, resetToken string, resetTokenExpiry int64) error {
+	_, err := ExecContext(ctx,
+		"UPDATE users SET reset_token = $1, reset_token_expiry = $2 WHERE id = $3",
+		resetToken, resetTokenExpiry, id)
+		
+	if err != nil {
+		return fmt.Errorf("error saving reset token: %w", err)
+	}
+	
+	return nil
+}
+
+// VerifyResetToken verifies a password reset token
+func VerifyResetToken(ctx context.Context, id, token string) (bool, error) {
+	var storedToken string
+	var expiry int64
+	
+	err := QueryRowContext(ctx,
+		"SELECT reset_token, reset_token_expiry FROM users WHERE id = $1",
+		id).Scan(&storedToken, &expiry)
+		
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
+		}
+		return false, fmt.Errorf("error verifying reset token: %w", err)
+	}
+
+	// Check if token matches and has not expired
+	if storedToken == token && expiry > time.Now().Unix() {
+		return true, nil
+	}
+	
+	return false, nil
+}
+
+// ClearResetToken clears a user's password reset token
+func ClearResetToken(ctx context.Context, id string) error {
+	_, err := ExecContext(ctx,
+		"UPDATE users SET reset_token = NULL, reset_token_expiry = NULL WHERE id = $1",
+		id)
+		
+	if err != nil {
+		return fmt.Errorf("error clearing reset token: %w", err)
+	}
+	
+	return nil
 }

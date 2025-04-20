@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -6,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { EyeIcon, EyeOffIcon } from 'lucide-react';
 import { toast } from 'sonner';
-import { authApi } from '@/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 const RegisterForm = () => {
   const [firstName, setFirstName] = useState('');
@@ -19,6 +20,7 @@ const RegisterForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
+  const { register } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,16 +38,21 @@ const RegisterForm = () => {
     // setIsLoading(true);
     
     try {
-      const response = await authApi.register({
-        name: `${firstName} ${lastName}`,
+      const name = `${firstName} ${lastName}`;
+      
+      console.log("Sending registration data:", {
+        name,
         email,
-        password,
-        role
+        password: '***скрыто***',
+        role,
+        firstName,
+        lastName
       });
+
+      await register(name, email, password, role);
       
       toast.success("Регистрация успешна! Добро пожаловать в StudyHub!");
       
-      // Redirect based on user role
       if (role === 'teacher') {
         navigate('/teacher-dashboard');
       } else {
@@ -53,7 +60,7 @@ const RegisterForm = () => {
       }
     } catch (error) {
       console.error('Registration error:', error);
-      toast.error(error instanceof Error ? error.message : "Проблема с подключением к серверу");
+      toast.error(error instanceof Error ? error.message : "Ошибка при регистрации");
     } finally {
       setIsLoading(false);
     }
@@ -66,6 +73,9 @@ const RegisterForm = () => {
         <p className="text-muted-foreground">
           Присоединяйтесь к тысячам студентов, успешно сдавших ЕНТ
         </p>
+        <div className="mt-2 p-2 bg-muted text-xs rounded">
+          <p>В текущей версии регистрация работает в демо-режиме</p>
+        </div>
       </div>
       
       <form onSubmit={handleSubmit} className="space-y-5">

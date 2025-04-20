@@ -4,6 +4,9 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { LanguageProvider } from "./contexts/LanguageContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
+import RequireAuth from "./components/auth/RequireAuth";
 
 // Pages
 import Index from "./pages/Index";
@@ -41,6 +44,11 @@ import NewForumTopic from "./pages/NewForumTopic";
 import Tests from "./pages/Tests";
 import StudentProgress from "./pages/StudentProgress";
 import QuestionDetails from "./pages/QuestionDetails";
+import LessonView from "./pages/LessonView";
+import StudentMessage from "./pages/StudentMessage";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfUse from "./pages/TermsOfUse";
+import Students from "./pages/Students";
 
 // Components
 import AIAssistantComponent from "./components/ui/AIAssistant";
@@ -49,68 +57,80 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/student-dashboard" element={<StudentDashboard />} />
-          <Route path="/teacher-dashboard" element={<TeacherDashboard />} />
-          
-          {/* Course routes */}
-          <Route path="/course/:id" element={<CourseDetails />} />
-          <Route path="/course/:id/learn" element={<CourseLearn />} />
-          <Route path="/course/:courseId/test/create" element={<CreateTest />} />
-          <Route path="/course/:courseId/test/:testId" element={<TakeTest />} />
-          <Route path="/course/:courseId/test/:testId/edit" element={<EditTest />} />
-          <Route path="/course/:courseId/test/:testId/results" element={<TestResults />} />
-          <Route path="/course/:courseId/lesson/create" element={<CreateLesson />} />
-          <Route path="/course/:courseId/lesson/:lessonId/edit" element={<EditLesson />} />
-          <Route path="/course/:courseId/manage" element={<TeacherCourseManage />} />
-          <Route path="/course/:courseId/analytics" element={<CourseAnalytics />} />
-          <Route path="/course/:courseId/discussions" element={<CourseDiscussions />} />
-          <Route path="/course/:courseId/discussions/:discussionId" element={<DiscussionDetails />} />
-          <Route path="/course/:courseId/discussions/create" element={<CreateDiscussion />} />
-          
-          {/* Subject pages */}
-          <Route path="/courses" element={<Courses />} />
-          <Route path="/courses/:subject" element={<SubjectPage />} />
-          
-          {/* User pages */}
-          <Route path="/notifications" element={<NotificationsPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/ai-assistant" element={<AIAssistant />} />
-          
-          {/* Forum pages */}
-          <Route path="/forum" element={<Forum />} />
-          <Route path="/forum/:id" element={<ForumDetails />} />
-          <Route path="/forum/new" element={<NewForumTopic />} />
-          
-          {/* Tests page */}
-          <Route path="/tests" element={<Tests />} />
-          
-          {/* Student progress */}
-          <Route path="/student/:id/progress" element={<StudentProgress />} />
-          
-          {/* Question details */}
-          <Route path="/questions/:id" element={<QuestionDetails />} />
-          
-          {/* Static pages */}
-          <Route path="/how-it-works" element={<HowItWorks />} />
-          <Route path="/about" element={<About />} />
-          
-          {/* Catch-all route - must be last */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-        <AIAssistantComponent />
-      </BrowserRouter>
-    </TooltipProvider>
+    <LanguageProvider>
+      <ThemeProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              {/* Public routes */}
+              <Route path="/" element={<Index />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/how-it-works" element={<HowItWorks />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/terms" element={<TermsOfUse />} />
+              
+              {/* Protected routes - requires authentication */}
+              <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
+              <Route path="/student-dashboard" element={<RequireAuth><StudentDashboard /></RequireAuth>} />
+              <Route path="/teacher-dashboard" element={<RequireAuth><TeacherDashboard /></RequireAuth>} />
+              <Route path="/students" element={<RequireAuth><Students /></RequireAuth>} />
+              
+              {/* Course routes - all protected */}
+              <Route path="/course/:id" element={<RequireAuth><CourseDetails /></RequireAuth>} />
+              <Route path="/course/:id/learn" element={<RequireAuth><CourseLearn /></RequireAuth>} />
+              <Route path="/course/:courseId/lesson/:id" element={<RequireAuth><LessonView /></RequireAuth>} />
+              <Route path="/course/:courseId/test/create" element={<RequireAuth><CreateTest /></RequireAuth>} />
+              <Route path="/course/:courseId/test/:testId" element={<RequireAuth><TakeTest /></RequireAuth>} />
+              <Route path="/course/:courseId/test/:testId/edit" element={<RequireAuth><EditTest /></RequireAuth>} />
+              <Route path="/course/:courseId/test/:testId/results" element={<RequireAuth><TestResults /></RequireAuth>} />
+              <Route path="/course/:courseId/lesson/create" element={<RequireAuth><CreateLesson /></RequireAuth>} />
+              <Route path="/course/:courseId/lesson/:lessonId/edit" element={<RequireAuth><EditLesson /></RequireAuth>} />
+              <Route path="/course/:courseId/manage" element={<RequireAuth><TeacherCourseManage /></RequireAuth>} />
+              <Route path="/course/:courseId/analytics" element={<RequireAuth><CourseAnalytics /></RequireAuth>} />
+              <Route path="/course/:courseId/discussions" element={<RequireAuth><CourseDiscussions /></RequireAuth>} />
+              <Route path="/course/:courseId/discussions/:discussionId" element={<RequireAuth><DiscussionDetails /></RequireAuth>} />
+              <Route path="/course/:courseId/discussions/create" element={<RequireAuth><CreateDiscussion /></RequireAuth>} />
+              
+              {/* Subject pages */}
+              <Route path="/courses" element={<Courses />} />
+              <Route path="/courses/:subject" element={<SubjectPage />} />
+              
+              {/* User pages - all protected */}
+              <Route path="/notifications" element={<RequireAuth><NotificationsPage /></RequireAuth>} />
+              <Route path="/profile" element={<RequireAuth><ProfilePage /></RequireAuth>} />
+              <Route path="/settings" element={<RequireAuth><SettingsPage /></RequireAuth>} />
+              <Route path="/ai-assistant" element={<RequireAuth><AIAssistant /></RequireAuth>} />
+              
+              {/* Forum pages */}
+              <Route path="/forum" element={<RequireAuth><Forum /></RequireAuth>} />
+              <Route path="/forum/:id" element={<RequireAuth><ForumDetails /></RequireAuth>} />
+              <Route path="/forum/new" element={<RequireAuth><NewForumTopic /></RequireAuth>} />
+              
+              {/* Tests page */}
+              <Route path="/tests" element={<RequireAuth><Tests /></RequireAuth>} />
+              
+              {/* Student progress and messaging */}
+              <Route path="/student/:id/progress" element={<RequireAuth><StudentProgress /></RequireAuth>} />
+              <Route path="/student/:id/message" element={<RequireAuth><StudentMessage /></RequireAuth>} />
+              
+              {/* Question details */}
+              <Route path="/questions/:id" element={<RequireAuth><QuestionDetails /></RequireAuth>} />
+              
+              {/* Not found page */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            
+            {/* Global AI Assistant component */}
+            <AIAssistantComponent />
+          </BrowserRouter>
+        </TooltipProvider>
+      </ThemeProvider>
+    </LanguageProvider>
   </QueryClientProvider>
 );
 
