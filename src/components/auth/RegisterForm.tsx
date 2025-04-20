@@ -33,7 +33,7 @@ const RegisterForm = () => {
       return;
     }
     
-    setIsLoading(true);
+    // setIsLoading(true);
     
     try {
       const response = await authApi.register({

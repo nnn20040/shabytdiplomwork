@@ -1,4 +1,3 @@
-
 package middleware
 
 import (
@@ -10,7 +9,6 @@ import (
 	"os"
 	"strings"
 
-	"backend/config"
 	"backend/models"
 
 	"github.com/dgrijalva/jwt-go"

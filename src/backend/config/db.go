@@ -1,4 +1,3 @@
-
 package config
 
 import (
@@ -20,33 +19,33 @@ func InitDB() error {
 	if user == "" {
 		user = "postgres"
 	}
-	
+
 	password := os.Getenv("DB_PASSWORD")
 	if password == "" {
-		password = "postgres"
+		password = "yourpassword"
 	}
-	
+
 	host := os.Getenv("DB_HOST")
 	if host == "" {
 		host = "localhost"
 	}
-	
+
 	port := os.Getenv("DB_PORT")
 	if port == "" {
 		port = "5432"
 	}
-	
+
 	dbname := os.Getenv("DB_NAME")
 	if dbname == "" {
-		dbname = "ent_prep_db"
+		dbname = "yourdb"
 	}
-	
+
 	sslMode := "disable"
 	if os.Getenv("DB_SSL") == "true" {
 		sslMode = "require"
 	}
 
-	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s", 
+	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		host, port, user, password, dbname, sslMode)
 
 	var err error
@@ -63,7 +62,7 @@ func InitDB() error {
 	// Test the connection
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	
+
 	if err := DB.PingContext(ctx); err != nil {
 		return fmt.Errorf("failed to ping database: %w", err)
 	}

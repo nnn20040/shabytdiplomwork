@@ -1,8 +1,8 @@
-
 package controllers
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 
@@ -83,7 +83,7 @@ func CreateCourse(w http.ResponseWriter, r *http.Request) {
 func GetAllCourses(w http.ResponseWriter, r *http.Request) {
 	// Parse query parameters
 	category := r.URL.Query().Get("category")
-	
+
 	featuredStr := r.URL.Query().Get("featured")
 	featured := false
 	featuredSpecified := false
@@ -91,7 +91,7 @@ func GetAllCourses(w http.ResponseWriter, r *http.Request) {
 		featured = featuredStr == "true"
 		featuredSpecified = true
 	}
-	
+
 	teacherID := r.URL.Query().Get("teacher_id")
 
 	// Get courses
@@ -124,7 +124,7 @@ func GetCourseByID(w http.ResponseWriter, r *http.Request) {
 	// Get course
 	course, err := models.GetCourseByID(r.Context(), id)
 	if err != nil {
-		if err == models.ErrNotFound {
+		if errors.Is(err, models.ErrNotFound) {
 			http.Error(w, "Course not found", http.StatusNotFound)
 		} else {
 			log.Printf("Get course by ID error: %v", err)

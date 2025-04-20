@@ -1,4 +1,3 @@
-
 package models
 
 import (
@@ -12,6 +11,8 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 )
+
+var ErrNotFound = errors.New("resource not found")
 
 // User represents a user in the system
 type User struct {

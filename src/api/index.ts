@@ -3,7 +3,7 @@
  */
 
 // Base API URL
-const API_URL = '';
+const API_URL = "http://localhost:8080";
 
 /**
  * Make API request with proper error handling

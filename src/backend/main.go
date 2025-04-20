@@ -1,8 +1,6 @@
-
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -33,7 +31,7 @@ func main() {
 
 	// Middleware
 	corsMiddleware := cors.New(cors.Options{
-		AllowedOrigins:   []string{"*"},
+		AllowedOrigins:   []string{"http://localhost:8080", "https://localhost:5000"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Content-Type", "Authorization"},
 		AllowCredentials: true,
@@ -49,7 +47,7 @@ func main() {
 	if os.Getenv("GO_ENV") == "production" {
 		distDir := "../../dist"
 		fs := http.FileServer(http.Dir(distDir))
-		
+
 		router.PathPrefix("/").Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			path := filepath.Join(distDir, r.URL.Path)
 			_, err := os.Stat(path)
@@ -66,7 +64,7 @@ func main() {
 	if port == "" {
 		port = "5000"
 	}
-	
+
 	log.Printf("Server running on port %s", port)
 	if err := http.ListenAndServe(":"+port, corsMiddleware.Handler(router)); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
