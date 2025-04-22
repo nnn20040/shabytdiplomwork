@@ -1,3 +1,4 @@
+
 package repository
 
 import (
@@ -7,7 +8,7 @@ import (
 	"github.com/nnn20040/shabytdiplomwork/src/backend/models"
 )
 
-func CreateLesson(c context.Context, courseId int, request models.LessonRequest) (models.Lesson, error) {
+func CreateLesson(c context.Context, courseId string, request models.LessonRequest) (models.Lesson, error) {
 	var lesson models.Lesson
 	err := database.QueryRowContext(
 		c,
@@ -26,11 +27,11 @@ func CreateLesson(c context.Context, courseId int, request models.LessonRequest)
 	return lesson, nil
 }
 
-func GetLessonCount(c context.Context, courseId, lessonId int) (int, error) {
+func GetLessonCount(c context.Context, courseId string) (int, error) {
 	var count int
 	err := database.QueryRowContext(
-		c, "SELECT COUNT(*) FROM lessons WHERE id = $1 AND course_id = $2",
-		lessonId, courseId,
+		c, "SELECT COUNT(*) FROM lessons WHERE course_id = $1",
+		courseId,
 	).Scan(&count)
 	if err != nil {
 		return count, err
@@ -38,7 +39,7 @@ func GetLessonCount(c context.Context, courseId, lessonId int) (int, error) {
 	return count, nil
 }
 
-func UpdateLesson(c context.Context, lessonId, courseId int, req models.LessonRequest) (models.Lesson, error) {
+func UpdateLesson(c context.Context, lessonId int, courseId string, req models.LessonRequest) (models.Lesson, error) {
 	var lesson models.Lesson
 	err := database.QueryRowContext(
 		c,
@@ -58,7 +59,7 @@ func UpdateLesson(c context.Context, lessonId, courseId int, req models.LessonRe
 	return lesson, nil
 }
 
-func DeleteLesson(c context.Context, courseId, lessonId int) error {
+func DeleteLesson(c context.Context, courseId string, lessonId int) error {
 	_, err := database.ExecContext(
 		c,
 		"DELETE FROM lessons WHERE id = $1 AND course_id = $2",
@@ -71,7 +72,7 @@ func DeleteLesson(c context.Context, courseId, lessonId int) error {
 	return nil
 }
 
-func GetLessonsByCourseId(c context.Context, courseId int) ([]models.Lesson, error) {
+func GetLessonsByCourseId(c context.Context, courseId string) ([]models.Lesson, error) {
 	rows, err := database.QueryContext(
 		c,
 		`SELECT id, course_id, title, description, content, video_url, order_index, created_at, updated_at 
@@ -101,7 +102,7 @@ func GetLessonsByCourseId(c context.Context, courseId int) ([]models.Lesson, err
 	return lessons, nil
 }
 
-func GetLesson(c context.Context, courseId, lessonId int) (models.Lesson, error) {
+func GetLesson(c context.Context, courseId string, lessonId int) (models.Lesson, error) {
 	var lesson models.Lesson
 	err := database.QueryRowContext(
 		c,

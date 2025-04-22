@@ -93,16 +93,15 @@ CREATE TABLE
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
--- Lessons table
+-- Lessons table - Updated to match the repository usage
 CREATE TABLE
     IF NOT EXISTS lessons (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
+        id SERIAL PRIMARY KEY,
         course_id UUID REFERENCES courses (id) ON DELETE CASCADE,
         title VARCHAR(255) NOT NULL,
-        title_kk VARCHAR(255),
+        description TEXT NOT NULL,
         content TEXT NOT NULL,
-        content_kk TEXT,
-        duration_minutes INTEGER DEFAULT 0,
+        video_url VARCHAR(255),
         order_index INTEGER NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -127,7 +126,7 @@ CREATE TABLE
     IF NOT EXISTS lesson_progress (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
         user_id UUID REFERENCES users (id) ON DELETE CASCADE,
-        lesson_id UUID REFERENCES lessons (id) ON DELETE CASCADE,
+        lesson_id INTEGER REFERENCES lessons (id) ON DELETE CASCADE,
         status VARCHAR(20) DEFAULT 'not_started', -- not_started, in_progress, completed
         completion_date TIMESTAMP,
         time_spent_seconds INTEGER DEFAULT 0,
@@ -240,6 +239,16 @@ CREATE TABLE
         helpful_count INTEGER DEFAULT 0
     );
 
+-- AI Assistant interactions table
+CREATE TABLE
+    IF NOT EXISTS ai_assistant (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
+        user_id UUID REFERENCES users (id) ON DELETE CASCADE,
+        question TEXT NOT NULL,
+        response TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
 -- Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_enrollments_user_id ON enrollments (user_id);
 CREATE INDEX IF NOT EXISTS idx_enrollments_course_id ON enrollments (course_id);
@@ -257,3 +266,4 @@ CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id ON user_sessions (user_id);
 CREATE INDEX IF NOT EXISTS idx_user_sessions_token ON user_sessions (session_token);
 CREATE INDEX IF NOT EXISTS idx_registration_logs_email ON registration_logs (email);
 CREATE INDEX IF NOT EXISTS idx_courses_teacher_id ON courses (teacher_id);
+CREATE INDEX IF NOT EXISTS idx_ai_assistant_user_id ON ai_assistant (user_id);

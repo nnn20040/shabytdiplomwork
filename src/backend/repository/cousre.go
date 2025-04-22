@@ -141,8 +141,7 @@ func DeleteCourse(ctx context.Context, id string) error {
 	return nil
 }
 
-
-func GetCourseCount(c context.Context, courseId int) (int, error) {
+func GetCourseCount(c context.Context, courseId string) (int, error) {
 	var count int
 	err := database.QueryRowContext(c, "SELECT COUNT(*) FROM courses WHERE id = $1", courseId).Scan(&count)
 	if err != nil {
@@ -150,7 +149,6 @@ func GetCourseCount(c context.Context, courseId int) (int, error) {
 	}
 	return count, nil
 }
-
 
 func GetCoursesByTeacher(ctx context.Context, teacherID string) ([]*models.Course, error) {
 	rows, err := database.QueryContext(ctx,

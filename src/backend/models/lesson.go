@@ -1,3 +1,4 @@
+
 package models
 
 import "time"
@@ -18,7 +19,7 @@ type LessonRequest struct {
 
 type Lesson struct {
 	ID          int       `json:"id"`
-	CourseID    int       `json:"course_id"`
+	CourseID    string    `json:"course_id"`
 	Title       string    `json:"title"`
 	Description string    `json:"description"`
 	Content     string    `json:"content"`
