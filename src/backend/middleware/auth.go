@@ -1,58 +1,79 @@
 package middleware
 
 import (
+	"context"
+	"fmt"
+	"log"
 	"net/http"
-<<<<<<< HEAD
 	"os"
 	"strings"
 
-	"backend/models"
-
-	"github.com/dgrijalva/jwt-go"
-=======
-	"log"
->>>>>>> cd921a5ac2f69d998d31ec5ec2307706058d18ee
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/nnn20040/shabytdiplomwork/src/backend/models"
 )
 
-// UserKey is the context key for the user object
-type userContextKey string
-const UserKey userContextKey = "user"
-
-// RequireAuth is a simplified middleware that checks if a request has basic auth
 func RequireAuth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// For simplified authentication, we'll just pass the request through
-		// In a real system, you would validate session/auth here
-		log.Println("Auth check passed - simplified auth")
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
+			http.Error(w, "Missing Authorization header", http.StatusUnauthorized)
+			return
+		}
+
+		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+		if tokenString == authHeader {
+			http.Error(w, "Invalid token format", http.StatusUnauthorized)
+			return
+		}
+
+		jwtSecret := os.Getenv("JWT_SECRET")
+		if jwtSecret == "" {
+			http.Error(w, "JWT secret not configured", http.StatusInternalServerError)
+			return
+		}
+
+		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			}
+			return []byte(jwtSecret), nil
+		})
+
+		if err != nil || !token.Valid {
+			http.Error(w, "Invalid token", http.StatusUnauthorized)
+			return
+		}
+
+		if claims, ok := token.Claims.(jwt.MapClaims); ok {
+			userID, ok := claims[models.UserContextKey].(string)
+			if !ok {
+				http.Error(w, "Invalid token claims", http.StatusUnauthorized)
+				return
+			}
+
+			ctx := context.WithValue(r.Context(), models.UserContextKey, userID)
+			r = r.WithContext(ctx)
+		}
 		next.ServeHTTP(w, r)
 	}
 }
 
-// StudentOrTeacherOnly is a middleware that checks if the user is a student or teacher
 func StudentOrTeacherOnly(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// For simplified authentication, we'll just pass the request through
-		// In a real system, you would check user roles here
 		log.Println("Role check passed - simplified auth")
 		next.ServeHTTP(w, r)
 	}
 }
 
-// TeacherOnly is a middleware that checks if the user is a teacher
 func TeacherOnly(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// For simplified authentication, we'll just pass the request through
-		// In a real system, you would check if user is a teacher here
 		log.Println("Teacher role check passed - simplified auth")
 		next.ServeHTTP(w, r)
 	}
 }
 
-// AdminOnly is a middleware that checks if the user is an admin
 func AdminOnly(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// For simplified authentication, we'll just pass the request through
-		// In a real system, you would check if user is an admin here
 		log.Println("Admin role check passed - simplified auth")
 		next.ServeHTTP(w, r)
 	}

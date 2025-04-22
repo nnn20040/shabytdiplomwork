@@ -15,7 +15,6 @@ import (
 	"time"
 )
 
-// GeminiResponse represents the response from Google Gemini API
 type GeminiResponse struct {
 	Candidates []struct {
 		Content struct {
@@ -31,42 +30,32 @@ type GeminiResponse struct {
 	} `json:"error"`
 }
 
-// EvaluateMathExpression evaluates a mathematical expression
 func EvaluateMathExpression(expression string) (string, error) {
-	// Basic sanitization - remove all characters except numbers, basic operators and parentheses
 	sanitized := regexp.MustCompile(`[^0-9+\-*/( ).]`).ReplaceAllString(expression, "")
 
-	// Split the expression into tokens
 	tokens := tokenize(sanitized)
-	
-	// Convert to postfix notation
+
 	postfix, err := infixToPostfix(tokens)
 	if err != nil {
 		return "", err
 	}
-	
-	// Evaluate the postfix expression
+
 	result, err := evaluatePostfix(postfix)
 	if err != nil {
 		return "", err
 	}
-	
+
 	return fmt.Sprintf("%g", result), nil
 }
 
-// IsMathExpression checks if a string is a mathematical expression
 func IsMathExpression(text string) bool {
-	// Simple regex to detect basic math operations
 	return regexp.MustCompile(`^[\d\s+\-*/().]+$`).MatchString(strings.TrimSpace(text))
 }
 
-// GenerateAIResponse generates a response using AI based on the input question
 func GenerateAIResponse(question, userRole string) (string, error) {
-	// Log the interaction
 	log.Printf("AI assistance request: %s", question)
 	log.Printf("User role: %s", userRole)
 
-	// Check if it's a math expression
 	if IsMathExpression(question) {
 		result, err := EvaluateMathExpression(question)
 		if err != nil {
@@ -75,22 +64,14 @@ func GenerateAIResponse(question, userRole string) (string, error) {
 		}
 		return result, nil
 	}
-
-	// For text questions, use the Gemini API
 	return getAIResponse(question, userRole)
 }
 
-// getAIResponse gets a response from the Google Gemini API
 func getAIResponse(question, userRole string) (string, error) {
-	// Using Google Gemini API for better AI responses
 	apiKey := os.Getenv("GEMINI_API_KEY")
-	if apiKey == "" {
-		apiKey = "AIzaSyDJC5a7eWgwlPqRPjoQeR0rrxnDPVDXZY0" // Default API key for demo purposes
-	}
 
 	url := "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent"
-	
-	// Prepare request body with system prompt tailored for educational content
+
 	systemPrompt := `Вы - образовательный ассистент для подготовки к ЕНТ (Единому Национальному Тестированию) в Казахстане.
 	Отвечайте на вопросы студентов по школьной программе на том языке, на котором задан вопрос (казахский или русский).
 	Будьте полезным, информативным и точным.
@@ -99,7 +80,6 @@ func getAIResponse(question, userRole string) (string, error) {
 	Если вопрос задан на казахском, отвечайте на казахском.
 	Если вопрос задан на русском, отвечайте на русском.`
 
-	// Add role-specific instructions
 	if userRole == "teacher" {
 		systemPrompt += `\nВы общаетесь с преподавателем. Предлагайте методические рекомендации и профессиональные советы.`
 	}
@@ -122,12 +102,12 @@ func getAIResponse(question, userRole string) (string, error) {
 		},
 		"safetySettings": []map[string]interface{}{
 			{
-				"category":    "HARM_CATEGORY_HATE_SPEECH",
-				"threshold":   "BLOCK_MEDIUM_AND_ABOVE",
+				"category":  "HARM_CATEGORY_HATE_SPEECH",
+				"threshold": "BLOCK_MEDIUM_AND_ABOVE",
 			},
 			{
-				"category":    "HARM_CATEGORY_DANGEROUS_CONTENT",
-				"threshold":   "BLOCK_MEDIUM_AND_ABOVE",
+				"category":  "HARM_CATEGORY_DANGEROUS_CONTENT",
+				"threshold": "BLOCK_MEDIUM_AND_ABOVE",
 			},
 		},
 	}
@@ -138,18 +118,15 @@ func getAIResponse(question, userRole string) (string, error) {
 		return getFallbackResponse(question), nil
 	}
 
-	// Create HTTP request
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(requestJSON))
 	if err != nil {
 		log.Printf("Error creating request: %v", err)
 		return getFallbackResponse(question), nil
 	}
 
-	// Set headers
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("x-goog-api-key", apiKey)
 
-	// Send request
 	client := &http.Client{Timeout: 30 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -158,30 +135,25 @@ func getAIResponse(question, userRole string) (string, error) {
 	}
 	defer resp.Body.Close()
 
-	// Read response body
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Printf("Error reading response body: %v", err)
 		return getFallbackResponse(question), nil
 	}
 
-	// Parse response
 	var response GeminiResponse
 	if err := json.Unmarshal(body, &response); err != nil {
 		log.Printf("Error parsing response: %v", err)
 		return getFallbackResponse(question), nil
 	}
 
-	// Check for API error
 	if response.Error.Code != 0 {
 		log.Printf("API error: %s", response.Error.Message)
 		return getFallbackResponse(question), nil
 	}
 
-	// Extract text from response
 	if len(response.Candidates) > 0 && len(response.Candidates[0].Content.Parts) > 0 {
 		text := response.Candidates[0].Content.Parts[0].Text
-		// Remove any leading/trailing whitespace
 		text = strings.TrimSpace(text)
 		return text, nil
 	}
@@ -189,15 +161,12 @@ func getAIResponse(question, userRole string) (string, error) {
 	return getFallbackResponse(question), nil
 }
 
-// getFallbackResponse provides a fallback response when the AI API fails
 func getFallbackResponse(question string) string {
-	// Detect language
 	isKazakh := containsKazakhCharacters(question)
-	
+
 	lowercaseQuestion := strings.ToLower(question)
-	
+
 	if isKazakh {
-		// Kazakh fallback responses
 		if strings.Contains(lowercaseQuestion, "қазақстан") {
 			return "Қазақстан — Орталық Азиядағы мемлекет, бұрынғы кеңестік республика. Астанасы — Астана. Халқы 19 миллионнан астам адамды құрайды. Мемлекеттік тіл — қазақ тілі, ал орыс тілі ұлтаралық қатынас тілі мәртебесіне ие. Қазақстан 1991 жылы Кеңес Одағы ыдырағаннан кейін тәуелсіздік алды."
 		} else if strings.Contains(lowercaseQuestion, "ұбт") {
@@ -210,7 +179,6 @@ func getFallbackResponse(question string) string {
 			return "Мен сізге ҰБТ пәндері, дайындық стратегиялары және мектеп бағдарламасының әртүрлі тақырыптары туралы ақпарат бере аламын. Маған нақты пән немесе тақырып туралы сұрақ қойыңыз, мен пайдалы ақпарат беруге тырысамын."
 		}
 	} else {
-		// Russian fallback responses (keep existing fallback responses)
 		if strings.Contains(lowercaseQuestion, "казахстан") {
 			return "Казахстан — государство в Центральной Азии, бывшая советская республика. Столица — Астана. Население составляет более 19 миллионов человек. Государственным языком является казахский, а русский имеет статус языка межнационального общения. Казахстан обрел независимость в 1991 году после распада Советского Союза."
 		} else if strings.Contains(lowercaseQuestion, "ент") {
@@ -225,20 +193,17 @@ func getFallbackResponse(question string) string {
 	}
 }
 
-// containsKazakhCharacters checks if a string contains Kazakh-specific characters
 func containsKazakhCharacters(text string) bool {
-	// Kazakh-specific characters not in Russian: Әә, Ғғ, Ққ, Ңң, Өө, Ұұ, Үү, Һһ, Іі
 	kazakh := []string{"Ә", "ә", "Ғ", "ғ", "Қ", "қ", "Ң", "ң", "Ө", "ө", "Ұ", "ұ", "Ү", "ү", "Һ", "һ", "І", "і"}
-	
+
 	for _, char := range kazakh {
 		if strings.Contains(text, char) {
 			return true
 		}
 	}
-	
-	// If no Kazakh-specific characters are found, check for Kazakh words
+
 	kazakhWords := []string{"мен", "біз", "сен", "с��з", "ол", "олар", "бұл", "қазақ", "қазақша", "рақмет"}
-	
+
 	words := strings.Fields(strings.ToLower(text))
 	for _, word := range words {
 		for _, kazakhWord := range kazakhWords {
@@ -247,11 +212,10 @@ func containsKazakhCharacters(text string) bool {
 			}
 		}
 	}
-	
+
 	return false
 }
 
-// Helper functions for math expression evaluation
 func tokenize(expr string) []string {
 	expr = strings.ReplaceAll(expr, " ", "")
 	var tokens []string
@@ -306,7 +270,6 @@ func infixToPostfix(tokens []string) ([]string, error) {
 			if len(stack) == 0 {
 				return nil, errors.New("mismatched parentheses")
 			}
-			// Pop the "("
 			stack = stack[:len(stack)-1]
 		} else if token == "+" || token == "-" || token == "*" || token == "/" {
 			for len(stack) > 0 && stack[len(stack)-1] != "(" && precedence(stack[len(stack)-1]) >= precedence(token) {
@@ -315,7 +278,6 @@ func infixToPostfix(tokens []string) ([]string, error) {
 			}
 			stack = append(stack, token)
 		} else {
-			// Number
 			result = append(result, token)
 		}
 	}
@@ -359,7 +321,6 @@ func evaluatePostfix(tokens []string) (float64, error) {
 			}
 			stack = append(stack, result)
 		} else {
-			// Number
 			num, err := strconv.ParseFloat(token, 64)
 			if err != nil {
 				return 0, err

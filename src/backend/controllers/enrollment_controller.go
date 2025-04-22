@@ -1,4 +1,3 @@
-
 package controllers
 
 import (
@@ -6,15 +5,14 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/nnn20040/shabytdiplomwork/src/backend/models"
 )
 
-// EnrollCourse enrolls a user in a course
 func EnrollCourse(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	courseID := params["id"]
 
-	// Simplified implementation - just returns a success response
-	response := Response{
+	response := models.Response{
 		Success: true,
 		Message: "Successfully enrolled in course " + courseID,
 	}
@@ -23,10 +21,8 @@ func EnrollCourse(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-// GetFeaturedCourses gets featured courses
 func GetFeaturedCourses(w http.ResponseWriter, r *http.Request) {
-	// Simplified implementation - just returns a sample featured courses
-	response := Response{
+	response := models.Response{
 		Success: true,
 		Data: []map[string]interface{}{
 			{
@@ -42,6 +38,49 @@ func GetFeaturedCourses(w http.ResponseWriter, r *http.Request) {
 				"description": "Интерактивный курс физики",
 				"featured":    true,
 				"image_url":   "https://example.com/physics.jpg",
+			},
+		},
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+func GetCourseAnalytics(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	courseID := params["id"]
+
+	response := models.Response{
+		Success: true,
+		Data: map[string]interface{}{
+			"course_id":       courseID,
+			"total_students":  45,
+			"average_score":   78.5,
+			"completion_rate": 0.65,
+			"engagement_metrics": map[string]interface{}{
+				"lessons_viewed": 320,
+				"tests_taken":    98,
+				"discussions":    34,
+			},
+			"student_progress": []map[string]interface{}{
+				{
+					"user_id":  1,
+					"name":     "Студент 1",
+					"progress": 0.9,
+					"score":    85,
+				},
+				{
+					"user_id":  2,
+					"name":     "Студент 2",
+					"progress": 0.75,
+					"score":    72,
+				},
+				{
+					"user_id":  3,
+					"name":     "Студент 3",
+					"progress": 0.6,
+					"score":    68,
+				},
 			},
 		},
 	}

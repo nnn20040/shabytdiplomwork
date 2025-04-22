@@ -1,4 +1,3 @@
-
 package controllers
 
 import (
@@ -6,15 +5,14 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/nnn20040/shabytdiplomwork/src/backend/models"
 )
 
-// CreateTest creates a new test
 func CreateTest(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	courseID := params["courseId"]
 
-	// Simplified implementation - just returns a success response
-	response := Response{
+	response := models.Response{
 		Success: true,
 		Message: "Test created successfully for course " + courseID,
 		Data: map[string]interface{}{
@@ -29,31 +27,29 @@ func CreateTest(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-// GetTest gets a test by ID
 func GetTest(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	courseID := params["courseId"]
 	testID := params["testId"]
 
-	// Simplified implementation - just returns a sample test
-	response := Response{
+	response := models.Response{
 		Success: true,
 		Data: map[string]interface{}{
-			"id":         testID,
-			"course_id":  courseID,
-			"title":      "Sample Test",
+			"id":        testID,
+			"course_id": courseID,
+			"title":     "Sample Test",
 			"questions": []map[string]interface{}{
 				{
-					"id":       1,
-					"text":     "What is 2+2?",
-					"options":  []string{"3", "4", "5", "6"},
-					"answer":   1, // Index of correct answer (0-based)
+					"id":      1,
+					"text":    "What is 2+2?",
+					"options": []string{"3", "4", "5", "6"},
+					"answer":  1, 
 				},
 				{
-					"id":       2,
-					"text":     "What is the capital of France?",
-					"options":  []string{"London", "Berlin", "Paris", "Madrid"},
-					"answer":   2, // Index of correct answer (0-based)
+					"id":      2,
+					"text":    "What is the capital of France?",
+					"options": []string{"London", "Berlin", "Paris", "Madrid"},
+					"answer":  2, 
 				},
 			},
 		},
@@ -63,14 +59,12 @@ func GetTest(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-// UpdateTest updates a test
 func UpdateTest(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	courseID := params["courseId"]
 	testID := params["testId"]
 
-	// Simplified implementation - just returns a success response
-	response := Response{
+	response := models.Response{
 		Success: true,
 		Message: "Test " + testID + " updated successfully for course " + courseID,
 	}
@@ -79,14 +73,12 @@ func UpdateTest(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-// DeleteTest deletes a test
 func DeleteTest(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	courseID := params["courseId"]
 	testID := params["testId"]
 
-	// Simplified implementation - just returns a success response
-	response := Response{
+	response := models.Response{
 		Success: true,
 		Message: "Test " + testID + " deleted successfully from course " + courseID,
 	}
@@ -95,14 +87,12 @@ func DeleteTest(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-// SubmitTest submits a test
 func SubmitTest(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	courseID := params["courseId"]
 	testID := params["testId"]
 
-	// Simplified implementation - just returns a success response
-	response := Response{
+	response := models.Response{
 		Success: true,
 		Message: "Test " + testID + " submitted successfully for course " + courseID,
 		Data: map[string]interface{}{
@@ -116,14 +106,12 @@ func SubmitTest(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-// GetTestResults gets test results
 func GetTestResults(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	courseID := params["courseId"]
 	testID := params["testId"]
 
-	// Simplified implementation - just returns sample results
-	response := Response{
+	response := models.Response{
 		Success: true,
 		Data: map[string]interface{}{
 			"id":         testID,

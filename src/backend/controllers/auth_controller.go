@@ -4,67 +4,17 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-<<<<<<< HEAD
-	"os"
-	"strconv"
-	"time"
-=======
->>>>>>> cd921a5ac2f69d998d31ec5ec2307706058d18ee
 
-	"backend/models"
+	"github.com/nnn20040/shabytdiplomwork/src/backend/api/helper"
+	"github.com/nnn20040/shabytdiplomwork/src/backend/database"
+	"github.com/nnn20040/shabytdiplomwork/src/backend/models"
+	"github.com/nnn20040/shabytdiplomwork/src/backend/repository"
+	"golang.org/x/crypto/bcrypt"
 )
 
-// Response represents a generic API response
-type Response struct {
-	Success bool        `json:"success"`
-	Message string      `json:"message,omitempty"`
-	Data    interface{} `json:"data,omitempty"`
-	User    interface{} `json:"user,omitempty"`
-}
-
-// RegisterRequest represents a user registration request
-type RegisterRequest struct {
-	Name      string `json:"name"`
-	Email     string `json:"email"`
-	Password  string `json:"password"`
-	Role      string `json:"role"`
-	FirstName string `json:"firstName"`
-	LastName  string `json:"lastName"`
-}
-
-// LoginRequest represents a user login request
-type LoginRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
-// UpdateProfileRequest represents a request to update a user's profile
-type UpdateProfileRequest struct {
-	Name  string `json:"name"`
-	Email string `json:"email"`
-}
-
-// ChangePasswordRequest represents a request to change a user's password
-type ChangePasswordRequest struct {
-	CurrentPassword string `json:"currentPassword"`
-	NewPassword     string `json:"newPassword"`
-}
-
-// ForgotPasswordRequest represents a request to initiate the password reset process
-type ForgotPasswordRequest struct {
-	Email string `json:"email"`
-}
-
-// ResetPasswordRequest represents a request to reset a user's password
-type ResetPasswordRequest struct {
-	Email       string `json:"email"`
-	Token       string `json:"token"`
-	NewPassword string `json:"newPassword"`
-}
-
-// Register registers a new user
+// done
 func Register(w http.ResponseWriter, r *http.Request) {
-	var req RegisterRequest
+	var req models.RegisterRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		log.Printf("Register error: Failed to decode request body: %v", err)
@@ -74,14 +24,12 @@ func Register(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("Register request received: %+v", req)
 
-	// Validate input
 	if req.Email == "" || req.Password == "" {
 		log.Printf("Register error: Missing required fields")
 		http.Error(w, "Please provide all required fields", http.StatusBadRequest)
 		return
 	}
 
-	// If name is not provided but first name is, create name from first and last name
 	if req.Name == "" && req.FirstName != "" {
 		if req.LastName != "" {
 			req.Name = req.FirstName + " " + req.LastName
@@ -90,8 +38,26 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Create user
-	user, err := models.CreateUser(r.Context(), req.Name, req.Email, req.Password, req.Role)
+	existingUser, err := repository.GetUserByEmail(r.Context(), req.Email)
+	if existingUser != nil {
+		log.Printf("Register error: User with email already exists: %s", req.Email)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		log.Printf("error hashing password: %w", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	req.Password = string(hashedPassword)
+
+	if req.Role == "" {
+		req.Role = "student"
+	}
+
+	user, err := repository.CreateUser(r.Context(), req)
 	if err != nil {
 		if err.Error() == "user with this email already exists" {
 			log.Printf("Register error: User with email already exists: %s", req.Email)
@@ -105,17 +71,22 @@ func Register(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("User registered successfully: %s", user.Email)
 
-	// Return success response without token
-	response := Response{
+	token, err := helper.GenerateJWT(user.ID)
+	if err != nil {
+		log.Printf("Error generating token: %v", err)
+	}
+
+	response := models.Response{
 		Success: true,
 		Message: "Registration successful",
-		User: map[string]interface{}{
-			"id":        user.ID,
-			"name":      user.Name,
-			"email":     user.Email,
-			"role":      user.Role,
-			"firstName": user.FirstName,
-			"lastName":  user.LastName,
+		Data:    token,
+		User: models.UserResponse{
+			ID:        user.ID,
+			FirstName: user.FirstName,
+			LastName:  user.LastName,
+			Email:     user.Email,
+			Role:      user.Role,
+			Name:      user.Name,
 		},
 	}
 
@@ -124,9 +95,8 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-// Login authenticates a user
 func Login(w http.ResponseWriter, r *http.Request) {
-	var req LoginRequest
+	var req models.LoginRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		log.Printf("Login error: Failed to decode request body: %v", err)
@@ -134,12 +104,11 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Validate input
 	if req.Email == "" || req.Password == "" {
 		log.Printf("Login error: Missing email or password")
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Response{
+		json.NewEncoder(w).Encode(models.Response{
 			Success: false,
 			Message: "Пожалуйста, укажите email и пароль",
 		})
@@ -148,49 +117,45 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("Login attempt for email: %s", req.Email)
 
-	// Testing account for development
 	if req.Email == "test@example.com" && req.Password == "password123" {
 		log.Printf("Using test account for email: %s", req.Email)
-		testUser := map[string]interface{}{
-			"id":        "test-user-id",
-			"name":      "Test User",
-			"email":     req.Email,
-			"role":      "student",
-			"firstName": "Test",
-			"lastName":  "User",
-		}
-		
-		response := Response{
+
+		response := models.Response{
 			Success: true,
 			Message: "Успешный вход (тестовый аккаунт)",
-			User:    testUser,
+			User: models.UserResponse{
+				ID:        "test-user-id",
+				Name:      "Test User",
+				FirstName: "Test",
+				LastName:  "User",
+				Email:     req.Email,
+				Role:      "student",
+			},
 		}
-		
+
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(response)
 		return
 	}
 
-	// Find user by email
-	user, err := models.GetUserByEmail(r.Context(), req.Email)
+	user, err := repository.GetUserByEmail(r.Context(), req.Email)
 	if err != nil {
 		log.Printf("Login error: User not found: %v", err)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusUnauthorized)
-		json.NewEncoder(w).Encode(Response{
+		json.NewEncoder(w).Encode(models.Response{
 			Success: false,
 			Message: "Неверные данные для входа",
 		})
 		return
 	}
 
-	// Verify password
-	err = models.ComparePassword(user.Password, req.Password)
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password))
 	if err != nil {
 		log.Printf("Login error: Invalid password for user %s: %v", req.Email, err)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusUnauthorized)
-		json.NewEncoder(w).Encode(Response{
+		json.NewEncoder(w).Encode(models.Response{
 			Success: false,
 			Message: "Неверные данные для входа",
 		})
@@ -199,17 +164,22 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("Login successful for user: %s", user.Email)
 
-	// Return success response with user data
-	response := Response{
+	token, err := helper.GenerateJWT(user.ID)
+	if err != nil {
+		log.Printf("Error generating token: %v", err)
+	}
+
+	response := models.Response{
 		Success: true,
 		Message: "Успешный вход",
-		User: map[string]interface{}{
-			"id":        user.ID,
-			"name":      user.Name,
-			"email":     user.Email,
-			"role":      user.Role,
-			"firstName": user.FirstName,
-			"lastName":  user.LastName,
+		Data:    token,
+		User: models.UserResponse{
+			ID:        user.ID,
+			FirstName: user.FirstName,
+			LastName:  user.LastName,
+			Email:     user.Email,
+			Role:      user.Role,
+			Name:      user.Name,
 		},
 	}
 
@@ -217,29 +187,41 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-// GetCurrentUser returns the current authenticated user
 func GetCurrentUser(w http.ResponseWriter, r *http.Request) {
-	// Simply return success with status 200 to indicate user is logged in
-	response := Response{
+	userID := r.Context().Value(models.UserContextKey).(string)
+
+	user, err := repository.GetUserByID(r.Context(), userID)
+	if err != nil {
+		http.Error(w, "user doesnt exists", http.StatusInternalServerError)
+		return
+	}
+
+	response := models.Response{
 		Success: true,
 		Message: "User is authenticated",
+		User: models.UserResponse{
+			ID:        user.ID,
+			FirstName: user.FirstName,
+			LastName:  user.LastName,
+			Email:     user.Email,
+			Role:      user.Role,
+			Name:      user.Name,
+		},
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
 
-// UpdateProfile updates a user's profile
 func UpdateProfile(w http.ResponseWriter, r *http.Request) {
-	var req UpdateProfileRequest
+	var req models.UpdateProfileRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		http.Error(w, "Invalid request data", http.StatusBadRequest)
 		return
 	}
 
-	// For the simplified version, just send a successful response
-	response := Response{
+	response := models.Response{
 		Success: true,
 		Message: "Profile updated successfully",
 	}
@@ -248,36 +230,57 @@ func UpdateProfile(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-// ChangePassword changes a user's password
 func ChangePassword(w http.ResponseWriter, r *http.Request) {
-	var req ChangePasswordRequest
+	var req models.ChangePasswordRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		http.Error(w, "Invalid request data", http.StatusBadRequest)
 		return
 	}
+	userID := r.Context().Value(models.UserContextKey).(string)
 
-	// For the simplified version, just send a successful response
-	response := Response{
+	var hashedPassword string
+	err = database.DB.QueryRow("SELECT password FROM users WHERE id = $1", userID).Scan(&hashedPassword)
+	if err != nil {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(req.CurrentPassword))
+	if err != nil {
+		http.Error(w, "Current password is incorrect", http.StatusUnauthorized)
+		return
+	}
+
+	newHashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		http.Error(w, "Failed to hash password", http.StatusInternalServerError)
+		return
+	}
+
+	err = repository.UpdatePassword(r.Context(), userID, string(newHashedPassword))
+	if err != nil {
+		http.Error(w, "Failed to update password", http.StatusInternalServerError)
+		return
+	}
+
+	response := models.Response{
 		Success: true,
 		Message: "Password changed successfully",
 	}
-
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
 
-// ForgotPassword initiates the password reset process
 func ForgotPassword(w http.ResponseWriter, r *http.Request) {
-	var req ForgotPasswordRequest
+	var req models.ForgotPasswordRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		http.Error(w, "Invalid request data", http.StatusBadRequest)
 		return
 	}
 
-	// For the simplified version, just send a successful response
-	response := Response{
+	response := models.Response{
 		Success: true,
 		Message: "Password reset instructions sent",
 	}
@@ -286,17 +289,15 @@ func ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-// ResetPassword resets a user's password using a reset token
 func ResetPassword(w http.ResponseWriter, r *http.Request) {
-	var req ResetPasswordRequest
+	var req models.ResetPasswordRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		http.Error(w, "Invalid request data", http.StatusBadRequest)
 		return
 	}
 
-	// For the simplified version, just send a successful response
-	response := Response{
+	response := models.Response{
 		Success: true,
 		Message: "Password has been reset successfully",
 	}

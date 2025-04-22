@@ -1,4 +1,3 @@
-
 package controllers
 
 import (
@@ -7,15 +6,14 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/nnn20040/shabytdiplomwork/src/backend/models"
 )
 
-// GetDiscussions gets all discussions for a course
 func GetDiscussions(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	courseID := params["courseId"]
 
-	// Simplified implementation - just returns sample discussions
-	response := Response{
+	response := models.Response{
 		Success: true,
 		Data: []map[string]interface{}{
 			{
@@ -43,14 +41,12 @@ func GetDiscussions(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-// GetDiscussion gets a discussion by ID
 func GetDiscussion(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	courseID := params["courseId"]
 	discussionID := params["discussionId"]
 
-	// Simplified implementation - just returns a sample discussion
-	response := Response{
+	response := models.Response{
 		Success: true,
 		Data: map[string]interface{}{
 			"id":         discussionID,
@@ -62,20 +58,20 @@ func GetDiscussion(w http.ResponseWriter, r *http.Request) {
 			"user_name":  "Студент 1",
 			"replies": []map[string]interface{}{
 				{
-					"id":           1,
+					"id":            1,
 					"discussion_id": discussionID,
-					"user_id":      3,
-					"content":      "Я тоже столкнулся с этой проблемой",
-					"created_at":   time.Now().Add(-1 * time.Hour).Format(time.RFC3339),
-					"user_name":    "Студент 3",
+					"user_id":       3,
+					"content":       "Я тоже столкнулся с этой проблемой",
+					"created_at":    time.Now().Add(-1 * time.Hour).Format(time.RFC3339),
+					"user_name":     "Студент 3",
 				},
 				{
-					"id":           2,
+					"id":            2,
 					"discussion_id": discussionID,
-					"user_id":      4,
-					"content":      "Попробуйте подход, описанный в лекции 3",
-					"created_at":   time.Now().Add(-30 * time.Minute).Format(time.RFC3339),
-					"user_name":    "Преподаватель",
+					"user_id":       4,
+					"content":       "Попробуйте подход, описанный в лекции 3",
+					"created_at":    time.Now().Add(-30 * time.Minute).Format(time.RFC3339),
+					"user_name":     "Преподаватель",
 				},
 			},
 		},
@@ -85,13 +81,11 @@ func GetDiscussion(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-// CreateDiscussion creates a new discussion
 func CreateDiscussion(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	courseID := params["courseId"]
 
-	// Simplified implementation - just returns a success response
-	response := Response{
+	response := models.Response{
 		Success: true,
 		Message: "Discussion created successfully for course " + courseID,
 		Data: map[string]interface{}{
@@ -110,14 +104,12 @@ func CreateDiscussion(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-// ReplyToDiscussion adds a reply to a discussion
 func ReplyToDiscussion(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	courseID := params["courseId"]
 	discussionID := params["discussionId"]
 
-	// Simplified implementation - just returns a success response
-	response := Response{
+	response := models.Response{
 		Success: true,
 		Message: "Reply added to discussion " + discussionID + " in course " + courseID,
 		Data: map[string]interface{}{
