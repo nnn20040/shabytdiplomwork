@@ -40,13 +40,7 @@ func CreateLesson(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	courseIDInt, err := strconv.Atoi(courseID)
-	if err != nil {
-		http.Error(w, "Неверный ID курса", http.StatusBadRequest)
-		return
-	}
-
-	count, err := repository.GetCourseCount(r.Context(), courseIDInt)
+	count, err := repository.GetCourseCount(r.Context(), courseID)
 	if err != nil {
 		log.Printf("Ошибка при проверке существования курса: %v", err)
 		http.Error(w, "Ошибка сервера при создании урока", http.StatusInternalServerError)
@@ -58,7 +52,7 @@ func CreateLesson(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	lesson, err := repository.CreateLesson(r.Context(), courseIDInt, req)
+	lesson, err := repository.CreateLesson(r.Context(), courseID, req)
 	if err != nil {
 		log.Printf("Ошибка при создании урока: %v", err)
 		http.Error(w, "Ошибка сервера при создании урока", http.StatusInternalServerError)
@@ -100,19 +94,13 @@ func UpdateLesson(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	courseIDInt, err := strconv.Atoi(courseID)
-	if err != nil {
-		http.Error(w, "Неверный ID курса", http.StatusBadRequest)
-		return
-	}
-
 	lessonIDInt, err := strconv.Atoi(lessonID)
 	if err != nil {
 		http.Error(w, "Неверный ID урока", http.StatusBadRequest)
 		return
 	}
 
-	count, err := repository.GetLessonCount(r.Context(), courseIDInt, lessonIDInt)
+	count, err := repository.IsLessonExist(r.Context(), courseID, lessonIDInt)
 	if err != nil {
 		log.Printf("Ошибка при проверке существования урока: %v", err)
 		http.Error(w, "Ошибка сервера при обновлении урока", http.StatusInternalServerError)
@@ -124,7 +112,7 @@ func UpdateLesson(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	lesson, err := repository.UpdateLesson(r.Context(), lessonIDInt, courseIDInt, req)
+	lesson, err := repository.UpdateLesson(r.Context(), lessonIDInt, courseID, req)
 	if err != nil {
 		log.Printf("Ошибка при обновлении урока: %v", err)
 		http.Error(w, "Ошибка сервера при обновлении урока", http.StatusInternalServerError)
@@ -159,19 +147,13 @@ func DeleteLesson(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	courseIDInt, err := strconv.Atoi(courseID)
-	if err != nil {
-		http.Error(w, "Неверный ID курса", http.StatusBadRequest)
-		return
-	}
-
 	lessonIDInt, err := strconv.Atoi(lessonID)
 	if err != nil {
 		http.Error(w, "Неверный ID урока", http.StatusBadRequest)
 		return
 	}
 
-	count, err := repository.GetLessonCount(r.Context(), courseIDInt, lessonIDInt)
+	count, err := repository.IsLessonExist(r.Context(), courseID, lessonIDInt)
 	if err != nil {
 		log.Printf("Ошибка при проверке существования урока: %v", err)
 		http.Error(w, "Ошибка сервера при удалении урока", http.StatusInternalServerError)
@@ -182,7 +164,7 @@ func DeleteLesson(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = repository.DeleteLesson(r.Context(), courseIDInt, lessonIDInt)
+	err = repository.DeleteLesson(r.Context(), courseID, lessonIDInt)
 	if err != nil {
 		log.Printf("Ошибка при удалении урока: %v", err)
 		http.Error(w, "Ошибка сервера при удалении урока", http.StatusInternalServerError)
@@ -202,13 +184,7 @@ func GetLessons(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	courseID := params["courseId"]
 
-	courseIDInt, err := strconv.Atoi(courseID)
-	if err != nil {
-		http.Error(w, "Неверный ID курса", http.StatusBadRequest)
-		return
-	}
-
-	count, err := repository.GetCourseCount(r.Context(), courseIDInt)
+	count, err := repository.GetCourseCount(r.Context(), courseID)
 	if err != nil {
 		log.Printf("Ошибка при проверке существования курса: %v", err)
 		http.Error(w, "Ошибка сервера при получении уроков", http.StatusInternalServerError)
@@ -220,7 +196,7 @@ func GetLessons(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	lessons, err := repository.GetLessonsByCourseId(r.Context(), courseIDInt)
+	lessons, err := repository.GetLessonsByCourseId(r.Context(), courseID)
 	if err != nil {
 		log.Printf("Ошибка получения уроков: %v", err)
 		http.Error(w, "Ошибка сервера при получении уроков", http.StatusInternalServerError)
@@ -241,19 +217,13 @@ func GetLesson(w http.ResponseWriter, r *http.Request) {
 	courseID := params["courseId"]
 	lessonID := params["lessonId"]
 
-	courseIDInt, err := strconv.Atoi(courseID)
-	if err != nil {
-		http.Error(w, "Неверный ID курса", http.StatusBadRequest)
-		return
-	}
-
 	lessonIDInt, err := strconv.Atoi(lessonID)
 	if err != nil {
 		http.Error(w, "Неверный ID урока", http.StatusBadRequest)
 		return
 	}
 
-	lesson, err := repository.GetLesson(r.Context(), courseIDInt, lessonIDInt)
+	lesson, err := repository.GetLesson(r.Context(), courseID, lessonIDInt)
 	if err != nil {
 		log.Printf("Ошибка при получении урока: %v", err)
 		http.Error(w, "Урок не найден", http.StatusNotFound)

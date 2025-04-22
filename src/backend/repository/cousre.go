@@ -45,7 +45,7 @@ func GetCourseByID(ctx context.Context, id string) (*models.Course, error) {
 
 func GetAllCourses(ctx context.Context, category, teacherID string, featured bool, featuredSpecified bool) ([]*models.Course, error) {
 	query := `
-		SELECT c.*, u.name AS instructor_name,
+		SELECT c.*, u.first_name AS instructor_name,
 		(SELECT COUNT(*) FROM enrollments WHERE course_id = c.id) AS students,
 		(SELECT COUNT(*) FROM lessons WHERE course_id = c.id) AS lessons
 		FROM courses c

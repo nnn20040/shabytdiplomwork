@@ -71,7 +71,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("User registered successfully: %s", user.Email)
 
-	token, err := helper.GenerateJWT(user.ID)
+	token, err := helper.GenerateJWT(user.ID, user.Role)
 	if err != nil {
 		log.Printf("Error generating token: %v", err)
 	}
@@ -164,7 +164,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("Login successful for user: %s", user.Email)
 
-	token, err := helper.GenerateJWT(user.ID)
+	token, err := helper.GenerateJWT(user.ID, user.Role)
 	if err != nil {
 		log.Printf("Error generating token: %v", err)
 	}

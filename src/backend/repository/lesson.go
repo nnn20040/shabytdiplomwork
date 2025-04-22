@@ -1,4 +1,3 @@
-
 package repository
 
 import (
@@ -27,12 +26,11 @@ func CreateLesson(c context.Context, courseId string, request models.LessonReque
 	return lesson, nil
 }
 
-func GetLessonCount(c context.Context, courseId string) (int, error) {
+func IsLessonExist(c context.Context, courseId string, lessonId int) (int, error) {
 	var count int
 	err := database.QueryRowContext(
-		c, "SELECT COUNT(*) FROM lessons WHERE course_id = $1",
-		courseId,
-	).Scan(&count)
+		c, "SELECT COUNT(*) FROM lessons WHERE course_id = $1 and id=$2",
+		courseId, lessonId).Scan(&count)
 	if err != nil {
 		return count, err
 	}

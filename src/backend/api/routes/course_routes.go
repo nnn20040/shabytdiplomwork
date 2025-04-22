@@ -14,11 +14,11 @@ func RegisterCourseRoutes(router *mux.Router) {
 	courseRouter.HandleFunc("/featured", controllers.GetFeaturedCourses).Methods("GET", "OPTIONS")
 	courseRouter.HandleFunc("/{id}/enroll", middleware.RequireAuth(controllers.EnrollCourse)).Methods("POST", "OPTIONS")
 	courseRouter.HandleFunc("/{id}/analytics", controllers.GetCourseAnalytics).Methods("GET", "OPTIONS")
-	courseRouter.HandleFunc("/teacher/my-courses", controllers.GetTeacherCourses).Methods("GET", "OPTIONS")
+	courseRouter.HandleFunc("/teacher/my-courses", middleware.RequireAuth(controllers.GetTeacherCourses)).Methods("GET", "OPTIONS")
 
 	//course routes
 	courseRouter.HandleFunc("", controllers.GetAllCourses).Methods("GET", "OPTIONS")
-	courseRouter.HandleFunc("", controllers.CreateCourse).Methods("POST", "OPTIONS")
+	courseRouter.HandleFunc("", middleware.RequireAuth(controllers.CreateCourse)).Methods("POST", "OPTIONS")
 	courseRouter.HandleFunc("/{id}", controllers.GetCourseByID).Methods("GET", "OPTIONS")
 	courseRouter.HandleFunc("/{id}", middleware.RequireAuth(controllers.UpdateCourse)).Methods("PUT", "OPTIONS")
 	courseRouter.HandleFunc("/{id}", middleware.RequireAuth(controllers.DeleteCourse)).Methods("DELETE", "OPTIONS")
