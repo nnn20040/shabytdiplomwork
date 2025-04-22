@@ -1,3 +1,4 @@
+
 package middleware
 
 import (
@@ -58,7 +59,7 @@ func RequireAuth(next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		// Get user ID from claims
-		userID, ok := claims["id"].(string)
+		userID, ok := claims["user_id"].(string)
 		if !ok {
 			http.Error(w, "Unauthorized: Invalid token claims", http.StatusUnauthorized)
 			return

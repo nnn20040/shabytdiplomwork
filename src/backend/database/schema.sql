@@ -1,3 +1,4 @@
+
 -- Users table (simplified without tokens)
 CREATE TABLE
     IF NOT EXISTS users (
@@ -12,9 +13,7 @@ CREATE TABLE
         last_login TIMESTAMP,
         profile_image_url VARCHAR(255),
         is_active BOOLEAN DEFAULT TRUE,
-        language_preference VARCHAR(10) DEFAULT 'ru',
-        reset_token VARCHAR(255),
-        reset_token_expiry BIGINT -- ru, kk, en
+        language_preference VARCHAR(10) DEFAULT 'ru' -- ru, kk, en
     );
 
 -- Registration logs table with improved information
@@ -84,19 +83,14 @@ CREATE TABLE
     IF NOT EXISTS courses (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
         title VARCHAR(255) NOT NULL,
-        title_kk VARCHAR(255),
         description TEXT NOT NULL,
-        description_kk TEXT,
-        subject VARCHAR(100) NOT NULL,
-        image_url VARCHAR(255),
-        difficulty_level VARCHAR(20) NOT NULL, -- beginner, intermediate, advanced
-        is_published BOOLEAN DEFAULT FALSE,
-        creator_id UUID REFERENCES users (id),
+        teacher_id UUID REFERENCES users (id),
+        category VARCHAR(100) NOT NULL,
+        image VARCHAR(255),
+        duration VARCHAR(50),
+        featured BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        duration_minutes INTEGER DEFAULT 0,
-        price DECIMAL(10, 2) DEFAULT 0.00,
-        avg_rating DECIMAL(3, 2) DEFAULT 0.00
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
 -- Lessons table
@@ -246,152 +240,20 @@ CREATE TABLE
         helpful_count INTEGER DEFAULT 0
     );
 
--- Notifications
-CREATE TABLE
-    IF NOT EXISTS notifications (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
-        user_id UUID REFERENCES users (id) ON DELETE CASCADE,
-        title VARCHAR(255) NOT NULL,
-        title_kk VARCHAR(255),
-        content TEXT NOT NULL,
-        content_kk TEXT,
-        notification_type VARCHAR(50) NOT NULL, -- system, course, achievement, etc.
-        read BOOLEAN DEFAULT FALSE,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        action_url VARCHAR(255)
-    );
-
--- User achievements
-CREATE TABLE
-    IF NOT EXISTS achievements (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
-        name VARCHAR(100) NOT NULL,
-        name_kk VARCHAR(100),
-        description TEXT NOT NULL,
-        description_kk TEXT,
-        image_url VARCHAR(255),
-        requirements TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
--- User earned achievements
-CREATE TABLE
-    IF NOT EXISTS user_achievements (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
-        user_id UUID REFERENCES users (id) ON DELETE CASCADE,
-        achievement_id UUID REFERENCES achievements (id) ON DELETE CASCADE,
-        earned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
--- User messages
-CREATE TABLE
-    IF NOT EXISTS user_messages (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
-        sender_id UUID REFERENCES users (id),
-        recipient_id UUID REFERENCES users (id),
-        subject VARCHAR(255) NOT NULL,
-        message TEXT NOT NULL,
-        read BOOLEAN DEFAULT FALSE,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        replied_to_id UUID REFERENCES user_messages (id)
-    );
-
--- AI Assistant interactions
-CREATE TABLE
-    IF NOT EXISTS ai_assistant (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
-        user_id UUID REFERENCES users (id) ON DELETE CASCADE,
-        question TEXT NOT NULL,
-        response TEXT NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
--- Forum topics (general discussion forum, not course-specific)
-CREATE TABLE
-    IF NOT EXISTS forum_topics (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
-        title VARCHAR(255) NOT NULL,
-        category VARCHAR(100) NOT NULL,
-        user_id UUID REFERENCES users (id),
-        content TEXT NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        is_pinned BOOLEAN DEFAULT FALSE,
-        is_closed BOOLEAN DEFAULT FALSE,
-        view_count INTEGER DEFAULT 0
-    );
-
--- Forum replies
-CREATE TABLE
-    IF NOT EXISTS forum_replies (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
-        topic_id UUID REFERENCES forum_topics (id) ON DELETE CASCADE,
-        user_id UUID REFERENCES users (id),
-        content TEXT NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        is_solution BOOLEAN DEFAULT FALSE
-    );
-
--- Course ratings and reviews
-CREATE TABLE
-    IF NOT EXISTS course_reviews (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
-        course_id UUID REFERENCES courses (id) ON DELETE CASCADE,
-        user_id UUID REFERENCES users (id),
-        rating INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
-        review_text TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        is_hidden BOOLEAN DEFAULT FALSE,
-        helpful_count INTEGER DEFAULT 0,
-        UNIQUE (user_id, course_id)
-    );
-
--- User activity logs
-CREATE TABLE
-    IF NOT EXISTS user_activity_logs (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
-        user_id UUID REFERENCES users (id) ON DELETE CASCADE,
-        activity_type VARCHAR(50) NOT NULL,
-        entity_type VARCHAR(50), -- course, lesson, test, etc.
-        entity_id UUID,
-        details JSONB,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        ip_address VARCHAR(50)
-    );
-
 -- Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_enrollments_user_id ON enrollments (user_id);
-
 CREATE INDEX IF NOT EXISTS idx_enrollments_course_id ON enrollments (course_id);
-
 CREATE INDEX IF NOT EXISTS idx_lessons_course_id ON lessons (course_id);
-
 CREATE INDEX IF NOT EXISTS idx_lesson_progress_user_id ON lesson_progress (user_id);
-
 CREATE INDEX IF NOT EXISTS idx_lesson_progress_lesson_id ON lesson_progress (lesson_id);
-
 CREATE INDEX IF NOT EXISTS idx_tests_course_id ON tests (course_id);
-
 CREATE INDEX IF NOT EXISTS idx_questions_test_id ON questions (test_id);
-
 CREATE INDEX IF NOT EXISTS idx_test_attempts_user_id ON test_attempts (user_id);
-
 CREATE INDEX IF NOT EXISTS idx_test_attempts_test_id ON test_attempts (test_id);
-
 CREATE INDEX IF NOT EXISTS idx_discussions_course_id ON discussions (course_id);
-
-CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications (user_id);
-
-CREATE INDEX IF NOT EXISTS idx_user_achievements_user_id ON user_achievements (user_id);
-
 CREATE INDEX IF NOT EXISTS idx_registration_logs_user_id ON registration_logs (user_id);
-
 CREATE INDEX IF NOT EXISTS idx_login_logs_user_id ON login_logs (user_id);
-
 CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id ON user_sessions (user_id);
-
 CREATE INDEX IF NOT EXISTS idx_user_sessions_token ON user_sessions (session_token);
-
 CREATE INDEX IF NOT EXISTS idx_registration_logs_email ON registration_logs (email);
+CREATE INDEX IF NOT EXISTS idx_courses_teacher_id ON courses (teacher_id);

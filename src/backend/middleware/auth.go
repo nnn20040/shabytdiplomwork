@@ -1,3 +1,4 @@
+
 package middleware
 
 import (
@@ -28,8 +29,8 @@ func RequireAuth(next http.HandlerFunc) http.HandlerFunc {
 
 		jwtSecret := os.Getenv("JWT_SECRET")
 		if jwtSecret == "" {
-			http.Error(w, "JWT secret not configured", http.StatusInternalServerError)
-			return
+			// Use a default secret for development
+			jwtSecret = "shabyt_secure_jwt_key_2025"
 		}
 
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
@@ -45,7 +46,7 @@ func RequireAuth(next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		if claims, ok := token.Claims.(jwt.MapClaims); ok {
-			userID, ok := claims[models.UserContextKey].(string)
+			userID, ok := claims["user_id"].(string)
 			if !ok {
 				http.Error(w, "Invalid token claims", http.StatusUnauthorized)
 				return
