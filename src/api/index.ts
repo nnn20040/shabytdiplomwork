@@ -1,17 +1,11 @@
-
 /**
  * API client for handling requests to backend
  */
 
-<<<<<<< HEAD
-// Base API URL
-const API_URL = "http://localhost:8080";
-=======
 // Base API URL - Update this to point to the backend server
 const API_URL = process.env.NODE_ENV === 'production' 
   ? '' // В продакшене используем относительные URL
   : 'http://localhost:5000'; // В разработке указываем полный URL с портом бэкенда
->>>>>>> cd921a5ac2f69d998d31ec5ec2307706058d18ee
 
 /**
  * Make API request with proper error handling

@@ -30,17 +30,7 @@ const LoginForm = () => {
     setIsLoading(true);
     
     try {
-<<<<<<< HEAD
-      const response = await fetch('http://localhost:5000/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-=======
       console.log("Attempting login with:", { email, password: "******" });
->>>>>>> cd921a5ac2f69d998d31ec5ec2307706058d18ee
       
       const data = await login(email, password);
       
