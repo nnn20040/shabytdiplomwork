@@ -1,91 +1,30 @@
 
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { EyeIcon, EyeOffIcon } from 'lucide-react';
-import { toast } from 'sonner';
-import { authApi } from '@/api';
+import RegisterNameFields from "./RegisterNameFields";
+import RegisterEmailField from "./RegisterEmailField";
+import RegisterPasswordFields from "./RegisterPasswordFields";
+import RegisterRoleRadioGroup from "./RegisterRoleRadioGroup";
+import { Button } from "@/components/ui/button";
+import { useRegisterForm } from "./useRegisterForm";
+import { Link } from "react-router-dom";
 
 const RegisterForm = () => {
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState('student');
-  const [isLoading, setIsLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
-  const navigate = useNavigate();
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMsg('');
-    
-    // Form validation
-    if (!firstName || !lastName || !email || !password || !confirmPassword) {
-      setErrorMsg("Пожалуйста, заполните все поля");
-      toast.error("Пожалуйста, заполните все поля");
-      return;
-    }
-    
-    if (password !== confirmPassword) {
-      setErrorMsg("Пароли не совпадают");
-      toast.error("Пароли не совпадают");
-      return;
-    }
-    
-    setIsLoading(true);
-    
-    try {
-      const name = `${firstName} ${lastName}`;
-      
-      // Debug log before API call
-      console.log("Sending registration request with data:", {
-        name,
-        email,
-        password: "[HIDDEN]",
-        role,
-        firstName,
-        lastName
-      });
-      
-      // Direct API call with explicit data
-      const response = await authApi.register({
-        name,
-        email,
-        password,
-        role,
-        firstName,
-        lastName,
-      });
-      
-      console.log("Registration API response:", response);
-      
-      if (response && response.success) {
-        toast.success("Регистрация успешна! Добро пожаловать в StudyHub!");
-        if (role === 'teacher') {
-          navigate('/teacher-dashboard');
-        } else {
-          navigate('/student-dashboard');
-        }
-      } else {
-        setErrorMsg(response?.message || "Ошибка при регистрации");
-        toast.error(response?.message || "Ошибка при регистрации");
-      }
-    } catch (error) {
-      console.error('Registration error:', error);
-      const errorMessage = error instanceof Error ? error.message : "Ошибка при регистрации";
-      setErrorMsg(errorMessage);
-      toast.error(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const {
+    firstName,
+    lastName,
+    email,
+    password,
+    confirmPassword,
+    role,
+    isLoading,
+    errorMsg,
+    setFirstName,
+    setLastName,
+    setEmail,
+    setPassword,
+    setConfirmPassword,
+    setRole,
+    handleSubmit
+  } = useRegisterForm();
 
   return (
     <div className="w-full max-w-md mx-auto">
@@ -104,107 +43,20 @@ const RegisterForm = () => {
             {errorMsg}
           </div>
         )}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="firstName">Имя</Label>
-            <Input
-              id="firstName"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              required
-              className="h-12"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="lastName">Фамилия</Label>
-            <Input
-              id="lastName"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              required
-              className="h-12"
-            />
-          </div>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            placeholder="your.email@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="h-12"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="password">Пароль</Label>
-          <div className="relative">
-            <Input
-              id="password"
-              type={showPassword ? "text" : "password"}
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="h-12 pr-10"
-            />
-            <button
-              type="button"
-              className="absolute inset-y-0 right-0 pr-3 flex items-center"
-              onClick={() => setShowPassword(!showPassword)}
-            >
-              {showPassword ? (
-                <EyeOffIcon className="h-5 w-5 text-muted-foreground" />
-              ) : (
-                <EyeIcon className="h-5 w-5 text-muted-foreground" />
-              )}
-            </button>
-          </div>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="confirmPassword">Подтверждение пароля</Label>
-          <div className="relative">
-            <Input
-              id="confirmPassword"
-              type={showConfirmPassword ? "text" : "password"}
-              placeholder="••••••••"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              className="h-12 pr-10"
-            />
-            <button
-              type="button"
-              className="absolute inset-y-0 right-0 pr-3 flex items-center"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-            >
-              {showConfirmPassword ? (
-                <EyeOffIcon className="h-5 w-5 text-muted-foreground" />
-              ) : (
-                <EyeIcon className="h-5 w-5 text-muted-foreground" />
-              )}
-            </button>
-          </div>
-        </div>
-        <div className="space-y-2">
-          <Label>Выберите роль</Label>
-          <RadioGroup
-            value={role}
-            onValueChange={setRole}
-            className="flex space-x-4"
-          >
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="student" id="student" />
-              <Label htmlFor="student" className="cursor-pointer">Ученик</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="teacher" id="teacher" />
-              <Label htmlFor="teacher" className="cursor-pointer">Учитель</Label>
-            </div>
-          </RadioGroup>
-        </div>
+        <RegisterNameFields
+          firstName={firstName}
+          lastName={lastName}
+          setFirstName={setFirstName}
+          setLastName={setLastName}
+        />
+        <RegisterEmailField email={email} setEmail={setEmail} />
+        <RegisterPasswordFields
+          password={password}
+          confirmPassword={confirmPassword}
+          setPassword={setPassword}
+          setConfirmPassword={setConfirmPassword}
+        />
+        <RegisterRoleRadioGroup role={role} setRole={setRole} />
         <div className="pt-2">
           <Button
             type="submit"
