@@ -33,21 +33,17 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
         console.error('Failed to parse user data from localStorage', e);
       }
     }
-    
-    // Make sure we send the body properly - stringify the object if it's not already a string
-    if (options.body && typeof options.body === 'object' && !(options.body instanceof Blob) &&
-        !(options.body instanceof ArrayBuffer) && !(options.body instanceof FormData) &&
-        !(options.body instanceof URLSearchParams) && !(options.body instanceof ReadableStream)) {
-      options.body = JSON.stringify(options.body);
-    }
-    
-    console.log("Request body:", options.body);
-    
-    const response = await fetch(url, {
+
+    // Create a new options object with proper body handling
+    const fetchOptions: RequestInit = {
       ...options,
       headers,
       credentials: 'include', // This ensures cookies are sent with requests
-    });
+    };
+    
+    console.log("Request body:", options.body);
+    
+    const response = await fetch(url, fetchOptions);
 
     console.log(`Received response from ${url}:`, response.status);
 
@@ -92,7 +88,7 @@ export const authApi = {
       
       const response = await apiRequest('/api/auth/register', {
         method: 'POST',
-        body: userData
+        body: JSON.stringify(userData)
       });
 
       if (response.data && response.data.user && response.data.data) {
@@ -118,7 +114,7 @@ export const authApi = {
       
       const response = await apiRequest('/api/auth/login', {
         method: 'POST',
-        body: credentials
+        body: JSON.stringify(credentials)
       });
 
       if (response.data && response.data.user && response.data.data) {
@@ -175,7 +171,7 @@ export const authApi = {
     console.log("Requesting password reset for:", email);
     const response = await apiRequest('/api/auth/forgot-password', {
       method: 'POST',
-      body: { email }
+      body: JSON.stringify({ email })
     });
     return response.data;
   },
@@ -184,7 +180,7 @@ export const authApi = {
     console.log("Resetting password for:", resetData.email);
     const response = await apiRequest('/api/auth/reset-password', {
       method: 'POST',
-      body: resetData
+      body: JSON.stringify(resetData)
     });
     return response.data;
   },
@@ -193,7 +189,7 @@ export const authApi = {
     console.log("Updating profile:", userData);
     const response = await apiRequest('/api/auth/profile', {
       method: 'PUT',
-      body: userData
+      body: JSON.stringify(userData)
     });
     
     if (response.data && response.data.success) {
@@ -213,7 +209,7 @@ export const authApi = {
     console.log("Changing password");
     const response = await apiRequest('/api/auth/change-password', {
       method: 'POST',
-      body: passwordData
+      body: JSON.stringify(passwordData)
     });
     return response.data;
   },
@@ -228,7 +224,7 @@ export const aiApi = {
     try {
       const response = await apiRequest('/api/ai-assistant/public-ask', {
         method: 'POST',
-        body: { question }
+        body: JSON.stringify({ question })
       });
       
       return response.data;
@@ -331,7 +327,7 @@ export const coursesApi = {
   createCourse: async (courseData: any) => {
     const response = await apiRequest('/api/courses', {
       method: 'POST',
-      body: courseData
+      body: JSON.stringify(courseData)
     });
     
     return response.data;
@@ -341,7 +337,7 @@ export const coursesApi = {
   updateCourse: async (courseId: string | number, courseData: any) => {
     const response = await apiRequest(`/api/courses/${courseId}`, {
       method: 'PUT',
-      body: courseData
+      body: JSON.stringify(courseData)
     });
     
     return response.data;
@@ -360,7 +356,7 @@ export const coursesApi = {
   createLesson: async (courseId: string | number, lessonData: any) => {
     const response = await apiRequest(`/api/courses/${courseId}/lessons`, {
       method: 'POST',
-      body: lessonData
+      body: JSON.stringify(lessonData)
     });
     
     return response.data;
@@ -370,7 +366,7 @@ export const coursesApi = {
   updateLesson: async (courseId: string | number, lessonId: string | number, lessonData: any) => {
     const response = await apiRequest(`/api/courses/${courseId}/lessons/${lessonId}`, {
       method: 'PUT',
-      body: lessonData
+      body: JSON.stringify(lessonData)
     });
     
     return response.data;
@@ -410,7 +406,7 @@ export const testsApi = {
   createTest: async (courseId: number | string, testData: any) => {
     const response = await apiRequest(`/api/courses/${courseId}/tests`, {
       method: 'POST',
-      body: testData
+      body: JSON.stringify(testData)
     });
     
     return response.data;
@@ -426,7 +422,7 @@ export const testsApi = {
   updateTest: async (courseId: number | string, testId: number | string, testData: any) => {
     const response = await apiRequest(`/api/courses/${courseId}/tests/${testId}`, {
       method: 'PUT',
-      body: testData
+      body: JSON.stringify(testData)
     });
     
     return response.data;
@@ -445,7 +441,7 @@ export const testsApi = {
   submitTest: async (courseId: number | string, testId: number | string, answers: any) => {
     const response = await apiRequest(`/api/courses/${courseId}/tests/${testId}/submit`, {
       method: 'POST',
-      body: { answers }
+      body: JSON.stringify({ answers })
     });
     
     return response.data;
@@ -478,7 +474,7 @@ export const discussionsApi = {
   createDiscussion: async (courseId: number | string, discussionData: any) => {
     const response = await apiRequest(`/api/courses/${courseId}/discussions`, {
       method: 'POST',
-      body: discussionData
+      body: JSON.stringify(discussionData)
     });
     
     return response.data;
@@ -488,7 +484,7 @@ export const discussionsApi = {
   replyToDiscussion: async (courseId: number | string, discussionId: number | string, content: string) => {
     const response = await apiRequest(`/api/courses/${courseId}/discussions/${discussionId}/replies`, {
       method: 'POST',
-      body: { content }
+      body: JSON.stringify({ content })
     });
     
     return response.data;
