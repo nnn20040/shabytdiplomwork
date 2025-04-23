@@ -35,18 +35,18 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
       }
     }
     
-    // Make sure we send the body properly
-    let requestBody = options.body;
-    if (requestBody && typeof requestBody === 'object') {
-      requestBody = JSON.stringify(requestBody);
+    // Make sure we send the body properly - stringify the object if it's not already a string
+    if (options.body && typeof options.body === 'object' && !(options.body instanceof Blob) &&
+        !(options.body instanceof ArrayBuffer) && !(options.body instanceof FormData) &&
+        !(options.body instanceof URLSearchParams) && !(options.body instanceof ReadableStream)) {
+      options.body = JSON.stringify(options.body);
     }
     
-    console.log("Request body:", requestBody);
+    console.log("Request body:", options.body);
     
     const response = await fetch(url, {
       ...options,
       headers,
-      body: requestBody as BodyInit,
       credentials: 'include', // This ensures cookies are sent with requests
     });
 
