@@ -458,35 +458,26 @@ export const testsApi = {
  * Discussions API
  */
 export const discussionsApi = {
-  // Get course discussions
   getDiscussions: async (courseId: number | string) => {
     const response = await apiRequest(`/api/courses/${courseId}/discussions`);
     return response.data;
   },
-  
-  // Get discussion details
   getDiscussion: async (courseId: number | string, discussionId: number | string) => {
     const response = await apiRequest(`/api/courses/${courseId}/discussions/${discussionId}`);
     return response.data;
   },
-  
-  // Create a discussion
   createDiscussion: async (courseId: number | string, discussionData: any) => {
     const response = await apiRequest(`/api/courses/${courseId}/discussions`, {
       method: 'POST',
       body: JSON.stringify(discussionData)
     });
-    
     return response.data;
   },
-  
-  // Reply to a discussion
   replyToDiscussion: async (courseId: number | string, discussionId: number | string, content: string) => {
     const response = await apiRequest(`/api/courses/${courseId}/discussions/${discussionId}/replies`, {
       method: 'POST',
       body: JSON.stringify({ content })
     });
-    
     return response.data;
   }
 };
@@ -495,13 +486,10 @@ export const discussionsApi = {
  * Analytics API
  */
 export const analyticsApi = {
-  // Get course analytics
   getCourseAnalytics: async (courseId: number | string) => {
     const response = await apiRequest(`/api/courses/${courseId}/analytics`);
     return response.data;
   },
-  
-  // Get user progress
   getUserProgress: async () => {
     const response = await apiRequest('/api/user/progress');
     return response.data;
