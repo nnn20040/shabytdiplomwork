@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
@@ -10,9 +11,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, MessageCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { discussionsApi } from '@/api';
 
 const NewForumTopic = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     title: '',
     content: '',
@@ -30,7 +33,7 @@ const NewForumTopic = () => {
     setFormData(prev => ({ ...prev, category: value }));
   };
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.title.trim()) {
@@ -50,12 +53,28 @@ const NewForumTopic = () => {
     
     setIsSubmitting(true);
     
-    // In a real app, you would send this data to your backend
-    setTimeout(() => {
-      toast.success('Тема успешно создана');
-      navigate('/forum');
+    try {
+      // Предполагается, что в API есть метод для создания обсуждения вне контекста курса
+      // Можно модифицировать API, чтобы он принимал другой формат или создать новый метод
+      const response = await discussionsApi.createDiscussion('general', {
+        title: formData.title,
+        content: formData.content,
+        category: formData.category,
+        user_id: user?.id,
+      });
+      
+      if (response.success) {
+        toast.success('Тема успешно создана');
+        navigate('/forum');
+      } else {
+        toast.error(response.message || 'Ошибка при создании темы');
+      }
+    } catch (error) {
+      console.error('Error creating forum topic:', error);
+      toast.error('Произошла ошибка при создании темы');
+    } finally {
       setIsSubmitting(false);
-    }, 1000);
+    }
   };
   
   return (

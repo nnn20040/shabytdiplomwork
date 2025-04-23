@@ -11,6 +11,7 @@ interface User {
   role: string;
   firstName?: string;
   lastName?: string;
+  token?: string;
 }
 
 // Интерфейс контекста аутентификации
@@ -21,6 +22,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<any>;
   register: (name: string, email: string, password: string, role: string) => Promise<any>;
   logout: () => Promise<void>;
+  getCurrentUser: () => Promise<any>;
 }
 
 // Создаем контекст с начальным значением
@@ -31,6 +33,7 @@ const AuthContext = createContext<AuthContextType>({
   login: async () => {},
   register: async () => {},
   logout: async () => {},
+  getCurrentUser: async () => {},
 });
 
 // Хук для использования контекста аутентификации
@@ -48,9 +51,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log("Checking authentication...");
         const stored = localStorage.getItem('user');
         if (stored) {
-          const userData = JSON.parse(stored);
-          console.log("Found user in localStorage:", userData);
-          setUser(userData);
+          try {
+            const userData = JSON.parse(stored);
+            console.log("Found user in localStorage:", userData);
+            
+            // Проверяем наличие токена
+            if (!userData.token) {
+              console.warn("User found in localStorage but no token present");
+              setUser(null);
+              localStorage.removeItem('user');
+            } else {
+              setUser(userData);
+              
+              // Опционально: проверка валидности токена на сервере
+              // const response = await authApi.getCurrentUser();
+              // if (!response.success) {
+              //   console.warn("Stored token is invalid");
+              //   setUser(null);
+              //   localStorage.removeItem('user');
+              // }
+            }
+          } catch (error) {
+            console.error("Error parsing user data from localStorage:", error);
+            localStorage.removeItem('user');
+          }
         } else {
           console.log("No user found in localStorage");
         }
@@ -65,16 +89,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     checkAuth();
   }, []);
 
+  // Получение данных пользователя с сервера
+  const getCurrentUser = async () => {
+    try {
+      setIsLoading(true);
+      const response = await authApi.getCurrentUser();
+      if (response.success && response.user) {
+        // Обновляем данные в localStorage с сервера
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          const userData = JSON.parse(storedUser);
+          const updatedUser = { 
+            ...response.user,
+            token: userData.token // Сохраняем токен
+          };
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+          setUser(updatedUser);
+        }
+      }
+      return response;
+    } catch (error) {
+      console.error('Get current user error:', error);
+      return { success: false };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Функция входа в систему
   const login = async (email: string, password: string) => {
     try {
+      setIsLoading(true);
       console.log("Login attempt with:", { email, password: "***" });
       const response = await authApi.login({ email, password });
       
       console.log("Login response:", response);
       if (response && response.user) {
         setUser(response.user);
-        localStorage.setItem('user', JSON.stringify(response.user));
         toast.success("Успешный вход в систему!");
       }
       return response;
@@ -83,19 +134,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const errorMessage = error instanceof Error ? error.message : "Ошибка входа в систему";
       toast.error(errorMessage);
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
   // Функция регистрации
   const register = async (name: string, email: string, password: string, role: string) => {
     try {
+      setIsLoading(true);
       console.log("Registration attempt with:", { name, email, password: "***", role });
       const response = await authApi.register({ name, email, password, role });
       
       console.log("Registration response:", response);
       if (response && response.user) {
         setUser(response.user);
-        localStorage.setItem('user', JSON.stringify(response.user));
         toast.success("Регистрация успешна!");
       }
       return response;
@@ -104,12 +157,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const errorMessage = error instanceof Error ? error.message : "Ошибка при регистрации";
       toast.error(errorMessage);
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
   // Функция выхода из системы
   const logout = async () => {
     try {
+      setIsLoading(true);
       await authApi.logout();
       localStorage.removeItem('user');
       setUser(null);
@@ -119,6 +175,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Даже в случае ошибки очищаем состояние пользователя
       localStorage.removeItem('user');
       setUser(null);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -130,6 +188,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     login,
     register,
     logout,
+    getCurrentUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

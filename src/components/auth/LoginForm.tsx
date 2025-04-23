@@ -32,17 +32,22 @@ const LoginForm = () => {
     try {
       console.log("Attempting login with:", { email, password: "******" });
       
-      const data = await login(email, password);
+      const response = await login(email, password);
       
-      console.log("Login response:", data);
+      console.log("Login response:", response);
       
-      toast.success("Успешный вход!");
-      
-      // Redirect based on user role
-      if (data.user?.role === 'teacher') {
-        navigate('/teacher-dashboard');
+      if (response.success) {
+        toast.success("Успешный вход!");
+        
+        // Redirect based on user role
+        if (response.user?.role === 'teacher') {
+          navigate('/teacher-dashboard');
+        } else {
+          navigate('/student-dashboard');
+        }
       } else {
-        navigate('/student-dashboard');
+        setErrorMsg(response.message || "Ошибка входа в систему");
+        toast.error(response.message || "Ошибка входа в систему");
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -65,7 +70,9 @@ const LoginForm = () => {
           Войдите в аккаунт, чтобы продолжить
         </p>
         <div className="mt-2 p-2 bg-muted text-xs rounded">
-          <p>В текущей версии любые учетные данные будут работать для входа</p>
+          <p>В текущей версии для тестирования можно использовать:</p>
+          <p>Email: test@example.com</p>
+          <p>Пароль: password123</p>
         </div>
       </div>
       

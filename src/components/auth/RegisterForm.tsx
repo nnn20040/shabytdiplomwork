@@ -19,23 +19,27 @@ const RegisterForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
   const navigate = useNavigate();
   const { register } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMsg('');
     
     if (!firstName || !lastName || !email || !password || !confirmPassword) {
+      setErrorMsg("Пожалуйста, заполните все поля");
       toast.error("Пожалуйста, заполните все поля");
       return;
     }
     
     if (password !== confirmPassword) {
+      setErrorMsg("Пароли не совпадают");
       toast.error("Пароли не совпадают");
       return;
     }
     
-    // setIsLoading(true);
+    setIsLoading(true);
     
     try {
       const name = `${firstName} ${lastName}`;
@@ -49,18 +53,25 @@ const RegisterForm = () => {
         lastName
       });
 
-      await register(name, email, password, role);
+      const response = await register(name, email, password, role);
       
-      toast.success("Регистрация успешна! Добро пожаловать в StudyHub!");
-      
-      if (role === 'teacher') {
-        navigate('/teacher-dashboard');
+      if (response.success) {
+        toast.success("Регистрация успешна! Добро пожаловать в StudyHub!");
+        
+        if (role === 'teacher') {
+          navigate('/teacher-dashboard');
+        } else {
+          navigate('/student-dashboard');
+        }
       } else {
-        navigate('/student-dashboard');
+        setErrorMsg(response.message || "Ошибка при регистрации");
+        toast.error(response.message || "Ошибка при регистрации");
       }
     } catch (error) {
       console.error('Registration error:', error);
-      toast.error(error instanceof Error ? error.message : "Ошибка при регистрации");
+      const errorMessage = error instanceof Error ? error.message : "Ошибка при регистрации";
+      setErrorMsg(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -79,6 +90,12 @@ const RegisterForm = () => {
       </div>
       
       <form onSubmit={handleSubmit} className="space-y-5">
+        {errorMsg && (
+          <div className="p-3 bg-red-50 text-red-800 rounded-md text-sm">
+            {errorMsg}
+          </div>
+        )}
+        
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="firstName">Имя</Label>

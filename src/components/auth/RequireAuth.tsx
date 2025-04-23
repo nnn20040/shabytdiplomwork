@@ -10,10 +10,35 @@ interface RequireAuthProps {
 }
 
 const RequireAuth: React.FC<RequireAuthProps> = ({ children }) => {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, getCurrentUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [redirected, setRedirected] = useState(false);
+  const [authCheckTimeout, setAuthCheckTimeout] = useState<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    // Clear existing timeout if component unmounts or effect runs again
+    if (authCheckTimeout) {
+      clearTimeout(authCheckTimeout);
+    }
+
+    // Set a timeout to prevent infinite loading
+    const timeout = setTimeout(() => {
+      console.log("Authentication check timed out");
+      if (isLoading) {
+        // If still loading after timeout, consider it a failure and redirect
+        setRedirected(true);
+        navigate('/login', { state: { from: location.pathname } });
+        toast.error('Не удалось проверить аутентификацию. Пожалуйста, войдите снова.');
+      }
+    }, 5000); // 5 seconds timeout
+
+    setAuthCheckTimeout(timeout);
+
+    return () => {
+      if (timeout) clearTimeout(timeout);
+    };
+  }, [isLoading, navigate, location.pathname]);
 
   useEffect(() => {
     if (!isLoading && !user && !redirected) {

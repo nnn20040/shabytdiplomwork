@@ -1,3 +1,4 @@
+
 /**
  * API client for handling requests to backend
  */
@@ -5,7 +6,7 @@
 // Base API URL - Update this to point to the backend server
 const API_URL = process.env.NODE_ENV === 'production' 
   ? '' // В продакшене используем относительные URL
-  : 'http://localhost:5000'; // В разработке указываем полный URL с портом бэкенда
+  : 'http://localhost:8080'; // В разработке указываем полный URL с портом бэкенда
 
 /**
  * Make API request with proper error handling
@@ -20,6 +21,19 @@ export async function apiRequest(endpoint: string, options: RequestInit = {}) {
       'Content-Type': 'application/json',
       ...(options.headers || {}),
     };
+    
+    // Add auth token if available
+    const user = localStorage.getItem('user');
+    if (user) {
+      try {
+        const userData = JSON.parse(user);
+        if (userData.token) {
+          headers['Authorization'] = `Bearer ${userData.token}`;
+        }
+      } catch (e) {
+        console.error('Failed to parse user data from localStorage', e);
+      }
+    }
     
     // Make sure we send the body properly
     let requestBody = options.body;
@@ -79,19 +93,16 @@ export const authApi = {
       
       const response = await apiRequest('/api/auth/register', {
         method: 'POST',
-        body: JSON.stringify({
-          name: userData.name || `${userData.firstName} ${userData.lastName}`,
-          email: userData.email,
-          password: userData.password,
-          role: userData.role || "student",
-          firstName: userData.firstName,
-          lastName: userData.lastName
-        })
+        body: userData
       });
 
-      if (response.data && response.data.user) {
-        // Store user data in localStorage
-        localStorage.setItem('user', JSON.stringify(response.data.user));
+      if (response.data && response.data.user && response.data.data) {
+        // Store user data and token in localStorage
+        const userToStore = {
+          ...response.data.user,
+          token: response.data.data
+        };
+        localStorage.setItem('user', JSON.stringify(userToStore));
       }
       
       return response.data;
@@ -108,12 +119,16 @@ export const authApi = {
       
       const response = await apiRequest('/api/auth/login', {
         method: 'POST',
-        body: JSON.stringify(credentials)
+        body: credentials
       });
 
-      if (response.data && response.data.user) {
-        // Store user data in localStorage
-        localStorage.setItem('user', JSON.stringify(response.data.user));
+      if (response.data && response.data.user && response.data.data) {
+        // Store user data and token in localStorage
+        const userToStore = {
+          ...response.data.user,
+          token: response.data.data
+        };
+        localStorage.setItem('user', JSON.stringify(userToStore));
       }
       
       return response.data;
@@ -126,14 +141,13 @@ export const authApi = {
   // Get current user
   getCurrentUser: async () => {
     try {
-      // Just return the user from localStorage
-      const user = localStorage.getItem('user');
-      if (!user) {
-        return { success: false, message: 'User not found' };
-      }
-      return { success: true, user: JSON.parse(user) };
+      const response = await apiRequest('/api/auth/me', {
+        method: 'GET'
+      });
+      return response.data;
     } catch (error) {
       console.error("Get current user error:", error);
+      localStorage.removeItem('user'); // Clear invalid user data
       return { success: false, message: 'Error getting current user' };
     }
   },
@@ -142,7 +156,11 @@ export const authApi = {
   logout: async () => {
     try {
       console.log("Logging out user");
-      // Just remove from localStorage
+      // Make logout request to backend
+      await apiRequest('/api/auth/logout', {
+        method: 'POST'
+      });
+      // Remove from localStorage
       localStorage.removeItem('user');
       return { success: true, message: 'Logged out successfully' };
     } catch (error) {
@@ -156,37 +174,49 @@ export const authApi = {
   // Remaining methods simplified to just return success
   forgotPassword: async (email: string) => {
     console.log("Requesting password reset for:", email);
-    return { success: true, message: "Password reset instructions sent" };
+    const response = await apiRequest('/api/auth/forgot-password', {
+      method: 'POST',
+      body: { email }
+    });
+    return response.data;
   },
   
   resetPassword: async (resetData: { email: string; token: string; newPassword: string }) => {
     console.log("Resetting password for:", resetData.email);
-    return { success: true, message: "Password has been reset successfully" };
+    const response = await apiRequest('/api/auth/reset-password', {
+      method: 'POST',
+      body: resetData
+    });
+    return response.data;
   },
   
   updateProfile: async (userData: { name: string; email: string }) => {
     console.log("Updating profile:", userData);
+    const response = await apiRequest('/api/auth/profile', {
+      method: 'PUT',
+      body: userData
+    });
     
-    // Get current user and update
-    const userJson = localStorage.getItem('user');
-    if (userJson) {
-      const user = JSON.parse(userJson);
-      const updatedUser = { ...user, ...userData };
-      localStorage.setItem('user', JSON.stringify(updatedUser));
-      
-      return { 
-        success: true, 
-        message: "Profile updated successfully",
-        user: updatedUser
-      };
+    if (response.data && response.data.success) {
+      // Update user in localStorage
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        const updatedUser = { ...user, ...userData };
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+      }
     }
     
-    return { success: false, message: "User not found" };
+    return response.data;
   },
   
   changePassword: async (passwordData: { currentPassword: string; newPassword: string }) => {
     console.log("Changing password");
-    return { success: true, message: "Password changed successfully" };
+    const response = await apiRequest('/api/auth/change-password', {
+      method: 'POST',
+      body: passwordData
+    });
+    return response.data;
   },
 };
 
@@ -199,7 +229,7 @@ export const aiApi = {
     try {
       const response = await apiRequest('/api/ai-assistant/public-ask', {
         method: 'POST',
-        body: JSON.stringify({ question })
+        body: { question }
       });
       
       return response.data;
@@ -235,7 +265,7 @@ export const getFallbackResponse = async (question: string) => {
       data: {
         id: `fallback_${Date.now()}`,
         question,
-        response: 'Математика - это наука о структ��рах, порядке и отношениях, которая исторически р��звивалась из по��счетов, измерений и описания форм объектов. В современной математике существует множество разделов: алгебра, геометрия, математический анализ, теория чисел, теория вероятностей и другие.',
+        response: 'Математика - это наука о структурах, порядке и отношениях, которая исторически развивалась из подсчетов, измерений и описания форм объектов. В современной математике существует множество разделов: алгебра, геометрия, математический анализ, теория чисел, теория вероятностей и другие.',
         created_at: new Date().toISOString()
       }
     };
@@ -247,7 +277,7 @@ export const getFallbackResponse = async (question: string) => {
       data: {
         id: `fallback_${Date.now()}`,
         question,
-        response: 'Физика - это естественная н��ука, изучающая материю, её движение и поведение в пространстве и времени, а также связанные с этим понятия энергии �� силы. Основные разделы физики включают механику, электродинамику, термодинамику, оптику, квантовую физику и теорию относительности.',
+        response: 'Физика - это естественная наука, изучающая материю, её движение и поведение в пространстве и времени, а также связанные с этим понятия энергии и силы. Основные разделы физики включают механику, электродинамику, термодинамику, оптику, квантовую физику и теорию относительности.',
         created_at: new Date().toISOString()
       }
     };
@@ -302,7 +332,7 @@ export const coursesApi = {
   createCourse: async (courseData: any) => {
     const response = await apiRequest('/api/courses', {
       method: 'POST',
-      body: JSON.stringify(courseData)
+      body: courseData
     });
     
     return response.data;
@@ -312,7 +342,7 @@ export const coursesApi = {
   updateCourse: async (courseId: string | number, courseData: any) => {
     const response = await apiRequest(`/api/courses/${courseId}`, {
       method: 'PUT',
-      body: JSON.stringify(courseData)
+      body: courseData
     });
     
     return response.data;
@@ -331,7 +361,7 @@ export const coursesApi = {
   createLesson: async (courseId: string | number, lessonData: any) => {
     const response = await apiRequest(`/api/courses/${courseId}/lessons`, {
       method: 'POST',
-      body: JSON.stringify(lessonData)
+      body: lessonData
     });
     
     return response.data;
@@ -341,7 +371,7 @@ export const coursesApi = {
   updateLesson: async (courseId: string | number, lessonId: string | number, lessonData: any) => {
     const response = await apiRequest(`/api/courses/${courseId}/lessons/${lessonId}`, {
       method: 'PUT',
-      body: JSON.stringify(lessonData)
+      body: lessonData
     });
     
     return response.data;
@@ -381,7 +411,7 @@ export const testsApi = {
   createTest: async (courseId: number | string, testData: any) => {
     const response = await apiRequest(`/api/courses/${courseId}/tests`, {
       method: 'POST',
-      body: JSON.stringify(testData)
+      body: testData
     });
     
     return response.data;
@@ -397,7 +427,7 @@ export const testsApi = {
   updateTest: async (courseId: number | string, testId: number | string, testData: any) => {
     const response = await apiRequest(`/api/courses/${courseId}/tests/${testId}`, {
       method: 'PUT',
-      body: JSON.stringify(testData)
+      body: testData
     });
     
     return response.data;
@@ -416,7 +446,7 @@ export const testsApi = {
   submitTest: async (courseId: number | string, testId: number | string, answers: any) => {
     const response = await apiRequest(`/api/courses/${courseId}/tests/${testId}/submit`, {
       method: 'POST',
-      body: JSON.stringify({ answers })
+      body: { answers }
     });
     
     return response.data;
@@ -449,7 +479,7 @@ export const discussionsApi = {
   createDiscussion: async (courseId: number | string, discussionData: any) => {
     const response = await apiRequest(`/api/courses/${courseId}/discussions`, {
       method: 'POST',
-      body: JSON.stringify(discussionData)
+      body: discussionData
     });
     
     return response.data;
@@ -459,7 +489,7 @@ export const discussionsApi = {
   replyToDiscussion: async (courseId: number | string, discussionId: number | string, content: string) => {
     const response = await apiRequest(`/api/courses/${courseId}/discussions/${discussionId}/replies`, {
       method: 'POST',
-      body: JSON.stringify({ content })
+      body: { content }
     });
     
     return response.data;

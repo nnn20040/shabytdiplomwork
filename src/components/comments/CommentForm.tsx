@@ -5,6 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 interface CommentFormProps {
   onSubmit: (content: string) => Promise<void>;
@@ -14,13 +15,16 @@ interface CommentFormProps {
 export const CommentForm = ({ onSubmit, placeholder = 'Напишите комментарий...' }: CommentFormProps) => {
   const [content, setContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!user) {
+    if (!isAuthenticated || !user) {
       toast.error('Необходимо войти в систему, чтобы оставить комментарий');
+      // Сохраняем текущий URL, чтобы вернуться после авторизации
+      navigate('/login', { state: { from: window.location.pathname } });
       return;
     }
     
@@ -52,12 +56,18 @@ export const CommentForm = ({ onSubmit, placeholder = 'Напишите комм
       />
       <Button 
         type="submit" 
-        disabled={isSubmitting || !content.trim() || !user} 
+        disabled={isSubmitting || !content.trim()} 
         className="flex items-center gap-2"
       >
         <Send className="h-4 w-4" />
         {isSubmitting ? 'Отправка...' : 'Отправить'}
       </Button>
+      
+      {!isAuthenticated && (
+        <p className="text-sm text-muted-foreground">
+          Необходимо <a href="/login" className="text-primary hover:underline">войти в систему</a>, чтобы оставить комментарий
+        </p>
+      )}
     </form>
   );
 };
