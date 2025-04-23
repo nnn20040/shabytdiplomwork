@@ -1,4 +1,3 @@
-
 /**
  * API client for handling requests to backend
  */
