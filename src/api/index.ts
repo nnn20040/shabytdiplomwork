@@ -3,76 +3,59 @@
  */
 
 // Base API URL - Update this to point to the backend server
-const API_URL = process.env.NODE_ENV === 'production' 
+const API_URL = process.env.NODE_ENV === 'production'
   ? '' // В продакшене используем относительные URL
-  : 'http://localhost:8080'; // В разработке указываем полный URL с портом бэкенда
+  : 'http://localhost:5000'; // В разработке указываем полный URL с портом бэкенда
 
 /**
  * Make API request with proper error handling
  */
 export async function apiRequest(endpoint: string, options: RequestInit = {}) {
+  const url = `${API_URL}${endpoint}`;
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    ...(options.headers || {})
+  };
+
+  // Add auth token if available
   try {
-    const url = `${API_URL}${endpoint}`;
-    console.log(`Making request to: ${url}`, options);
-    
-    // Setup headers
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-      ...(options.headers || {}),
-    };
-    
-    // Add auth token if available
     const user = localStorage.getItem('user');
     if (user) {
-      try {
-        const userData = JSON.parse(user);
-        if (userData.token) {
-          headers['Authorization'] = `Bearer ${userData.token}`;
-        }
-      } catch (e) {
-        console.error('Failed to parse user data from localStorage', e);
-      }
+      const { token } = JSON.parse(user);
+      if (token) headers['Authorization'] = `Bearer ${token}`;
     }
+  } catch (err) {
+    console.warn('Failed to parse user from localStorage', err);
+  }
 
-    // Create a new options object with proper body handling
-    const fetchOptions: RequestInit = {
-      ...options,
-      headers,
-      credentials: 'include', // This ensures cookies are sent with requests
-    };
-    
-    console.log("Request body:", options.body);
-    
+  const fetchOptions: RequestInit = {
+    method: options.method || 'GET',
+    headers,
+    credentials: 'include',
+    body: options.body ? options.body : undefined,
+  };
+
+  console.log("Making request to:", url);
+  if (fetchOptions.body) console.log("Request body:", fetchOptions.body);
+
+  try {
     const response = await fetch(url, fetchOptions);
 
-    console.log(`Received response from ${url}:`, response.status);
+    const contentType = response.headers.get('content-type');
+    const isJSON = contentType?.includes('application/json');
 
-    // For non-JSON responses, just return status
-    if (response.headers.get('content-type')?.indexOf('application/json') === -1) {
-      return { status: response.status };
-    }
-
-    // Parse JSON response if available
-    let data;
-    try {
-      data = await response.json();
-      console.log(`Response data:`, data);
-    } catch (e) {
-      console.error("Error parsing JSON response:", e);
-      throw new Error("Ошибка при обработке ответа сервера");
-    }
-
-    // If response is not ok, throw error with server message or default
     if (!response.ok) {
-      throw new Error(data.message || `Ошибка запроса: ${response.status}`);
+      const errorData = isJSON ? await response.json() : { message: response.statusText };
+      throw new Error(errorData.message || `Error ${response.status}`);
     }
 
-    return { data, status: response.status };
-  } catch (error) {
-    console.error('API request error:', error);
-    throw error;
+    return isJSON ? await response.json() : { status: response.status };
+  } catch (err) {
+    console.error("API request failed:", err);
+    throw err;
   }
 }
+
 
 /**
  * Authentication API calls
@@ -85,33 +68,32 @@ export const authApi = {
         ...userData,
         password: "****" // Hide password in logs
       });
-      
+
       const response = await apiRequest('/api/auth/register', {
         method: 'POST',
         body: JSON.stringify(userData)
       });
 
       if (response.data && response.data.user && response.data.data) {
-        // Store user data and token in localStorage
         const userToStore = {
           ...response.data.user,
           token: response.data.data
         };
         localStorage.setItem('user', JSON.stringify(userToStore));
       }
-      
+
       return response.data;
     } catch (error) {
       console.error("Registration error:", error);
       throw error;
     }
   },
-  
+
   // Login user
   login: async (credentials: { email: string; password: string }) => {
     try {
       console.log("Logging in user:", { email: credentials.email, password: "****" });
-      
+
       const response = await apiRequest('/api/auth/login', {
         method: 'POST',
         body: JSON.stringify(credentials)
@@ -125,14 +107,14 @@ export const authApi = {
         };
         localStorage.setItem('user', JSON.stringify(userToStore));
       }
-      
+
       return response.data;
     } catch (error) {
       console.error("Login error:", error);
       throw error;
     }
   },
-  
+
   // Get current user
   getCurrentUser: async () => {
     try {
@@ -165,7 +147,7 @@ export const authApi = {
       return { success: false, message: 'Error during logout' };
     }
   },
-  
+
   // Remaining methods simplified to just return success
   forgotPassword: async (email: string) => {
     console.log("Requesting password reset for:", email);
@@ -175,7 +157,7 @@ export const authApi = {
     });
     return response.data;
   },
-  
+
   resetPassword: async (resetData: { email: string; token: string; newPassword: string }) => {
     console.log("Resetting password for:", resetData.email);
     const response = await apiRequest('/api/auth/reset-password', {
@@ -184,14 +166,14 @@ export const authApi = {
     });
     return response.data;
   },
-  
+
   updateProfile: async (userData: { name: string; email: string }) => {
     console.log("Updating profile:", userData);
     const response = await apiRequest('/api/auth/profile', {
       method: 'PUT',
       body: JSON.stringify(userData)
     });
-    
+
     if (response.data && response.data.success) {
       // Update user in localStorage
       const storedUser = localStorage.getItem('user');
@@ -201,10 +183,10 @@ export const authApi = {
         localStorage.setItem('user', JSON.stringify(updatedUser));
       }
     }
-    
+
     return response.data;
   },
-  
+
   changePassword: async (passwordData: { currentPassword: string; newPassword: string }) => {
     console.log("Changing password");
     const response = await apiRequest('/api/auth/change-password', {
@@ -226,14 +208,14 @@ export const aiApi = {
         method: 'POST',
         body: JSON.stringify({ question })
       });
-      
+
       return response.data;
     } catch (error) {
       console.error("Error asking AI:", error);
       return getFallbackResponse(question);
     }
   },
-  
+
   getHistory: async () => {
     console.log("Getting AI history");
     try {
@@ -253,7 +235,7 @@ export const aiApi = {
 export const getFallbackResponse = async (question: string) => {
   const lowercaseQuestion = question.toLowerCase();
   console.log("Using fallback response for:", question);
-  
+
   if (lowercaseQuestion.includes('математика') || lowercaseQuestion.includes('алгебра') || lowercaseQuestion.includes('геометрия')) {
     return {
       success: true,
@@ -265,7 +247,7 @@ export const getFallbackResponse = async (question: string) => {
       }
     };
   }
-  
+
   if (lowercaseQuestion.includes('физика')) {
     return {
       success: true,
@@ -277,7 +259,7 @@ export const getFallbackResponse = async (question: string) => {
       }
     };
   }
-  
+
   if (lowercaseQuestion.includes('ент') || lowercaseQuestion.includes('единое национальное тестирование')) {
     return {
       success: true,
@@ -289,7 +271,7 @@ export const getFallbackResponse = async (question: string) => {
       }
     };
   }
-  
+
   return {
     success: true,
     data: {
@@ -310,90 +292,90 @@ export const coursesApi = {
     const response = await apiRequest('/api/courses');
     return response.data;
   },
-  
+
   // Get featured courses
   getFeaturedCourses: async () => {
     const response = await apiRequest('/api/courses/featured');
     return response.data;
   },
-  
+
   // Get course details
   getCourseDetails: async (courseId: string | number) => {
     const response = await apiRequest(`/api/courses/${courseId}`);
     return response.data;
   },
-  
+
   // Create a new course
   createCourse: async (courseData: any) => {
     const response = await apiRequest('/api/courses', {
       method: 'POST',
       body: JSON.stringify(courseData)
     });
-    
+
     return response.data;
   },
-  
+
   // Update a course
   updateCourse: async (courseId: string | number, courseData: any) => {
     const response = await apiRequest(`/api/courses/${courseId}`, {
       method: 'PUT',
       body: JSON.stringify(courseData)
     });
-    
+
     return response.data;
   },
-  
+
   // Delete a course
   deleteCourse: async (courseId: string | number) => {
     const response = await apiRequest(`/api/courses/${courseId}`, {
       method: 'DELETE'
     });
-    
+
     return response.data;
   },
-  
+
   // Create a new lesson
   createLesson: async (courseId: string | number, lessonData: any) => {
     const response = await apiRequest(`/api/courses/${courseId}/lessons`, {
       method: 'POST',
       body: JSON.stringify(lessonData)
     });
-    
+
     return response.data;
   },
-  
+
   // Update a lesson
   updateLesson: async (courseId: string | number, lessonId: string | number, lessonData: any) => {
     const response = await apiRequest(`/api/courses/${courseId}/lessons/${lessonId}`, {
       method: 'PUT',
       body: JSON.stringify(lessonData)
     });
-    
+
     return response.data;
   },
-  
+
   // Delete a lesson
   deleteLesson: async (courseId: string | number, lessonId: string | number) => {
     const response = await apiRequest(`/api/courses/${courseId}/lessons/${lessonId}`, {
       method: 'DELETE'
     });
-    
+
     return response.data;
   },
-  
+
   // Enroll in a course
   enrollCourse: async (courseId: string | number) => {
     const response = await apiRequest(`/api/courses/${courseId}/enroll`, {
       method: 'POST'
     });
-    
+
     return response.data;
   },
-  
+
   // Get enrolled courses
   getEnrolledCourses: async () => {
     const response = await apiRequest('/api/enrollments');
-    
+
     return response.data;
   }
 };
@@ -408,45 +390,45 @@ export const testsApi = {
       method: 'POST',
       body: JSON.stringify(testData)
     });
-    
+
     return response.data;
   },
-  
+
   // Get test details
   getTest: async (courseId: number | string, testId: number | string) => {
     const response = await apiRequest(`/api/courses/${courseId}/tests/${testId}`);
     return response.data;
   },
-  
+
   // Update a test
   updateTest: async (courseId: number | string, testId: number | string, testData: any) => {
     const response = await apiRequest(`/api/courses/${courseId}/tests/${testId}`, {
       method: 'PUT',
       body: JSON.stringify(testData)
     });
-    
+
     return response.data;
   },
-  
+
   // Delete a test
   deleteTest: async (courseId: number | string, testId: number | string) => {
     const response = await apiRequest(`/api/courses/${courseId}/tests/${testId}`, {
       method: 'DELETE'
     });
-    
+
     return response.data;
   },
-  
+
   // Submit test answers
   submitTest: async (courseId: number | string, testId: number | string, answers: any) => {
     const response = await apiRequest(`/api/courses/${courseId}/tests/${testId}/submit`, {
       method: 'POST',
       body: JSON.stringify({ answers })
     });
-    
+
     return response.data;
   },
-  
+
   // Get test results
   getTestResults: async (courseId: number | string, testId: number | string) => {
     const response = await apiRequest(`/api/courses/${courseId}/tests/${testId}/results`);

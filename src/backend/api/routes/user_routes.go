@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/nnn20040/shabytdiplomwork/src/backend/middleware"
-
 	"github.com/gorilla/mux"
 )
 
@@ -26,7 +24,6 @@ func RegisterUserRoutes(router *mux.Router) {
 	}).Methods("GET", "OPTIONS")
 
 	enrollmentsRouter := router.PathPrefix("/api/enrollments").Subrouter()
-	enrollmentsRouter.Use(middleware.CORSMiddleware)
 
 	enrollmentsRouter.HandleFunc("", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")

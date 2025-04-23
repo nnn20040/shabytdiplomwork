@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -41,7 +42,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	existingUser, err := repository.GetUserByEmail(r.Context(), req.Email)
 	if existingUser != nil {
 		log.Printf("Register error: User with email already exists: %s", req.Email)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("User with email already exists", req.Email), http.StatusBadRequest)
 		return
 	}
 

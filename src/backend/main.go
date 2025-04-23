@@ -9,7 +9,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/nnn20040/shabytdiplomwork/src/backend/api/routes"
 	"github.com/nnn20040/shabytdiplomwork/src/backend/database"
-	"github.com/nnn20040/shabytdiplomwork/src/backend/middleware"
+	"github.com/rs/cors"
 )
 
 func main() {
@@ -23,10 +23,7 @@ func main() {
 
 	router := mux.NewRouter()
 
-	router.Use(middleware.RequestLogger)
-	router.Use(middleware.CORSMiddleware)
-
-	router = router.PathPrefix("/api").Subrouter()
+	apiRouter := router.PathPrefix("/api").Subrouter()
 
 	router.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -34,15 +31,22 @@ func main() {
 		w.Write([]byte(`{"status":"ok","message":"Server is running"}`))
 	}).Methods("GET", "OPTIONS")
 
-	routes.RegisterAuthRoutes(router)
-	routes.RegisterCourseRoutes(router)
-	routes.RegisterAIAssistantRoutes(router)
-	routes.RegisterUserRoutes(router)
+	routes.RegisterAuthRoutes(apiRouter)
+	routes.RegisterCourseRoutes(apiRouter)
+	routes.RegisterAIAssistantRoutes(apiRouter)
+	routes.RegisterUserRoutes(apiRouter)
+
+	handler := cors.New(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:8080"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization"},
+		AllowCredentials: true,
+	}).Handler(router)
 
 	port := os.Getenv("PORT")
 
 	log.Printf("Starting HTTP server on :%s", port)
-	if err := http.ListenAndServe(":"+port, router); err != nil {
+	if err := http.ListenAndServe(":"+port, handler); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
 }
