@@ -7,8 +7,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { EyeIcon, EyeOffIcon } from 'lucide-react';
 import { toast } from 'sonner';
-import { authApi } from '@/api'; // Импортируем напрямую из api
-// Убираем useAuth
+import { authApi } from '@/api';
 
 const RegisterForm = () => {
   const [firstName, setFirstName] = useState('');
@@ -26,20 +25,36 @@ const RegisterForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
+    
+    // Form validation
     if (!firstName || !lastName || !email || !password || !confirmPassword) {
       setErrorMsg("Пожалуйста, заполните все поля");
       toast.error("Пожалуйста, заполните все поля");
       return;
     }
+    
     if (password !== confirmPassword) {
       setErrorMsg("Пароли не совпадают");
       toast.error("Пароли не совпадают");
       return;
     }
+    
     setIsLoading(true);
+    
     try {
       const name = `${firstName} ${lastName}`;
-      // Здесь напрямую отправляется POST-запрос через API
+      
+      // Debug log before API call
+      console.log("Sending registration request with data:", {
+        name,
+        email,
+        password: "[HIDDEN]",
+        role,
+        firstName,
+        lastName
+      });
+      
+      // Direct API call with explicit data
       const response = await authApi.register({
         name,
         email,
@@ -48,7 +63,9 @@ const RegisterForm = () => {
         firstName,
         lastName,
       });
-
+      
+      console.log("Registration API response:", response);
+      
       if (response && response.success) {
         toast.success("Регистрация успешна! Добро пожаловать в StudyHub!");
         if (role === 'teacher') {
