@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { EyeIcon, EyeOffIcon } from 'lucide-react';
 import { toast } from 'sonner';
-import { useAuth } from '@/contexts/AuthContext';
+import { authApi } from '@/api'; // Импортируем напрямую из api
+// Убираем useAuth
 
 const RegisterForm = () => {
   const [firstName, setFirstName] = useState('');
@@ -21,51 +22,43 @@ const RegisterForm = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const navigate = useNavigate();
-  const { register } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
-    
     if (!firstName || !lastName || !email || !password || !confirmPassword) {
       setErrorMsg("Пожалуйста, заполните все поля");
       toast.error("Пожалуйста, заполните все поля");
       return;
     }
-    
     if (password !== confirmPassword) {
       setErrorMsg("Пароли не совпадают");
       toast.error("Пароли не совпадают");
       return;
     }
-    
     setIsLoading(true);
-    
     try {
       const name = `${firstName} ${lastName}`;
-      
-      console.log("Sending registration data:", {
+      // Здесь напрямую отправляется POST-запрос через API
+      const response = await authApi.register({
         name,
         email,
-        password: '***скрыто***',
+        password,
         role,
         firstName,
-        lastName
+        lastName,
       });
 
-      const response = await register(name, email, password, role);
-      
-      if (response.success) {
+      if (response && response.success) {
         toast.success("Регистрация успешна! Добро пожаловать в StudyHub!");
-        
         if (role === 'teacher') {
           navigate('/teacher-dashboard');
         } else {
           navigate('/student-dashboard');
         }
       } else {
-        setErrorMsg(response.message || "Ошибка при регистрации");
-        toast.error(response.message || "Ошибка при регистрации");
+        setErrorMsg(response?.message || "Ошибка при регистрации");
+        toast.error(response?.message || "Ошибка при регистрации");
       }
     } catch (error) {
       console.error('Registration error:', error);
@@ -88,14 +81,12 @@ const RegisterForm = () => {
           <p>В текущей версии регистрация работает в демо-режиме</p>
         </div>
       </div>
-      
       <form onSubmit={handleSubmit} className="space-y-5">
         {errorMsg && (
           <div className="p-3 bg-red-50 text-red-800 rounded-md text-sm">
             {errorMsg}
           </div>
         )}
-        
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="firstName">Имя</Label>
@@ -118,7 +109,6 @@ const RegisterForm = () => {
             />
           </div>
         </div>
-        
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
           <Input
@@ -131,7 +121,6 @@ const RegisterForm = () => {
             className="h-12"
           />
         </div>
-        
         <div className="space-y-2">
           <Label htmlFor="password">Пароль</Label>
           <div className="relative">
@@ -157,7 +146,6 @@ const RegisterForm = () => {
             </button>
           </div>
         </div>
-        
         <div className="space-y-2">
           <Label htmlFor="confirmPassword">Подтверждение пароля</Label>
           <div className="relative">
@@ -183,7 +171,6 @@ const RegisterForm = () => {
             </button>
           </div>
         </div>
-        
         <div className="space-y-2">
           <Label>Выберите роль</Label>
           <RadioGroup
@@ -201,7 +188,6 @@ const RegisterForm = () => {
             </div>
           </RadioGroup>
         </div>
-        
         <div className="pt-2">
           <Button
             type="submit"
@@ -212,7 +198,6 @@ const RegisterForm = () => {
           </Button>
         </div>
       </form>
-      
       <div className="mt-6 text-center">
         <p className="text-muted-foreground">
           Уже есть аккаунт?{" "}
