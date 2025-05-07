@@ -9,28 +9,34 @@ import { ArrowRight, School, Book, Brain, Star } from 'lucide-react';
 const About = () => {
   const team = [
     {
-      name: 'Алиев Марат',
+      name: 'Адилбек Нурлыбек',
       role: 'Основатель, CEO',
       bio: 'Более 10 лет опыта в образовательной сфере, выпускник Назарбаев Университета',
-      image: 'https://randomuser.me/api/portraits/men/1.jpg',
+      image: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?q=80&w=500&auto=format&fit=crop',
     },
     {
-      name: 'Ким Елена',
+      name: 'Мауленов Бакдаулет',
       role: 'Руководитель образовательных программ',
       bio: 'Кандидат педагогических наук, автор методик подготовки к ЕНТ',
-      image: 'https://randomuser.me/api/portraits/women/2.jpg',
+      image: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?q=80&w=500&auto=format&fit=crop',
     },
     {
-      name: 'Иванов Сергей',
+      name: 'Нурбек Доссанов',
       role: 'Технический директор',
       bio: 'Эксперт в области образовательных технологий и искусственного интеллекта',
-      image: 'https://randomuser.me/api/portraits/men/3.jpg',
+      image: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?q=80&w=500&auto=format&fit=crop',
     },
     {
-      name: 'Ахметова Аида',
+      name: 'Батыйхан Исмамутов',
       role: 'Методист по математике',
       bio: 'Преподаватель высшей категории с 15-летним стажем работы',
-      image: 'https://randomuser.me/api/portraits/women/4.jpg',
+      image: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?q=80&w=500&auto=format&fit=crop',
+    },
+    {
+      name: 'Даниял Турысбек',
+      role: 'Главный разработчик',
+      bio: 'Специалист по образовательным технологиям, разработчик платформы',
+      image: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?q=80&w=500&auto=format&fit=crop',
     },
   ];
 
@@ -56,6 +62,21 @@ const About = () => {
       label: 'Успешных студентов' 
     },
   ];
+
+  // Добавленные ссылки на курсы YouTube
+  const courseLinks = {
+    math: 'https://www.youtube.com/watch?v=pJpBYlvB2a8&list=PLGfOjbqAzLPF80bQsPslH0-90uPLtg2lJ&index=2',
+    physics: 'https://www.youtube.com/watch?v=VWGkC0clMNA&list=PLdjp7wVqN3Wvjuf8JbuKPnwUewOOZUsZD',
+    chemistry: 'https://www.youtube.com/watch?v=1Em3NWr8Y_s&list=PLoe4L7cYJo_Wh9JJUn1JbTwwmiYeV8P0R',
+    history: 'https://www.youtube.com/watch?v=RzOJNLuyx7M',
+    kazakh: 'https://www.youtube.com/watch?v=5t76qMokdyA&list=PLtcU2pef2q99tZ9JuWPSk-N3bz7Ik7P2W',
+    english: 'https://www.youtube.com/watch?v=fsOBilnCJIA&list=PLh35lj1wGT3E5HXA5dcatk7-GEi4IASCs',
+  };
+
+  // Сохраняем ссылки в localStorage для доступа из других компонентов
+  React.useEffect(() => {
+    localStorage.setItem('courseLinks', JSON.stringify(courseLinks));
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -129,7 +150,7 @@ const About = () => {
               </p>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-8">
               {team.map((member, index) => (
                 <div key={index} className="bg-card border border-border/50 rounded-xl overflow-hidden">
                   <div className="aspect-square">
