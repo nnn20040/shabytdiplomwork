@@ -74,8 +74,9 @@ export function useRegisterForm(): UseRegisterFormReturn {
           navigate("/student-dashboard");
         }
       } else {
-        setErrorMsg(response?.message || "Ошибка при регистрации");
-        toast.error(response?.message || "Ошибка при регистрации");
+        // Fixed: accessing message through data property since it's nested there
+        setErrorMsg(response?.data?.message || "Ошибка при регистрации");
+        toast.error(response?.data?.message || "Ошибка при регистрации");
       }
     } catch (error) {
       console.error("Registration error:", error);

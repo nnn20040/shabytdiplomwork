@@ -67,7 +67,8 @@ const NewForumTopic = () => {
         toast.success('Тема успешно создана');
         navigate('/forum');
       } else {
-        toast.error(response.message || 'Ошибка при создании темы');
+        // Fixed: handle error case properly without assuming response.message exists
+        toast.error('Ошибка при создании темы');
       }
     } catch (error) {
       console.error('Error creating forum topic:', error);

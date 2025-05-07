@@ -33,8 +33,8 @@ const EditLesson = () => {
         // Реальный API-запрос вместо мока
         const response = await coursesApi.getCourseDetails(String(courseId));
         
-        if (response && response.lessons) {
-          const lesson = response.lessons.find((l: any) => String(l.id) === lessonId);
+        if (response && response.success && response.data && response.data.lessons) {
+          const lesson = response.data.lessons.find((l: any) => String(l.id) === lessonId);
           
           if (lesson) {
             setLessonData({

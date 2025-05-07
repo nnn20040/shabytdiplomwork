@@ -51,8 +51,8 @@ const EditTest = () => {
       try {
         // Получаем уроки курса
         const courseData = await coursesApi.getCourseDetails(String(courseId));
-        if (courseData && courseData.lessons) {
-          setLessons(courseData.lessons.map((lesson: any) => ({
+        if (courseData && courseData.success && courseData.data && courseData.data.lessons) {
+          setLessons(courseData.data.lessons.map((lesson: any) => ({
             id: lesson.id,
             title: lesson.title
           })));
@@ -60,18 +60,18 @@ const EditTest = () => {
         
         // Получаем данные теста
         const testData = await testsApi.getTest(String(courseId), String(testId));
-        if (testData) {
+        if (testData && testData.success && testData.data) {
           setTestData({
-            id: testData.id,
-            title: testData.title,
-            description: testData.description,
-            time_limit: testData.time_limit,
-            passing_score: testData.passing_score,
-            lesson_id: testData.lesson_id
+            id: testData.data.id,
+            title: testData.data.title,
+            description: testData.data.description,
+            time_limit: testData.data.time_limit,
+            passing_score: testData.data.passing_score,
+            lesson_id: testData.data.lesson_id
           });
           
-          if (testData.questions) {
-            setQuestions(testData.questions);
+          if (testData.data.questions) {
+            setQuestions(testData.data.questions);
           }
         }
       } catch (error) {

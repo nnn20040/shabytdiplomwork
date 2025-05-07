@@ -60,8 +60,8 @@ const CreateTest = () => {
         // Получаем список уроков для курса
         const courseData = await coursesApi.getCourseDetails(String(courseId));
         
-        if (courseData && courseData.lessons) {
-          setLessons(courseData.lessons.map((lesson: any) => ({
+        if (courseData && courseData.success && courseData.data && courseData.data.lessons) {
+          setLessons(courseData.data.lessons.map((lesson: any) => ({
             id: lesson.id,
             title: lesson.title
           })));
