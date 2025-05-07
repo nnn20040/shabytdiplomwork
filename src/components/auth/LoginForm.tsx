@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -20,12 +19,6 @@ const LoginForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
-    
-    if (!email || !password) {
-      toast.error("Пожалуйста, заполните все поля");
-      setErrorMsg("Пожалуйста, заполните все поля");
-      return;
-    }
     
     setIsLoading(true);
     

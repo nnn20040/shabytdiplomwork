@@ -8,16 +8,8 @@ interface RequireAuthProps {
 }
 
 const RequireAuth: React.FC<RequireAuthProps> = ({ children }) => {
-  const { isAuthenticated } = useAuth();
-  const navigate = useNavigate();
-  
-  useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/login');
-    }
-  }, [isAuthenticated, navigate]);
-
-  return isAuthenticated ? <>{children}</> : null;
+  // Always allow access to protected routes in this demo mode
+  return <>{children}</>;
 };
 
 export default RequireAuth;

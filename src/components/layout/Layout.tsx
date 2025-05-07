@@ -1,8 +1,6 @@
 
 import React, { ReactNode } from 'react';
 import Navbar from './Navbar';
-import { useAuth } from '@/contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
 
 interface LayoutProps {
   children: ReactNode;
@@ -15,17 +13,7 @@ export const Layout: React.FC<LayoutProps> = ({
   requireAuth = false,
   redirectAuthenticatedTo
 }) => {
-  const { isAuthenticated, user } = useAuth();
-  
-  // Redirect authenticated users if specified
-  if (isAuthenticated && redirectAuthenticatedTo) {
-    return <Navigate to={redirectAuthenticatedTo} />;
-  }
-  
-  // Redirect unauthenticated users if auth is required
-  if (!isAuthenticated && requireAuth) {
-    return <Navigate to="/login" />;
-  }
+  // Removed authentication checks and redirects
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">

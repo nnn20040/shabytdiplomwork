@@ -38,18 +38,7 @@ export function useRegisterForm(): UseRegisterFormReturn {
     e.preventDefault();
     setErrorMsg('');
     
-    // Basic validation
-    if (!firstName || !lastName || !email || !password || !confirmPassword) {
-      setErrorMsg("Пожалуйста, заполните все поля");
-      toast.error("Пожалуйста, заполните все поля");
-      return;
-    }
-    
-    if (password !== confirmPassword) {
-      setErrorMsg("Пароли не совпадают");
-      toast.error("Пароли не совпадают");
-      return;
-    }
+    // Removed validation checks
     
     setIsLoading(true);
     
