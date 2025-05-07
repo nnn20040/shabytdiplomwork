@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
@@ -10,48 +10,34 @@ interface RequireAuthProps {
 }
 
 const RequireAuth: React.FC<RequireAuthProps> = ({ children }) => {
-  const { user, isLoading, getCurrentUser } = useAuth();
+  const { user, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [redirected, setRedirected] = useState(false);
-  const [authCheckTimeout, setAuthCheckTimeout] = useState<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    // Clear existing timeout if component unmounts or effect runs again
-    if (authCheckTimeout) {
-      clearTimeout(authCheckTimeout);
-    }
-
-    // Set a timeout to prevent infinite loading
-    const timeout = setTimeout(() => {
-      console.log("Authentication check timed out");
-      if (isLoading) {
-        // If still loading after timeout, consider it a failure and redirect
-        setRedirected(true);
-        navigate('/login', { state: { from: location.pathname } });
-        toast.error('Не удалось проверить аутентификацию. Пожалуйста, войдите снова.');
-      }
-    }, 5000); // 5 seconds timeout
-
-    setAuthCheckTimeout(timeout);
-
-    return () => {
-      if (timeout) clearTimeout(timeout);
-    };
-  }, [isLoading, navigate, location.pathname]);
-
-  useEffect(() => {
-    if (!isLoading && !user && !redirected) {
-      console.log("No authenticated user found, redirecting to login");
-      setRedirected(true);
-      navigate('/login', { state: { from: location.pathname } });
+    // DEMO MODE: If no user in localStorage but we're in demo mode,
+    // automatically create a demo user
+    if (!isLoading && !user) {
+      console.log("DEMO MODE: No authenticated user found, creating demo user");
       
-      // Don't show the toast if coming from the registration or login page
-      if (!location.pathname.includes('register') && !location.pathname.includes('login')) {
-        toast.error('Для доступа к этой странице необходимо войти в систему');
-      }
+      // Create a demo user based on requested route
+      const isTeacherRoute = location.pathname.includes('teacher');
+      
+      const demoUser = {
+        id: `demo_${Date.now()}`,
+        name: isTeacherRoute ? 'Демо Учитель' : 'Демо Студент',
+        email: isTeacherRoute ? 'teacher@example.com' : 'student@example.com',
+        role: isTeacherRoute ? 'teacher' : 'student',
+        token: `demo_token_${Date.now()}`
+      };
+      
+      // Store in localStorage
+      localStorage.setItem('user', JSON.stringify(demoUser));
+      
+      // Force page reload to recognize the new user
+      window.location.reload();
     }
-  }, [user, isLoading, navigate, location, redirected]);
+  }, [user, isLoading, navigate, location]);
 
   if (isLoading) {
     return (
@@ -62,7 +48,7 @@ const RequireAuth: React.FC<RequireAuthProps> = ({ children }) => {
     );
   }
 
-  return user ? <>{children}</> : null;
+  return <>{children}</>;
 };
 
 export default RequireAuth;

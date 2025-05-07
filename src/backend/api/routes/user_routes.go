@@ -1,3 +1,4 @@
+
 package routes
 
 import (
@@ -12,6 +13,10 @@ func RegisterUserRoutes(router *mux.Router) {
 
 	userRouter.HandleFunc("/progress", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"success": true,
 			"data": map[string]interface{}{
@@ -27,6 +32,10 @@ func RegisterUserRoutes(router *mux.Router) {
 
 	enrollmentsRouter.HandleFunc("", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"success": true,
 			"data": []map[string]interface{}{

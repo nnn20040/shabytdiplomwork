@@ -30,24 +30,20 @@ const LoginForm = () => {
     setIsLoading(true);
     
     try {
-      console.log("Attempting login with:", { email, password: "******" });
+      console.log("Демо режим: имитация авторизации", { email, password: "******" });
       
+      // В демо режиме всегда успешно авторизуемся
       const response = await login(email, password);
       
-      console.log("Login response:", response);
+      console.log("Демо ответ авторизации:", response);
       
-      if (response.success) {
-        toast.success("Успешный вход!");
-        
-        // Redirect based on user role
-        if (response.user?.role === 'teacher') {
-          navigate('/teacher-dashboard');
-        } else {
-          navigate('/student-dashboard');
-        }
+      toast.success("Успешный вход!");
+      
+      // Redirect based on user role
+      if (email.includes('teacher')) {
+        navigate('/teacher-dashboard');
       } else {
-        setErrorMsg(response.message || "Ошибка входа в систему");
-        toast.error(response.message || "Ошибка входа в систему");
+        navigate('/student-dashboard');
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -70,9 +66,10 @@ const LoginForm = () => {
           Войдите в аккаунт, чтобы продолжить
         </p>
         <div className="mt-2 p-2 bg-muted text-xs rounded">
-          <p>В текущей версии для тестирования можно использовать:</p>
-          <p>Email: test@example.com</p>
-          <p>Пароль: password123</p>
+          <p>Для демо-входа используйте:</p>
+          <p>Email: teacher@example.com (для учителя)</p>
+          <p>Email: student@example.com (для ученика)</p>
+          <p>Пароль: любой (демо режим)</p>
         </div>
       </div>
       

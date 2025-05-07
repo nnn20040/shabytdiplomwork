@@ -1,6 +1,5 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { authApi } from '@/api';
 import { toast } from 'sonner';
 
 // Тип пользователя
@@ -20,7 +19,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<any>;
-  register: (name: string, email: string, password: string, role: string) => Promise<any>;
+  register: (firstName: string, lastName: string, email: string, password: string, role: string) => Promise<any>;
   logout: () => Promise<void>;
   getCurrentUser: () => Promise<any>;
 }
@@ -55,21 +54,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const userData = JSON.parse(stored);
             console.log("Found user in localStorage:", userData);
             
-            // Проверяем наличие токена
-            if (!userData.token) {
-              console.warn("User found in localStorage but no token present");
+            // Проверяем наличие данных
+            if (!userData.name || !userData.role) {
+              console.warn("User found in localStorage but data is incomplete");
               setUser(null);
               localStorage.removeItem('user');
             } else {
               setUser(userData);
-              
-              // Опционально: проверка валидности токена на сервере
-              // const response = await authApi.getCurrentUser();
-              // if (!response.success) {
-              //   console.warn("Stored token is invalid");
-              //   setUser(null);
-              //   localStorage.removeItem('user');
-              // }
             }
           } catch (error) {
             console.error("Error parsing user data from localStorage:", error);
@@ -89,25 +80,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     checkAuth();
   }, []);
 
-  // Получение данных пользователя с сервера
+  // Получение данных пользователя с сервера (в демо-режиме просто возвращает данные из localStorage)
   const getCurrentUser = async () => {
     try {
       setIsLoading(true);
-      const response = await authApi.getCurrentUser();
-      if (response.success && response.user) {
-        // Обновляем данные в localStorage с сервера
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-          const userData = JSON.parse(storedUser);
-          const updatedUser = { 
-            ...response.user,
-            token: userData.token // Сохраняем токен
-          };
-          localStorage.setItem('user', JSON.stringify(updatedUser));
-          setUser(updatedUser);
-        }
+      const stored = localStorage.getItem('user');
+      if (stored) {
+        const userData = JSON.parse(stored);
+        return { success: true, user: userData };
       }
-      return response;
+      return { success: false };
     } catch (error) {
       console.error('Get current user error:', error);
       return { success: false };
@@ -121,14 +103,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setIsLoading(true);
       console.log("Login attempt with:", { email, password: "***" });
-      const response = await authApi.login({ email, password });
       
-      console.log("Login response:", response);
-      if (response && response.user) {
-        setUser(response.user);
-        toast.success("Успешный вход в систему!");
-      }
-      return response;
+      // Демо-режим: всегда успешный вход
+      // Определяем роль на основе email (для демо)
+      const role = email.includes('teacher') ? 'teacher' : 'student';
+      const name = email.includes('teacher') ? 'Преподаватель Демо' : 'Студент Демо';
+      
+      const userData = {
+        id: `demo-${Date.now()}`,
+        name: name,
+        email: email,
+        role: role,
+        token: `demo_token_${Date.now()}`
+      };
+      
+      localStorage.setItem('user', JSON.stringify(userData));
+      setUser(userData);
+      
+      toast.success("Успешный вход в систему!");
+      
+      return { 
+        success: true,
+        user: userData,
+        message: "Вход выполнен успешно"
+      };
     } catch (error) {
       console.error('Login failed:', error);
       const errorMessage = error instanceof Error ? error.message : "Ошибка входа в систему";
@@ -140,18 +138,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // Функция регистрации
-  const register = async (name: string, email: string, password: string, role: string) => {
+  const register = async (firstName: string, lastName: string, email: string, password: string, role: string) => {
     try {
       setIsLoading(true);
-      console.log("Registration attempt with:", { name, email, password: "***", role });
-      const response = await authApi.register({ name, email, password, role });
+      console.log("Registration attempt with:", { firstName, lastName, email, password: "***", role });
       
-      console.log("Registration response:", response);
-      if (response && response.user) {
-        setUser(response.user);
-        toast.success("Регистрация успешна!");
-      }
-      return response;
+      // Демо-режим: всегда успешная регистрация
+      const userData = {
+        id: `demo-${Date.now()}`,
+        name: `${firstName} ${lastName}`,
+        email: email,
+        firstName: firstName,
+        lastName: lastName,
+        role: role,
+        token: `demo_token_${Date.now()}`
+      };
+      
+      localStorage.setItem('user', JSON.stringify(userData));
+      setUser(userData);
+      
+      toast.success("Регистрация успешна!");
+      
+      return { 
+        success: true,
+        user: userData,
+        message: "Регистрация успешна"
+      };
     } catch (error) {
       console.error('Registration failed:', error);
       const errorMessage = error instanceof Error ? error.message : "Ошибка при регистрации";
@@ -166,13 +178,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     try {
       setIsLoading(true);
-      await authApi.logout();
       localStorage.removeItem('user');
       setUser(null);
       toast.success("Вы вышли из системы");
     } catch (error) {
       console.error('Logout failed:', error);
-      // Даже в случае ошибки очищаем состояние пользователя
       localStorage.removeItem('user');
       setUser(null);
     } finally {
