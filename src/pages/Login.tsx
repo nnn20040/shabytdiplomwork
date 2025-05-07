@@ -1,10 +1,31 @@
 
-import { Link } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import LoginForm from '@/components/auth/LoginForm';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Login = () => {
+  const { isAuthenticated, user } = useAuth();
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    // Redirect authenticated users
+    if (isAuthenticated && user) {
+      if (user.role === 'teacher') {
+        navigate('/teacher-dashboard');
+      } else {
+        navigate('/student-dashboard');
+      }
+    }
+  }, [isAuthenticated, user, navigate]);
+
+  // Don't render form for authenticated users
+  if (isAuthenticated) {
+    return null; // Return nothing, the useEffect will redirect
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />

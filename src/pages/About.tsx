@@ -11,13 +11,13 @@ const About = () => {
     {
       name: 'Адилбек Нурлыбек',
       role: 'Основатель, CEO',
-      bio: 'Более 10 лет опыта в образовательной сфере, выпускник Назарбаев Университета',
+      bio: 'Аналитик с большим опытом работы и будущий выпускник Сулейман Демиреля, Разработчик',
       image: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?q=80&w=500&auto=format&fit=crop',
     },
     {
       name: 'Мауленов Бакдаулет',
       role: 'Руководитель образовательных программ',
-      bio: 'Кандидат педагогических наук, автор методик подготовки к ЕНТ',
+      bio: 'Бэкенд разработчик, методик подготовка к ЕНТ',
       image: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?q=80&w=500&auto=format&fit=crop',
     },
     {
@@ -29,7 +29,7 @@ const About = () => {
     {
       name: 'Батыйхан Исмамутов',
       role: 'Методист по математике',
-      bio: 'Преподаватель высшей категории с 15-летним стажем работы',
+      bio: 'Имеет опыта в преподавание, Разработчик',
       image: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?q=80&w=500&auto=format&fit=crop',
     },
     {
@@ -63,7 +63,7 @@ const About = () => {
     },
   ];
 
-  // Добавленные ссылки на курсы YouTube
+  // Обновленные ссылки на курсы YouTube
   const courseLinks = {
     math: 'https://www.youtube.com/watch?v=pJpBYlvB2a8&list=PLGfOjbqAzLPF80bQsPslH0-90uPLtg2lJ&index=2',
     physics: 'https://www.youtube.com/watch?v=VWGkC0clMNA&list=PLdjp7wVqN3Wvjuf8JbuKPnwUewOOZUsZD',

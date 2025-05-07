@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { authApi } from "@/api";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface UseRegisterFormReturn {
   firstName: string;
@@ -32,6 +32,7 @@ export function useRegisterForm(): UseRegisterFormReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const navigate = useNavigate();
+  const { register } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,32 +50,31 @@ export function useRegisterForm(): UseRegisterFormReturn {
       toast.error("Пароли не совпадают");
       return;
     }
-
-    // For demo purposes, skip real API calls and proceed directly
-    const name = `${firstName} ${lastName}`;
     
-    // Create a demo user
-    const demoUser = {
-      id: `demo-${Date.now()}`,
-      name: name,
-      email,
-      role,
-      firstName,
-      lastName,
-      token: `demo_token_${Date.now()}`
-    };
+    setIsLoading(true);
     
-    // Store in localStorage
-    localStorage.setItem('user', JSON.stringify(demoUser));
-    
-    // Show success message
-    toast.success("Регистрация успешна! Добро пожаловать в StudyHub!");
-    
-    // Navigate based on role
-    if (role === "teacher") {
-      navigate("/teacher-dashboard");
-    } else {
-      navigate("/student-dashboard");
+    try {
+      // Use the auth context register method
+      await register(firstName, lastName, email, password, role);
+      
+      // Show success message
+      toast.success("Регистрация успешна! Добро пожаловать в StudyHub!");
+      
+      // Navigate based on role
+      if (role === "teacher") {
+        navigate("/teacher-dashboard");
+      } else {
+        navigate("/student-dashboard");
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : "Ошибка при регистрации";
+      
+      setErrorMsg(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
 

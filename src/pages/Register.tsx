@@ -1,11 +1,32 @@
 
-import { Link } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import RegisterForm from '@/components/auth/RegisterForm';
 import { CheckCircle } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Register = () => {
+  const { isAuthenticated, user } = useAuth();
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    // Redirect authenticated users
+    if (isAuthenticated && user) {
+      if (user.role === 'teacher') {
+        navigate('/teacher-dashboard');
+      } else {
+        navigate('/student-dashboard');
+      }
+    }
+  }, [isAuthenticated, user, navigate]);
+
+  // Don't render form for authenticated users
+  if (isAuthenticated) {
+    return null; // Return nothing, the useEffect will redirect
+  }
+  
   const benefits = [
     'Доступ ко всем курсам и материалам',
     'Персонализированный план обучения',
