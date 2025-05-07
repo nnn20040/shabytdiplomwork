@@ -36,56 +36,45 @@ export function useRegisterForm(): UseRegisterFormReturn {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
+    
+    // Basic validation
     if (!firstName || !lastName || !email || !password || !confirmPassword) {
       setErrorMsg("Пожалуйста, заполните все поля");
       toast.error("Пожалуйста, заполните все поля");
       return;
     }
+    
     if (password !== confirmPassword) {
       setErrorMsg("Пароли не совпадают");
       toast.error("Пароли не совпадают");
       return;
     }
-    setIsLoading(true);
-    try {
-      const name = `${firstName} ${lastName}`;
-      console.log("Sending registration request with data:", {
-        name,
-        email,
-        password: "[HIDDEN]",
-        role,
-        firstName,
-        lastName
-      });
-      const response = await authApi.register({
-        name,
-        email,
-        password,
-        role,
-        firstName,
-        lastName,
-      });
-      console.log("Registration API response:", response);
-      if (response && response.success) {
-        toast.success("Регистрация успешна! Добро пожаловать в StudyHub!");
-        if (role === "teacher") {
-          navigate("/teacher-dashboard");
-        } else {
-          navigate("/student-dashboard");
-        }
-      } else {
-        // Fixed: accessing message through data property since it's nested there
-        setErrorMsg(response?.data?.message || "Ошибка при регистрации");
-        toast.error(response?.data?.message || "Ошибка при регистрации");
-      }
-    } catch (error) {
-      console.error("Registration error:", error);
-      const errorMessage =
-        error instanceof Error ? error.message : "Ошибка при регистрации";
-      setErrorMsg(errorMessage);
-      toast.error(errorMessage);
-    } finally {
-      setIsLoading(false);
+
+    // For demo purposes, skip real API calls and proceed directly
+    const name = `${firstName} ${lastName}`;
+    
+    // Create a demo user
+    const demoUser = {
+      id: `demo-${Date.now()}`,
+      name: name,
+      email,
+      role,
+      firstName,
+      lastName,
+      token: `demo_token_${Date.now()}`
+    };
+    
+    // Store in localStorage
+    localStorage.setItem('user', JSON.stringify(demoUser));
+    
+    // Show success message
+    toast.success("Регистрация успешна! Добро пожаловать в StudyHub!");
+    
+    // Navigate based on role
+    if (role === "teacher") {
+      navigate("/teacher-dashboard");
+    } else {
+      navigate("/student-dashboard");
     }
   };
 

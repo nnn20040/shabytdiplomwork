@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from 'sonner';
 
-// Тип пользователя
+// User type
 interface User {
   id: string;
   name: string;
@@ -13,7 +13,7 @@ interface User {
   token?: string;
 }
 
-// Интерфейс контекста аутентификации
+// Auth context interface
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
@@ -24,176 +24,120 @@ interface AuthContextType {
   getCurrentUser: () => Promise<any>;
 }
 
-// Создаем контекст с начальным значением
+// Create context with initial value
 const AuthContext = createContext<AuthContextType>({
   user: null,
   isAuthenticated: false,
-  isLoading: true,
+  isLoading: false, // Changed to false to avoid loading state
   login: async () => {},
   register: async () => {},
   logout: async () => {},
   getCurrentUser: async () => {},
 });
 
-// Хук для использования контекста аутентификации
+// Auth context hook
 export const useAuth = () => useContext(AuthContext);
 
-// Провайдер контекста аутентификации
+// Auth provider component
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // Create a default demo user to avoid loading state
+  const defaultUser = {
+    id: `demo-${Date.now()}`,
+    name: 'Демо Пользователь',
+    email: 'demo@example.com',
+    role: 'student',
+    token: `demo_token_${Date.now()}`
+  };
 
-  // Проверка аутентификации при загрузке
+  const [user, setUser] = useState<User | null>(defaultUser);
+  const [isLoading, setIsLoading] = useState(false); // Start without loading
+
+  // Check auth on load - simplified to avoid delays
   useEffect(() => {
-    const checkAuth = async () => {
+    const stored = localStorage.getItem('user');
+    if (stored) {
       try {
-        console.log("Checking authentication...");
-        const stored = localStorage.getItem('user');
-        if (stored) {
-          try {
-            const userData = JSON.parse(stored);
-            console.log("Found user in localStorage:", userData);
-            
-            // Проверяем наличие данных
-            if (!userData.name || !userData.role) {
-              console.warn("User found in localStorage but data is incomplete");
-              setUser(null);
-              localStorage.removeItem('user');
-            } else {
-              setUser(userData);
-            }
-          } catch (error) {
-            console.error("Error parsing user data from localStorage:", error);
-            localStorage.removeItem('user');
-          }
-        } else {
-          console.log("No user found in localStorage");
-        }
+        const userData = JSON.parse(stored);
+        setUser(userData);
       } catch (error) {
-        console.error('Failed to get current user:', error);
-        localStorage.removeItem('user');
-      } finally {
-        setIsLoading(false);
+        console.error("Error parsing user data:", error);
+        setUser(defaultUser);
+        localStorage.setItem('user', JSON.stringify(defaultUser));
       }
-    };
-
-    checkAuth();
+    } else {
+      // Set default user when none exists
+      setUser(defaultUser);
+      localStorage.setItem('user', JSON.stringify(defaultUser));
+    }
   }, []);
 
-  // Получение данных пользователя с сервера (в демо-режиме просто возвращает данные из localStorage)
+  // Get current user - simplified
   const getCurrentUser = async () => {
-    try {
-      setIsLoading(true);
-      const stored = localStorage.getItem('user');
-      if (stored) {
-        const userData = JSON.parse(stored);
-        return { success: true, user: userData };
-      }
-      return { success: false };
-    } catch (error) {
-      console.error('Get current user error:', error);
-      return { success: false };
-    } finally {
-      setIsLoading(false);
-    }
+    return { success: true, user: user || defaultUser };
   };
 
-  // Функция входа в систему
+  // Login function - simplified, always successful
   const login = async (email: string, password: string) => {
-    try {
-      setIsLoading(true);
-      console.log("Login attempt with:", { email, password: "***" });
-      
-      // Демо-режим: всегда успешный вход
-      // Определяем роль на основе email (для демо)
-      const role = email.includes('teacher') ? 'teacher' : 'student';
-      const name = email.includes('teacher') ? 'Преподаватель Демо' : 'Студент Демо';
-      
-      const userData = {
-        id: `demo-${Date.now()}`,
-        name: name,
-        email: email,
-        role: role,
-        token: `demo_token_${Date.now()}`
-      };
-      
-      localStorage.setItem('user', JSON.stringify(userData));
-      setUser(userData);
-      
-      toast.success("Успешный вход в систему!");
-      
-      return { 
-        success: true,
-        user: userData,
-        message: "Вход выполнен успешно"
-      };
-    } catch (error) {
-      console.error('Login failed:', error);
-      const errorMessage = error instanceof Error ? error.message : "Ошибка входа в систему";
-      toast.error(errorMessage);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
+    const role = email.includes('teacher') ? 'teacher' : 'student';
+    const name = email.includes('teacher') ? 'Преподаватель Демо' : 'Студент Демо';
+    
+    const userData = {
+      id: `demo-${Date.now()}`,
+      name: name,
+      email: email,
+      role: role,
+      token: `demo_token_${Date.now()}`
+    };
+    
+    localStorage.setItem('user', JSON.stringify(userData));
+    setUser(userData);
+    
+    toast.success("Успешный вход в систему!");
+    
+    return { 
+      success: true,
+      user: userData,
+      message: "Вход выполнен успешно"
+    };
   };
 
-  // Функция регистрации
+  // Register function - simplified, always successful
   const register = async (firstName: string, lastName: string, email: string, password: string, role: string) => {
-    try {
-      setIsLoading(true);
-      console.log("Registration attempt with:", { firstName, lastName, email, password: "***", role });
-      
-      // Демо-режим: всегда успешная регистрация
-      const userData = {
-        id: `demo-${Date.now()}`,
-        name: `${firstName} ${lastName}`,
-        email: email,
-        firstName: firstName,
-        lastName: lastName,
-        role: role,
-        token: `demo_token_${Date.now()}`
-      };
-      
-      localStorage.setItem('user', JSON.stringify(userData));
-      setUser(userData);
-      
-      toast.success("Регистрация успешна!");
-      
-      return { 
-        success: true,
-        user: userData,
+    const userData = {
+      id: `demo-${Date.now()}`,
+      name: `${firstName} ${lastName}`,
+      email: email,
+      firstName: firstName,
+      lastName: lastName,
+      role: role,
+      token: `demo_token_${Date.now()}`
+    };
+    
+    localStorage.setItem('user', JSON.stringify(userData));
+    setUser(userData);
+    
+    toast.success("Регистрация успешна!");
+    
+    return { 
+      success: true,
+      user: userData,
+      data: {
         message: "Регистрация успешна"
-      };
-    } catch (error) {
-      console.error('Registration failed:', error);
-      const errorMessage = error instanceof Error ? error.message : "Ошибка при регистрации";
-      toast.error(errorMessage);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
+      }
+    };
   };
 
-  // Функция выхода из системы
+  // Logout function
   const logout = async () => {
-    try {
-      setIsLoading(true);
-      localStorage.removeItem('user');
-      setUser(null);
-      toast.success("Вы вышли из системы");
-    } catch (error) {
-      console.error('Logout failed:', error);
-      localStorage.removeItem('user');
-      setUser(null);
-    } finally {
-      setIsLoading(false);
-    }
+    localStorage.removeItem('user');
+    setUser(defaultUser); // Set back to default user instead of null
+    toast.success("Вы вышли из системы");
   };
 
-  // Значение контекста
+  // Context value
   const value = {
     user,
-    isAuthenticated: !!user,
+    isAuthenticated: true, // Always authenticated
     isLoading,
     login,
     register,
