@@ -112,7 +112,7 @@ const FeatureSection = () => {
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
             Почему выбирают{' '}
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-500">
-              StudyHub
+              Shabyt
             </span>
           </h2>
           <p className="text-xl text-muted-foreground">
