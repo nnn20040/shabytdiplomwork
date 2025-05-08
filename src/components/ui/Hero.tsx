@@ -58,7 +58,7 @@ const Hero = () => {
                     <div className="w-3 h-3 rounded-full bg-green-400"></div>
                   </div>
                   <div className="mx-auto pr-6 text-sm font-medium text-muted-foreground">
-                    ИИ-ассистент StudyHub
+                    ИИ-ассистент Shabyt
                   </div>
                 </div>
                 <div className="p-6">
