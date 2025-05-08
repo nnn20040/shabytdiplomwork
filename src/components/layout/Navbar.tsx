@@ -142,7 +142,7 @@ const Navbar = () => {
           </Sheet>
 
           <Link to="/" className="hidden sm:flex items-center gap-2">
-            <span className="font-bold text-xl">EduKZ</span>
+            <span className="font-bold text-xl">Shabyt</span>
           </Link>
 
           <div className="hidden md:flex ml-6">
@@ -246,7 +246,7 @@ const Navbar = () => {
         </div>
 
         <Link to="/" className="flex sm:hidden items-center gap-2">
-          <span className="font-bold text-xl">EduKZ</span>
+          <span className="font-bold text-xl">Shabyt</span>
         </Link>
 
         <div className="flex items-center gap-2">
