@@ -27,7 +27,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
           <div className="animate-enter" style={{ animationDelay: '0.1s' }}>
             <h3 className="text-xl font-semibold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-500">
-              StudyHub
+              Shabyt
             </h3>
             <p className="text-muted-foreground mb-6 leading-relaxed">
               Онлайн платформа для подготовки к ЕНТ с качественными материалами, тестами и помощью ИИ-ассистента.
@@ -125,7 +125,7 @@ const Footer = () => {
               </li>
               <li className="flex items-center">
                 <Mail size={20} className="text-primary mr-3 flex-shrink-0" />
-                <span className="text-muted-foreground">info@studyhub.kz</span>
+                <span className="text-muted-foreground">210103049@stu.sdu.edu.kz</span>
               </li>
             </ul>
           </div>
@@ -134,7 +134,7 @@ const Footer = () => {
         <div className="border-t border-border/50 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-sm text-muted-foreground mb-4 md:mb-0">
-              © {new Date().getFullYear()} StudyHub. Все права защищены.
+              © {new Date().getFullYear()} Shabyt. Все права защищены.
             </p>
             <div className="flex space-x-6">
               <Link to="/privacy" className="text-sm text-muted-foreground hover:text-primary transition-colors">
