@@ -126,7 +126,7 @@ const AIAssistant = () => {
                 <AvatarImage src="/placeholder.svg" alt="AI" />
                 <AvatarFallback>AI</AvatarFallback>
               </Avatar>
-              <span>Shabyt ИИ-ассистент</span>
+              <span>Shabyt AI-ассистент</span>
             </CardTitle>
           </CardHeader>
           
