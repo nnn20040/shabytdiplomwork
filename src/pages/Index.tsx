@@ -69,7 +69,7 @@ const Index = () => {
   // Mock data for testimonials
   const testimonials = [
     {
-      content: 'Благодаря StudyHub я смог поднять свои баллы с 80 до 125 за 3 месяца. Особенно помог ИИ-ассистент, который отвечал на все мои вопросы 24/7!',
+      content: 'Благодаря Shabyt я смог поднять свои баллы с 80 до 125 за 3 месяца. Особенно помог ИИ-ассистент, который отвечал на все мои вопросы 24/7!',
       author: 'Алишер К.',
       role: 'Выпускник 2023',
       avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
