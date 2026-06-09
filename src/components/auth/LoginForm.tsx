@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,24 +15,33 @@ const LoginForm = () => {
   const [errorMsg, setErrorMsg] = useState('');
   const navigate = useNavigate();
   const { login } = useAuth();
+  const hasAutoLoggedIn = useRef(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Auto-login whenever user types something
+  useEffect(() => {
+    if (hasAutoLoggedIn.current) return;
+    if (email.length > 0 || password.length > 0) {
+      hasAutoLoggedIn.current = true;
+      const timer = setTimeout(() => {
+        performLogin();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [email, password]);
+
+  const performLogin = async () => {
     setErrorMsg('');
-    
     setIsLoading(true);
-    
+
     try {
-      console.log("Демо режим: имитация авторизации", { email, password: "******" });
-      
-      // В демо режиме всегда успешно авторизуемся
+      console.log("Демо режим: авто-авторизация", { email, password: "******" });
+
       const response = await login(email, password);
-      
+
       console.log("Демо ответ авторизации:", response);
-      
+
       toast.success("Успешный вход!");
-      
-      // Redirect based on user role
+
       if (email.includes('teacher')) {
         navigate('/teacher-dashboard');
       } else {
@@ -40,15 +49,21 @@ const LoginForm = () => {
       }
     } catch (error) {
       console.error('Login error:', error);
-      const errorMessage = error instanceof Error 
-        ? error.message 
+      const errorMessage = error instanceof Error
+        ? error.message
         : "Ошибка входа";
-      
+
       toast.error(errorMessage);
       setErrorMsg(errorMessage);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    hasAutoLoggedIn.current = true;
+    await performLogin();
   };
 
   return (
