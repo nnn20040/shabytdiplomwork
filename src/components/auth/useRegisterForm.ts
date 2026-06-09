@@ -33,6 +33,7 @@ export function useRegisterForm(): UseRegisterFormReturn {
   const [errorMsg, setErrorMsg] = useState('');
   const navigate = useNavigate();
   const { register } = useAuth();
+  const hasAutoRegistered = useRef(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
