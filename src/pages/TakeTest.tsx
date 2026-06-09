@@ -23,7 +23,7 @@ const TakeTest = () => {
   const [answers, setAnswers] = useState<{ [key: number]: number }>({});
   const [timeLeft, setTimeLeft] = useState<number>(0); // seconds
   const [testStarted, setTestStarted] = useState(false);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   
   // Format time in MM:SS
   const formatTime = (seconds: number): string => {
