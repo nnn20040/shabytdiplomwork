@@ -33,9 +33,6 @@ const RegisterForm = () => {
         <p className="text-muted-foreground">
           Присоединяйтесь к тысячам студентов, успешно сдавших ЕНТ
         </p>
-        <div className="mt-2 p-2 bg-muted text-xs rounded">
-          <p>В текущей версии регистрация работает в демо-режиме</p>
-        </div>
       </div>
       <form onSubmit={handleSubmit} className="space-y-5">
         {errorMsg && (
