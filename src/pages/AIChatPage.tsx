@@ -1211,7 +1211,7 @@ else if (input.toLowerCase().includes('ахмет яшауи')) {
 else if (input.toLowerCase().includes('түркістан')) {
   fallbackResponse = 'Туркестан — исторический город в Южном Казахстане, центр духовного и культурного развития региона, где находится мавзолей Ахмета Яссауи.';
 }
-else if (input.toLowerCase().includes('козы казак') {
+else if (input.toLowerCase().includes('козы казак')) {
   fallbackResponse = 'Козы Казак — важный символ казахской культуры и национальной идентичности, относящийся к прошлому казахов.';
 }
 else if (input.toLowerCase().includes('туран')) {
