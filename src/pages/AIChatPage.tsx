@@ -726,7 +726,7 @@ else if (input.toLowerCase().includes('reported speech')) {
   fallbackResponse = 'Reported Speech используется для передачи чьих-то слов, часто с изменением времени. Например: "She said that she was going to the store."';
 }
 else if (input.toLowerCase().includes('direct speech')) {
-  fallbackResponse = 'Direct Speech используется для точной передачи чьих-то слов. Например: "He said, 'I will come tomorrow.'"';
+  fallbackResponse = 'Direct Speech используется для точной передачи чьих-то слов. Например: "He said, \'I will come tomorrow.\'"';
 }
 else if (input.toLowerCase().includes('adjective clauses')) {
   fallbackResponse = 'Adjective clauses — это придаточные предложения, которые описывают существительные. Например: "The book that I bought is interesting."';
