@@ -73,12 +73,6 @@ const LoginForm = () => {
         <p className="text-muted-foreground">
           Войдите в аккаунт, чтобы продолжить
         </p>
-        <div className="mt-2 p-2 bg-muted text-xs rounded">
-          <p>Для демо-входа используйте:</p>
-          <p>Email: teacher@example.com (для учителя)</p>
-          <p>Email: student@example.com (для ученика)</p>
-          <p>Пароль: любой (демо режим)</p>
-        </div>
       </div>
       
       <form onSubmit={handleSubmit} className="space-y-6">
